@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Shifter's Town Grower</title>
+	<link rel="stylesheet" href="css/bootstrap.css">
+	<style type="text/css">
+		html, body {overflow:hidden; width:100%; height:100%;}
+		#cvMap {width:100%; height:100%;
+		   image-rendering: optimizeSpeed;
+    image-rendering: crisp-edges;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
+		#settings_button {
+			cursor:pointer;
+			position:fixed;
+			top:15px;
+			left:15px;
+			opacity:0.3;
+			transition:opacity 0.5s;
+			z-index:1100;
+		}
+		#settings_button:hover {
+			opacity:1.0;
+		}
+
+		#settings {
+			position:fixed;
+			top:10px;
+			left:10px;
+			width:300px;
+			margin:0;
+			
+		}
+
+		#settings .modal-header {
+			padding-left:40px;
+		}
+
+		#settings .modal-header h4 {
+			margin:0;
+		}
+
+		#settings .modal-body > input[type="number"],
+		#settings .modal-body > div {
+			float:right;
+		}
+
+		#settings .modal-body label.radio {
+			margin-right:15px;
+			margin-bottom:15px;
+		}
+		#settings .modal-body label {
+			clear:right;
+			float:left;
+		}
+		
+	</style>
+</head>
+<body>
+	<canvas id="cvMap"></canvas>
+	<div id="settings" class="modal">
+		<div class="modal-header">
+			<h4>Settings</h4>
+		</div>
+		<div class="modal-body">
+			<label for="size">Pixel size</label>
+			<input id="size" name="size" type="number" class="input-mini" value="3" step="1" min="1" max="5"/>
+			<label for="base_freq">Starting frequency</label>
+			<input id="base_freq" name="base_freq" type="number" class="input-mini" value="8" step="1" min="1" max="16" />
+			<label for="persistence">Persistence</label>
+			<input id="persistence" name="persistence" type="number" class="input-mini" value="0.5" step="0.1" min="0.0" max="1.0" />
+			<label for="max_iterations">Max iterations</label>
+			<input id="max_iterations" name="max_iterations" type="number" class="input-mini" value="4" step="1" min="1" max="20" />
+			<label for="seed">Seed</label>
+			<div class="input-prepend">
+				<span id="random_seed" class="btn add-on"><i class="icon-refresh"></i></span>
+				<input id="seed" name="seed" type="number" class="input-small" value="1">
+			</div>
+		</div>
+		<div class="modal-footer">
+			<button id="btnGenerate" class="btn btn-primary">Generate</button>
+		</div>
+	</div>
+	<a id="settings_button"><img src="settings.png" alt="" width="30" /></a>
+	
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript" src="perlin.js"></script>
+	<script type="text/javascript">
+
+		/* NOTES
+
+			white
+				unemployed person
+				will wander at random, prefers to stay near buildings
+
+			red
+
+
+
+			orange
+			purple
+			yellow
+
+
+
+			food
+			wood -dark green, trees
+			stone - 
+
+
+		*/
+
+
+
+		//#region Classes
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}		
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function Cell(ht, veg) {
+			this.Height = ht;
+			var type='Unknown', col=new Color(0,0,0);
+			var limits = [
+				0.15, //deep water
+				0.2,  //water
+				0.24,  //sand
+				0.65, //grass
+				1.0];
+			if(ht<limits[0]){
+				type='Deep Water';
+				col=GetColorFromHex('00008b');
+			}
+			else if(ht<limits[1]) {
+				type='Shallow Water';
+				col=GetColorFromHex('0000ff');
+			}
+			else if(ht<limits[2]){
+				type='Sand';
+				col=GetColorFromHex('d2b48c');
+			}
+			else if(ht<limits[3]){
+				type='Grass';
+				
+				//veg = (Math.random() + 0.333) < PerlinNoise.CosineInterpolate(0, 1, veg) ? 1 : 0;	
+				if(veg==1)
+					col=new Color(64, 196, 64);
+				else
+					col=GetColorFromHex('90ee90');
+				col=GetColorGradient(
+						new GetColorFromHex('90ee90'),
+						new Color(32, 196, 21),
+						veg/3
+					);
+			}
+			else{
+				type='Mountain';
+				col=GetColorGradient(
+					new Color(100,100,100),
+					new Color(255,255,255),
+					(ht-limits[3])/(limits[4]-limits[3])
+					);
+			}
+			this.Vegetation = veg;
+			this.Type = type;
+			this.Color = col;
+		}
+
+		//#endregion
+
+
+		/* UTILITIES */
+		function GetColorFromHex(hex) {
+			hex = hex.replace('#', '');
+			return new Color(
+				parseInt(hex.substring(0,2), 16),
+				parseInt(hex.substring(2,4), 16),
+				parseInt(hex.substring(4,6), 16)
+				);
+		}
+
+		function GetColorGradient(min, max, v) {
+			return new Color(
+				min.R + Math.floor((max.R-min.R)*v),
+				min.G + Math.floor((max.G-min.G)*v),
+				min.B + Math.floor((max.B-min.B)*v)
+				);
+		}
+
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min)) + min;
+		}
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+
+
+
+		/* GLOBALS */
+		var cellmap,
+			canvas,
+			ctx,
+			imageData,
+			w,
+			h,
+			scale,
+			x, y;
+
+
+		$(function() {
+
+			$('#settings_button').click(function() {
+				if($('#settings').is(':visible'))
+					$('#settings').fadeOut();
+				else
+					$('#settings').fadeIn();
+			});
+
+			$('#btnGenerate').click(function() {
+				$(this).html('Generating...').addClass('disabled');
+				$('*').css('cursor', 'wait');
+				setTimeout(function() {
+					GenerateNewMap();
+					$('#btnGenerate').html('Generate').removeClass('disabled');	
+					$('*').css('cursor', '');
+				}, 100);
+				
+			});
+
+			$('#random_seed').click(function() {
+				$('#seed').val(GetRandomInt(0, 999999999));
+			});//.click();
+
+			w = $(window).width() ;
+			h = $(window).height();
+			$('#cvMap').attr('width', w).attr('height', h);
+
+			canvas = document.getElementById('cvMap');
+			ctx = canvas.getContext('2d');
+			imageData = ctx.createImageData(w, h);		
+
+			$('#cvMap').mousemove(function (evt) {
+				var rect = canvas.getBoundingClientRect();
+				mousePoint = new Point(Math.floor(evt.clientX - rect.left), Math.floor(evt.clientY - rect.top));
+				//$('#lblMouse').html(((mousePoint.X * scale) + origin.X) + ', ' + (origin.Y - (mousePoint.Y * scale)));
+			});
+
+			//GenerateNewMap();
+		});
+
+		function GenerateNewMap() {
+			scale = $('#size').val();
+			var w2=$(window).width() / scale,
+				h2=$(window).height() / scale,
+				baseFreq = $('#base_freq').val(),
+				persistence = $('#persistence').val(),
+				max_iterations = $('#max_iterations').val(),
+				seed = $('#seed').val();
+
+				
+			var ht1 = PerlinNoise.GetNoiseMap(w2, h2, baseFreq, persistence, max_iterations, seed),
+				ht2 = PerlinNoise.GetNoiseMap(w2, h2, baseFreq, persistence, max_iterations, seed + 13),
+				veg = PerlinNoise.GetNoiseMap(w2, h2, baseFreq, persistence, max_iterations, seed + 27);
+
+			cellmap = Create2DArray(h2);
+
+			for(x=0;x<w2;x++){
+				for(y=0;y<h2;y++){
+					var ht = ht1[y][x]/2.0;
+					if(ht2[y][x]>=0.4 && ht >= 0.175) {
+						//ht+=PerlinNoise.CosineInterpolate(0.0, 0.5, ((ht2[y][x]/2.0)-0.2)/0.3);
+						ht += ht2[y][x]/2.0;
+					}
+					cellmap[y][x] = new Cell(ht, (PerlinNoise.RNG.next() + 0.333) < PerlinNoise.CosineInterpolate(0, 1, veg[y][x]) ? Math.floor(PerlinNoise.RNG.next() * 2)+2 : 0);
+
+					DrawPoint(x,y, cellmap[y][x].Color);
+				}
+			}
+			ctx.putImageData(imageData, 0, 0);
+		}
+
+		function DrawPoint(x, y, c) {
+			for(var x2=0;x2<scale;x2++){
+				for(var y2=0;y2<scale;y2++){
+					
+					var index =
+						(((x*scale)+x2) +
+						((y*scale)+y2) *
+						w) * 4;
+					imageData.data[index++]=c.R;
+					imageData.data[index++]=c.G;
+					imageData.data[index++]=c.B;
+					imageData.data[index]=255;
+				}
+			}
+		}
+
+	</script>
+</body>
+</html>

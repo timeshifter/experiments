@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Demo</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+
+		html, body {
+			height:100%;
+		}
+
+		.clear {
+			clear:both;
+		}
+
+		header {
+			text-align:center;
+			font-weight:bold;
+			font-size:32px;
+			padding:15px;
+			border-bottom:solid 1px #eee;
+			height:10%;
+		}
+
+		#content {
+			height:80%;
+		}
+
+			#streams {
+				width:75%;
+				height:100%;
+				padding:10px;
+				background-color:#eef;
+				float:left;
+			}
+	
+			#chat {
+				width:25%;
+				height:100%;
+				padding:10px;
+				float:right;
+			}
+	</style>
+</head>
+<body>
+	<header>header</header>
+	<div id="content">
+		<div id="streams">streams go here</div>
+		<div id="chat">
+			<div id="messages">
+				<p>this is a chat message</p>
+			</div>
+			<div id="chatinput">
+				<textarea name="" id="txtChat" rows="3"></textarea>
+			</div>
+			
+		</div>
+		<div class="clear"></div>
+	</div>
+	<footer>this is a footer</footer>
+</body>
+</html>

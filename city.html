@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Shifter's City Thing</title>
+	<link rel="stylesheet" href="reset.css">
+	<style type="text/css">
+		
+		html, body {
+			height:100%;
+		}
+
+		.sidebar {
+			position:fixed;
+			left:0;
+			top:0;
+			width:200px;
+			background-color:#888;
+			border-right:1px solid #666;
+			height:100%;
+		}
+
+		.map {
+			margin-left:200px;
+			height:100%;
+			background-color:#f0f0f0;
+		}
+
+		.map table {
+			width:100%;
+			height:100%;
+		}
+
+		.map td {
+			border:1px solid #d0d0d0;
+			vertical-align:top;
+			padding:2px;
+		}
+
+		.map td div {
+			height: 33%;
+		}
+	</style>
+</head>
+<body>
+	<div class="sidebar">
+	
+	</div>
+	<div class="map">
+		<table>
+		</table>
+	</div>
+
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+
+		var screen_w, screen_h, //.map size
+			w, h, //grid size
+			size = 50; //cell size
+
+		$(function () {
+			screen_w = $('.map').width();
+			screen_h = $('.map').height();
+
+			w = Math.round(screen_w / size);
+			h = Math.round(screen_h / size);
+
+			$('style').append('.map td div { font-size: ' + Math.floor(size / 4) + 'px; height: ' + Math.floor(size/4) + 'px; }');
+
+			var s = '';
+			for (var j = 0; j < h; j++) {
+				s += '<tr>';
+				for (var i = 0; i < w; i++) {
+					s +=
+						'<td data-x="' + i + '" data-y="' + j + '" class="unoccupied">' +
+							'<div class="beauty">++</div>' +
+							'<div class="wealth">$$</div>' +
+							'<div class="pop">12 / 20</div>' +
+						'</td>';
+				}
+				s += '</tr>';
+			}
+			$('.map table').html(s);
+		});
+
+
+
+
+	</script>
+</body>
+</html>

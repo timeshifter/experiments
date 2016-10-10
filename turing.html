@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Turing Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:800px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		ul, li {list-style:none;}
+
+		p {line-height:24px;}
+
+		#display {
+			padding-top:20px;
+			padding-bottom:20px;
+			font-family:Courier New, Courier New, monospace;
+			font-size:24px;
+			letter-spacing:4px;
+			text-align:center;
+		}
+		#tblCards {
+			
+		}
+		#tblCards thead tr:not(:first-child) th {
+			text-align:left;
+			border-bottom:1px solid #e0e0e0;
+		}
+		#tblCards td {
+			padding:5px;
+		}
+		#tblCards input {
+			border:solid 1px lightblue;
+			padding:0px;
+			
+
+		}
+		#tblCards tbody td:first-child,
+		#tblCards tbody td:nth-child(4) {
+			border-right:1px solid #e0e0e0;
+		}
+		#tblCards tbody tr:not(:last-child) td {
+			border-bottom:1px solid #e0e0e0;
+		}
+		#tblCards td:not(:first-child):not(:last-child) {
+			width:80px;
+		}
+		#tblCards td:not(:first-child):not(:last-child):hover {
+			cursor:pointer;
+			background-color:lightblue;
+
+		}
+		
+		#controls {
+			margin-bottom:20px;
+		}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's Turing Thing</h1>
+	<div id="display">
+		<p id="output"></p>
+	</div>
+	<div id="controls">
+		<p><button id="btnPlay" onclick="Play();">Run</button> curr: <label id="lblIts"></label></p>
+		<p><button id="btnStep" onclick="Step();">Step</button></p>
+		<p><button id="btnReset" onclick="Reset();">Reset</button></p>
+		<p><button id="left" onclick="MoveLeft();" disabled>Move left</button> <button id="right" onclick="MoveRight();" disabled>Move right</button></p>
+	</div>
+	<div id="cards">
+		<h4>Cards</h4>
+		<table id="tblCards">
+			<thead>
+				<tr>
+					<th></th>
+					<th colspan="3">Case 0</th>
+					<th colspan="3">Case 1</th>
+				</tr>
+				<tr>
+					<th></th>
+					<th>write</th>
+					<th>move</th>
+					<th>goto</th>
+					<th>write</th>
+					<th>move</th>
+					<th>goto</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>1</td>
+					<td>1</td>
+					<td>1</td>
+					<td>2</td>
+					<td>1</td>
+					<td>0</td>
+					<td>2</td>
+					<td><button onclick="RemoveCard(this);">x</button></td>
+				</tr>
+				<tr>
+					<td>2</td>
+					<td>1</td>
+					<td>0</td>
+					<td>1</td>
+					<td>1</td>
+					<td>1</td>
+					<td>0</td>
+					<td><button onclick="RemoveCard(this);">x</button></td>
+				</tr>			
+			</tbody>
+		</table>
+		<button onclick="AddCard();">Add card</button>
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+		
+		var cards=[], currCard=0, currIdx=0, str=[0], iterations=0, tmrId, running=false;
+
+		function GetHashParam(param) {
+			var ret = '';
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					var parts = params[i].split('=');
+					if (parts[0] == param)
+						ret = parts[1];
+				}
+			}
+			return ret;
+		}
+
+		function HashParamExists(param) {
+			var ret = false;
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					if (params[i].split('=')[0] == param)
+						ret = true;
+				}
+			}
+			return ret;
+		}
+
+
+		$(function () {
+			$('#tblCards td').live('click', function() {
+				if($(this).find('input').length==0){
+					var s = '<input type="text" style="width:' + ($(this).width()) + 'px;" value="' + $(this).html() + '" />';
+					$(this).html(s);
+					$(this).find('input').focus().blur(function() {
+						var t = $(this).val();
+						$(this).parent().html(t);
+					});
+				}
+			});
+
+			BuildCards();
+			Update();
+		});
+
+		function Reset() {
+			str=[0];
+			iterations=0;
+			currIdx=0;
+			currCard=0;
+			BuildCards();
+			Update();
+		}
+
+		function AddCard() {
+			var s = 
+				'<tr>'+
+					'<td>' + ($('#tblCards tbody tr').length + 1) + '</td>'+
+					'<td>1</td>'+
+					'<td>1</td>'+
+					'<td>2</td>'+
+					'<td>1</td>'+
+					'<td>0</td>'+
+					'<td>2</td>'+
+					'<td><button onclick="RemoveCard(this);">x</button></td>'+
+				'</tr>';
+			$('#tblCards tbody').append(s);
+			BuildCards();
+		}
+
+		function RemoveCard(anc) {
+			$(anc).closest('tr').remove();
+			BuildCards();
+		}
+
+		function BuildCards() {
+			cards=[];
+			$('#tblCards tbody tr').each(function(idx) {
+				cards.push(
+					[
+						{
+							write: parseInt($(this).find('td').eq(1).html(), 10),
+							move: parseInt($(this).find('td').eq(2).html(), 10),
+							goto: parseInt($(this).find('td').eq(3).html(), 10)
+						},
+						{
+							write: parseInt($(this).find('td').eq(4).html(), 10),
+							move: parseInt($(this).find('td').eq(5).html(), 10),
+							goto: parseInt($(this).find('td').eq(6).html(), 10)
+						}
+					]
+				);
+				$(this).find('td').eq(0).html(idx+1);
+			});
+		}
+
+		function MoveLeft() {
+			if(currIdx>0){
+				currIdx--;
+				Update();
+			}
+
+		}
+		function MoveRight() {
+			if(currIdx<(str.length-1)){
+				currIdx++;
+				Update();
+			}
+		}
+
+		function Update() {
+			var out = str.join('');
+			var out2 = out.substring(0, currIdx) + '<span style="background-color:yellow;">' + out[currIdx] + '</span>' + out.substring(currIdx+1);
+			$('#output').html(out2);
+			if(currIdx>0){
+				$('#left').removeAttr('disabled');
+			}
+			else{
+				$('#left').attr('disabled', 'disabled');
+			}
+
+			if(currIdx<(str.length-1)){
+				$('#right').removeAttr('disabled');
+			}
+			else{
+				$('#right').attr('disabled', 'disabled');
+			}
+			$('#tblCards tbody td').css('background-color', '');
+			var i = str[currIdx] == 0 ? 1 : 4;
+			$('#tblCards tbody tr').eq(currCard).find('td').each(function(idx) {
+				if(idx>=i && idx < (i+3)){
+					$(this).css('background-color', 'lightgreen');
+				}
+			});
+
+			$('#lblIts').html(iterations);
+		}
+
+		function Step() {
+			var action = cards[currCard][str[currIdx]];
+			if(action.goto>0){
+				iterations++;
+				str[currIdx] = action.write;
+				if(action.move==0) { //move left
+					if(currIdx==0)
+						str.splice(currIdx, 0, 0);
+					else	
+						currIdx--;
+				}
+				else { //move right
+					if(currIdx==(str.length-1))
+						str.push(0);
+					currIdx++;
+				}
+				currCard = action.goto - 1;
+				Update();
+			}
+			else {
+				$('#btnPlay').html('Run');
+				clearInterval(tmrId);
+				running=false;
+			}
+		}
+
+		function Play() {
+			running = !running;
+			$('#btnPlay').html(running ? 'Pause' : 'Run');
+			if (running) {
+				tmrId=setInterval(Step, 500);
+			}
+			else{
+				$('#btnPlay').html('Run');
+				clearInterval(tmrId);
+			}
+		}
+	</script>
+</body>
+</html>

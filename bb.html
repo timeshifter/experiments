@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>BB demo</title>
+	<link rel="stylesheet" href="reset.css">
+	<style type="text/css">
+		* {box-sizing:border-box; -moz-box-sizing:border-box; -webkit-box-sizing:border-box; font-family:Arial;}
+		body {
+			background-color:#E6E3DE;
+		}
+
+		.left {float:left;}
+		.right {float:right;}
+		.fix {clear:both;}
+
+		.center {text-align:center;}
+
+		#site {
+			width:942px;
+			margin:0 auto;
+			background-color:#fff;
+		}
+
+		h1 {
+			font-size:26px;
+			font-weight:normal;
+			overflow:visible;
+			height:28px;
+		}
+
+		h1 > span {
+			background-image:url(img/swoosh.png);
+			background-position:0px 24px;
+			background-repeat:no-repeat;
+			display:inline-block;
+			height:45px;
+		}
+
+		h2 {
+			font-size:26px;
+			font-weight:normal;
+			clear:left;
+			color:#fff;
+			background-color:#AF1D44;
+			padding:10px 30px;
+		}
+
+		h2 a {
+			color:#fff;
+			text-decoration:none;
+		}
+
+		h3 {
+			font-size:18px;
+			font-weight:bold;
+			padding:8px 0;
+
+		}
+
+		section {
+			width:680px;
+			padding:30px;
+		}
+
+		section img {
+			margin-left:15px;
+		}
+
+		section p, section ul {
+			color:#888;
+			font-size:14px;
+			line-height:18px;
+		}
+		section p {
+			clear:left;
+		}
+		section ul {
+			margin-top:15px;
+			margin-left:80px;
+		}
+		section ul li {
+			padding-left:20px;
+		}
+
+		form {
+			background-color:#E5E5E5;
+			margin-top:40px;
+			margin-right:40px;
+			padding-bottom:20px;
+		}
+
+		form ul {
+			list-style:none;
+		}
+		form ul li {
+			padding:15px 15px 0 15px;
+			text-align:center;
+		}
+		form input[type=submit] {
+			border:none;
+			background-color:#000;
+			color:#fff;
+			border-radius:4px;
+			font-weight:bold;
+		}
+		form ul li.gray {
+			color:#666;
+			font-size:12px;
+		}
+		footer {
+			padding:20px 30px;
+			font-size:11px;
+			padding-bottom:60px;
+		}
+		footer p {
+			padding:4px 0;
+		}
+	</style>
+</head>
+<body>
+	<div id="site">
+		<header>
+			<img src="img/header.png" alt="">
+		</header>
+		<section class="left">
+			<h1>INNOVATIVE TOOLS FOR PORTFOLIO <span>INSIGHT</span></h1>	
+			<h3>Capitalize On The Right Lending Strategy</h3>
+			<img src="img/sample.png" alt="" class="right">
+			<p>
+				Today's profitable portfolios are built off of accurate historical data and future projections. Download this free white paper and learn how innovative technology can power a more profitable portfolio.
+			</p>
+			<ul>
+				<li>Identify Opportunities</li>
+				<li>Fine Tune Loss Forcasting</li>
+				<li>Balance your Portfolio</li>
+			</ul>
+			<div class="fix"></div>
+		</section>
+		<form action="" class="right">
+			<img src="img/form-header.png" alt="">
+			<ul>
+				<li><input type="text" placeholder="First Name *"></li>
+				<li><input type="text" placeholder="Last Name *"></li>
+				<li><input type="text" placeholder="Title"></li>
+				<li><input type="text" placeholder="Organization *"></li>
+				<li><input type="text" placeholder="Phone"></li>
+				<li><input type="text" placeholder="Email *"></li>
+				<li class="center"><input type="submit" value="SUBMIT"> </li>
+				<li class="center gray">* Required fields</li>
+			</ul>
+		</form>
+		<h2><a href="#">DOWNLOAD OUR FREE WHITE PAPER TODAY!</a></h2>
+		<footer>
+			<p>
+				Black Book&reg; is a registered trademark of Hearst Business Media Corporation.
+			</p>
+			<p>&copy;2013 Hearst Business Media Corporation. All rights reserved. Patent pending.</p>
+		</footer>
+	</div>
+	<script src="jquery-1.7.2.js"></script>
+</body>
+</html>

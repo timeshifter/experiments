@@ -1,0 +1,6 @@
+http://www.projectrho.com/public_html/rocket/artificialgrav.php
+
+1g @ 1rpm = 223m radius
+1401m circumference
+@50m depth: 70,057m^2
+

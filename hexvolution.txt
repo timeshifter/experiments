@@ -1,0 +1,17 @@
+hexvolution
+
+cell traits:
+	health (fixed, double, 100.0)
+	strength - attack strength 0.0-1.0
+	regen rate
+	adjacency bonus
+	reproduction rate
+	energy consumption - proportional to all stats
+	metabolism rate - ability to collect energy from food sources
+	energy transfer efficiency - how much remaining energy is distributed
+
+all colonies start on a food source
+available energy per turn is distributed starting from food sources
+damage per turn = enemy strength - regen
+when a new cell is produced, its stats will be within the range of the stats of adjacent cells of the same species
+mutation will apply a random modifier to a random stat upon reproduction

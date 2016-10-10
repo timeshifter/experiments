@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Word Clouds</title>
+	<style>
+		html, body, #cloud {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+	<link href="jqcloud.min.css" rel="stylesheet" />
+</head>
+<body>
+	<div id="cloud"></div>
+	<script src="jquery-2.1.4.min.js"></script>
+	<script src="jqcloud.min.js"></script>
+	<script>
+
+		String.prototype.replaceAll = function (find, replace) {
+			var str = this;
+			return str.replace(new RegExp(find.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), replace);
+		};
+
+		function QueryStringExists(param) {
+			var ret = false;
+			var href = window.location.href.split('#')[0];
+			if (href.indexOf('?') > -1) {
+				var qry = href.split('?')[1];
+				var params = qry.split('&');
+				var i = 0;
+				for (i = 0; i < params.length; i++) {
+					if (params[i].split('=')[0] == param)
+						ret = true;
+				}
+			}
+			return ret;
+		}
+
+		function QueryStringValue(param) {
+			var ret = '';
+			var href = window.location.href.split('#')[0];
+			if (href.indexOf('?') > -1) {
+				var qry = href.split('?')[1];
+				var params = qry.split('&');
+				var i = 0;
+				for (i = 0; i < params.length; i++) {
+					if (params[i].split('=')[0] == param)
+						ret = params[i].split('=')[1];
+				}
+			}
+			return ret;
+		}
+
+		$(function () {
+			var removeChars = ['.', ':', '\r', '"', '<', '>', '+', '=', ',', '(', ')', '{', '}', '[', ']', '/'],
+				removeWords = [
+					'timebot2', 'alphaseg', 'b14d3', 'dodgerb0t', 'dogetime', 'earlz',
+					'mrprime', 'murrayman', 'murrayman8180', 'nuggernogger', 'omfgtora',
+					'outlawaol', 'outlawaold', 'outlawaolp', 'readonly', 'readonly21',
+					'skunkmonkey', 'timeshifter', 'userjack6880', 'veonik', 'angrywombat',
+					'dtzitz', 'valeness', 'turb0', 'jamesbdev', 'dodgertime', 'omgwoo', 'segumarc',
+					'pilate', 'tora_', 'kevrom', 
+					'and', 'to', 'the', 'in', 'you', 'me', 'your', 'like', 'can', 'but', 'for', 
+					
+				],
+				output = [];
+
+			var list = 'quote';
+			if (QueryStringExists('list')) {
+				list = QueryStringValue('list');
+			}
+
+			$.get('https://dl.dropboxusercontent.com/u/7820717/' + list + '.txt', function (result) {
+
+				for (var c = 0; c < removeChars.length; c++) {
+					result = result.replaceAll(removeChars[c], '');
+				}
+				
+				while (result.indexOf('  ') > -1) {
+					result = result.replaceAll('  ', ' ');
+				}
+
+				var lines = result.split('\n');
+
+				for (var l = 0; l < lines.length; l++) {
+					var len = l < 10 ? 2 : l < 100 ? 3 : 4;
+
+					var currLine = lines[l].substring(len);
+					var words = currLine.split(' ');
+					for (var w = 0; w < words.length; w++) {
+						if (removeWords.indexOf(words[w]) == -1) {
+							var wordIdx = -1;
+							for (var i = 0; i < output.length; i++) {
+								if (output[i].text == words[w]) {
+									wordIdx = i;
+									break;
+								}
+							}
+							if (wordIdx == -1) {
+								if (words[w].length > 2 && removeWords.indexOf(words[w].toLowerCase())==-1) {
+									output.push({ text: words[w], weight: 1 });
+								}
+							}
+							else {
+								output[wordIdx].weight++;
+							}
+						}
+					}
+				}
+				console.log(output);
+				$('#cloud').jQCloud(output);
+			});
+  //  		var words = [
+  //{ text: "Lorem", weight: 13 },
+  //{ text: "Ipsum", weight: 10.5 },
+  //{ text: "Dolor", weight: 9.4 },
+  //{ text: "Sit", weight: 8 },
+  //{ text: "Amet", weight: 6.2 },
+  //{ text: "Consectetur", weight: 5 },
+  //{ text: "Adipiscing", weight: 5 },
+  ///* ... */
+  //  		];
+
+  //  		$('#cloud').jQCloud(words, { autoResize: true });
+		});
+
+	</script>
+</body>
+</html>

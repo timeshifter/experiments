@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Color Flood Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:1000px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		li {
+			margin-left: 30px;
+			cursor:pointer;
+			margin-bottom:5px;
+		}
+		li.active {
+			font-weight: bold;
+		}
+
+		p {line-height:24px; margin:10px 0;}
+
+		#cv {width:1000px; height:800px; background-color:#000;}
+
+		#controls {float:left; width:50%; padding:10px;}
+
+		/*#code {float:right; width:450px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}*/
+
+		#colors a {font-weight:bold; cursor:pointer;}
+
+		input.hex {width:80px;}
+		input.rgb {width:60px;}
+		#tblGrid td div {
+			width:30px;
+			height:30px;
+			
+			margin:1px;
+			cursor:pointer;
+		}
+
+		#tblSteps {
+			width:100%;
+		}
+		#tblSteps thead tr {
+			border-bottom: 1px solid #666;
+		}
+		#tblSteps thead th {
+			cursor:pointer;
+		}
+
+		#tblSteps td, #tblSteps th {
+			text-align:center;
+			padding:4px;
+		}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's Color Flood Thing
+	</h1>
+	<div id="controls">
+		<ol id="cols" style="list-style-type:decimal">
+			<li>Red</li>
+			<li>Blue</li>
+			<li>Yellow</li>
+			<li>Cyan</li>
+			<li>Black</li>
+			<li>Orange</li>
+		</ol>
+		<p>Grid size: <input type="number" id="txtSize" value="7" /></p>
+		<table id="tblGrid" cellspacing="2">
+			<tbody></tbody>
+		</table>
+		<p>
+			<button onclick="Solve();">Solve it!</button>
+		</p>
+		<table id="tblSteps">
+			<thead>
+				<tr>
+					<th></th>
+					<th>Red</th>
+					<th>Blue</th>
+					<th>Yellow</th>
+					<th>Cyan</th>
+					<th>Black</th>
+					<th>Orange</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td style="font-weight:bold;">Next</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Red</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Blue</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Yellow</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Cyan</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Black</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+				<tr>
+					<td style="font-weight: bold;">Orange</td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div id="code">
+		
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+
+	<script type="text/javascript">
+		var fld =
+			[
+				[1, 1, 2, 5, 5, 0, 1],
+				[4, 2, 5, 3, 0, 1, 1],
+				[4, 4, 4, 0, 1, 4, 2],
+				[3, 3, 4, 2, 2, 2, 3],
+				[3, 0, 5, 1, 1, 2, 2],
+				[3, 0, 2, 1, 4, 4, 1],
+				[0, 0, 0, 4, 2, 0, 0]
+			];
+
+		var sz = 7;
+
+		$(function () {
+
+			$('li').on('click', function () {
+				$('li').removeClass('active');
+				$(this).addClass('active');
+			});
+
+			$('#txtSize').on('change', CreateGrid);
+			CreateGrid();
+
+			$('#tblGrid').on('click', 'div', function () {
+				if ($('li.active')) {
+					$(this).css('background-color', $('li.active').html()).parent().attr('data-i', $('li.active').index());
+				}
+			});
+
+			DrawGrid(fld);
+
+			$('#tblSteps thead th').on('click', function () {
+				var i = $(this).index();
+				var map = CopyMap(fld);
+				fld = Fill(map, i - 1);
+				DrawGrid(fld);
+				Recalc(fld);
+				PrintMap(fld);
+			});
+
+			Recalc(fld);
+		});
+
+		function Recalc(map) {
+			for (var i = 0; i < 6; i++) {
+				var n = Calculate(map, i);
+				$('#tblSteps tbody tr td').eq(i+1).html(n);
+			}
+		}
+
+		function CreateGrid() {
+			sz = parseInt($('#txtSize').val(), 10);
+			
+			var s = '<tr>', result='';
+			for (var i = 0; i < sz; i++) {
+				s += '<td><div></div></td>';
+			}
+			s += '</tr>';
+			for (var i = 0; i < sz; i++) {
+				result += s;
+			}
+			$('#tblGrid tbody').html(result);
+		}
+
+		function DrawGrid(map) {
+			for (var x = 0; x < sz; x++) {
+				for (var y = 0; y < sz; y++) {
+					$('#tblGrid tr').eq(y).find('td').eq(x).find('div').css('background-color', $('#cols li').eq(map[x][y]).html());
+				}
+			}
+		}
+
+		function Solve() {
+			fld = [], tmp = [];
+			var sz = parseInt($('#txtSize').val(), 10);
+
+			for (var x = 0; x < sz; x++) {
+				tmp = [];
+				for (var y = 0; y < sz; y++) {
+
+					tmp.push(parseInt($('#tblGrid tr').eq(y).find('td').eq(x).attr('data-i'), 10));
+				}
+
+				fld.push(tmp);
+			}
+
+			//clone
+			//var newfld = fld.slice();
+
+			console.log(fld);
+		}
+
+		function Calculate(map, val) {
+			var pts = [{ x: 0, y: 0 }];
+			var tmp = CopyMap(map);
+			//$.extend(true, tmp, map);
+
+			var vals = [val, tmp[0][0]];
+
+			var n = 1;
+
+			while (pts.length > 0) {
+				var pt = pts[0];
+				if (vals.indexOf(tmp[pt.x][pt.y]) > -1) { //scanned point is a match
+					var neighbors = GetNeighbors(tmp, pt, vals);
+					n += neighbors.length;
+					if (neighbors.length > 0) {
+						Array.prototype.push.apply(pts, neighbors);
+					}
+
+				}
+				else {
+
+				}
+				tmp[pt.x][pt.y] = -1;
+
+				pts.shift();
+			}
+			return n;
+
+		}
+
+		function GetNeighbors(map, pt, vals) {
+			var ret = [];
+			if (pt.x > 0) {
+				if (vals.indexOf(map[pt.x - 1][pt.y]) > -1 && map[pt.x - 1][pt.y] > -1) {
+					ret.push({ x: pt.x - 1, y: pt.y });
+				}
+			}
+			if (pt.x < (sz - 1)) {
+				if (vals.indexOf(map[pt.x + 1][pt.y]) > -1 && map[pt.x + 1][pt.y] > -1) {
+					ret.push({ x: pt.x + 1, y: pt.y });
+				}
+			}
+			if (pt.y > 0) {
+				if (vals.indexOf(map[pt.x][pt.y - 1]) > -1 && map[pt.x][pt.y - 1] > -1) {
+					ret.push({ x: pt.x, y: pt.y - 1 });
+				}
+			}
+			if (pt.y < (sz - 1)) {
+				if (vals.indexOf(map[pt.x][pt.y + 1]) > -1 && map[pt.x][pt.y + 1] > -1) {
+					ret.push({ x: pt.x, y: pt.y + 1 });
+				}
+			}
+			return ret;
+		}
+
+		function Fill(map, val) {
+			var pts = [{ x: 0, y: 0 }];
+			var tmp = CopyMap(map);
+			//$.extend(true, tmp, map);
+
+			var vals = [tmp[0][0]];
+
+			var n = 1;
+
+			while (pts.length > 0) {
+				var pt = pts[0];
+				if (vals.indexOf(tmp[pt.x][pt.y]) > -1) { //scanned point is a match
+					var neighbors = GetNeighbors(tmp, pt, vals);
+					n += neighbors.length;
+					if (neighbors.length > 0) {
+						Array.prototype.push.apply(pts, neighbors);
+					}
+
+				}
+				else {
+
+				}
+				tmp[pt.x][pt.y] = val;
+
+				pts.shift();
+			}
+			return tmp;
+		}
+
+		function CopyMap(map) {
+			var tmp = [];
+			$.extend(true, tmp, map);
+			return tmp;
+		}
+
+		function PrintMap(map) {
+			var s = '----------\n';
+			
+			for (var y = 0; y < sz; y++) {
+				for (var x = 0; x < sz; x++) {
+					s += map[x][y] + ' ';
+				}
+				s += '\n';
+			}
+			s += '----------';
+			console.log(s);
+		}
+	</script>
+</body>
+</html>

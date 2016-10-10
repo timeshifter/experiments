@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sim thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		* { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {height:100%;}
+		body {height:100%; padding:2px;}
+		h3 {margin-top:10px;}
+		#container {height:100%; background-color:#111;}
+		#controls {
+			position:fixed; 
+			top:2px; 
+			left:2px; 
+			color:#222; 
+			width:250px; 
+			padding:10px;
+			background: -moz-linear-gradient(top, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.7) 100%);
+		}
+		#control_wrapper {margin-top:10px;}
+		#control_wrapper p {margin:4px 0;}
+	</style>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript" src="kinetic-v4.6.0.min.js"></script>
+	<script type="text/javascript">
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+		function Distance2D(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y)));
+		}
+
+		function GetRandomPoint(buffer) {
+			return new Point(
+				GetRandomInt(buffer, worldSize.X - buffer),
+				GetRandomInt(buffer, worldSize.Y - buffer)
+				);
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function Species() {
+			this.Intelligence = 0.0;
+			this.Curiosity = 0.0;
+			this.Friendliness = 0.0;
+			this.Resourcefulness = 0.0;
+			this.TechLevel = 0.0;
+		}
+
+		function Planet() {
+			this.Position = new Point(0, 0);
+			this.Radius = 100.0;
+			this.ShapeID = -1;
+			this.Fertility = 0.0;
+			this.Minerals = 0.0;
+			
+			this.OwningSpecies = -1;
+			this.Population = 0;
+		}
+
+		var stage;
+		var planets = new Array();
+		var i = 0,
+			j = 0,
+			selectedIdx = -1;
+		var worldSize = new Point(),
+			center = new Point();
+		var selecting = false,
+			running = false;
+
+
+
+		$(function () {
+			Reset();
+		});
+
+		function TogglePlay() {
+			running = !running;
+			if (!running) {
+				$('#btnPlay').html('Play');
+			}
+			else {
+				$('#btnPlay').html('Pause');
+				Game();
+			}
+		}
+
+		function Reset() {
+			running = true;
+			TogglePlay();
+			selectedIdx = -1;
+			CreateMap();
+		}
+
+		function CreateMap() {
+			//Reset();
+
+			worldSize = new Point($('#container').width(), $('#container').height());
+			center = new Point(worldSize.X / 2, worldSize.Y / 2);
+			stage = new Kinetic.Stage({
+				container: 'container',
+				width: worldSize.X,
+				height: worldSize.Y
+			});
+			stage.on('click', function (evt) {
+				if (!selecting) {
+					selectedIdx = -1;
+					UpdateInfo();
+				}
+				selecting = false;
+			});
+
+			planets = new Array();
+			var habitable = 0;
+			for (i = 0; i < 50; i++) {
+				var p = new Planet();
+				if (GetRandomInt(0, 100) < 10) {
+					p.Radius = GetRandomInt(25, 41);
+				}
+				else {
+					p.Radius = GetRandomInt(5, 16);
+				}
+				var pos = GetRandomPoint(p.Radius + 25);
+
+
+				var valid = true;
+
+				for (j = 0; j < planets.length; j++) {
+					if (i != j) {
+						if (Distance2D(pos, planets[j].Position) <= (p.Radius + planets[j].Radius + 25))
+							valid = false;
+					}
+				}
+
+				if (valid) {
+					if (p.Radius >= 25) {
+						p.Fertility = Math.round(Math.random() * 100) / 100;
+						habitable++;
+					}
+
+					p.Minerals = Math.round(Math.random() * p.Radius * 1000.0);
+					p.Position = pos;
+
+
+					planets.push(p);
+				}
+				else
+					i--;
+			}
+			if (habitable < 3)
+				CreateMap();
+			else
+				DrawPlanets();
+		}
+
+		function DrawPlanets() {
+			var layer = new Kinetic.Layer();
+			for (i = 0; i < planets.length; i++) {
+					col = 'rgb(20,20,200)';
+				
+				if (planets[i].Radius < 25) {
+					var c = Math.round(50 + Math.floor(planets[i].Minerals / 100));
+					col='rgb(' + c.toString() + ',' + c.toString() + ',' + c.toString() + ')';
+				}
+				else 
+					col = 'rgb(20,' + (30 + (100.0 * planets[i].Fertility)).toFixed(0) + ',' + (20 + (200.0 * (1.0 - planets[i].Fertility))).toFixed(0) + ')';
+
+				var circle = new Kinetic.Circle({
+					x: planets[i].Position.X,
+					y: planets[i].Position.Y,
+					radius: planets[i].Radius,
+					fill: col,
+					stroke: '#ccc',
+					strokeWidth: 1.5
+				});
+
+				planets[i].ShapeID = circle._id;
+				circle.on('click', function (evt) {
+					for (j = 0; j < planets.length; j++) {
+						if (planets[j].ShapeID == this._id) {
+							selectedIdx = j;
+							selecting = true;
+							UpdateInfo();
+							break;
+						}
+					}
+				});
+				layer.add(circle);
+			}
+
+			stage.add(layer);
+		}
+
+		function Game() {
+
+			
+
+			UpdateInfo();
+			if (running)
+				setTimeout(Game, 1000);
+		}
+
+		function UpdateInfo() {
+			if (selectedIdx == -1)
+				$('.info').html('');
+			else {
+				
+
+				$('#lblRadius').html(planets[selectedIdx].Radius);
+				$('#lblFertility').html(planets[selectedIdx].Fertility);
+				$('#lblMinerals').html(planets[selectedIdx].Minerals);
+			}
+		}
+	</script>
+</head>
+<body>
+	<div id="container"></div>
+	<div id="controls">
+		<div id="control_wrapper">
+			<p>
+				<button onclick="Reset();">Reset map</button>
+				<button id="btnPlay" onclick="TogglePlay();">Play</button>	
+			</p>
+			<h3>Game</h3>
+			<p>Year: <label id="lblYear"></label></p>
+			<h3>Species</h3>
+			<p>Intelligence:</p>
+			<h3>Planet</h3>
+			<p>Radius: <label id="lblRadius" class="info"></label></p>
+			<p>Fertility: <label id="lblFertility" class="info"></label></p>
+			<p>Minerals: <label id="lblMinerals" class="info"></label></p>
+		</div>
+	</div>
+</body>
+</html>

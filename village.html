@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Shifter's Village Thing</title>
+	<style>
+		* {
+			margin:0;
+			padding:0;
+			box-sizing:border-box;
+			font-size:1.0em;
+			line-height:1.2em;
+		}
+		html {
+			font-size:16px;
+			overflow:hidden;
+		}
+
+		.panel {
+			background-color:#e0e0e0;
+			border-radius:3px;
+			border:1px solid #a0a0a0;
+			opacity:0.8;
+			padding:10px;
+		}
+
+		.sidebar {
+			float:left;
+			width:15%;
+			min-width:200px;
+		}
+
+		.sidebar .panel {
+			margin:10px 10px 0 10px;
+		}
+
+		#cv {
+			float:left;
+		}
+
+		.minimap {
+			margin:10px;
+			border:ridge 2px #ccc;
+			position:relative;
+		}
+		#minimap {
+			width: 100%;
+		}
+
+		#minimap_overlay {
+			position:absolute;
+			width:50px;
+			height:50px;
+			top:0;
+			background-color:rgba(255,255,255,0.3);
+			border:solid 1px yellow;
+		}
+
+		#loader {
+			background-color:#f0f0f0;
+			border-radius:4px;
+			border:1px solid #333;
+			text-align:center;
+			position:fixed;
+			width:250px;
+			left:50%;
+			top:300px;
+			margin-left:-125px;
+			margin-top:-50px;
+			font-size:2.0em;
+			font-weight:bold;
+			padding:40px;
+		}
+
+
+	</style>
+</head>
+<body>
+	<div class="sidebar">
+		<div class="minimap">
+			<canvas id="minimap"></canvas>
+			<div id="minimap_overlay"></div>
+		</div>
+		<div class="panel">
+			<p>Time to draw: <label id="lblTimeToDraw"></label></p>
+			<p>FPS: <label id="lblFPS"></label></p>
+			<p>Draws: <label id="lblDraws"></label></p>
+		</div>
+		<div class="panel">
+			<p><button id="btnPlay">Pause</button></p>
+		</div>
+	</div>
+	<canvas id="cv"></canvas>
+	
+
+	<div id="loader" class="panel">
+		<p>Loading...</p>
+	</div>
+
+	<script src="jquery-2.1.4.min.js"></script>
+	<script src="village/objects.js"></script>
+	<script src="perlin.js"></script>
+	<script>
+		var images = [
+			'village/grass-tile.gif',
+			'village/grass-texture-with-tree.gif',
+			'village/water.gif',
+			'village/sand.gif',
+			'village/tree.gif',
+			'village/rocks.gif',
+			'village/box-1.png',
+			'village/box-2.png',
+			'village/box-3.png'
+		];
+
+		var tiles=[],
+			loadedCt=0,
+			tileSize = 100;
+
+		var canvas, ctx;
+
+
+		var tileMap = [],
+			worldSize = new Point(80, 50),
+			worldCellSize = new Point(worldSize.X * 4, worldSize.Y * 4),
+			windowSize,
+			origin = new Point(0, 0),
+			worldPixelSize,
+			dragging = false,
+			dragVelocity = new Point(0, 0);
+
+		var running = false,
+			tickCount = 0,
+			sixtyConst = 1000 / 60;
+
+		var sprites = [];
+
+		//temps
+		var x, y, lastMousePos, dt, ct, inc, i;
+
+		$(function () {
+
+			windowSize = new Point(window.innerWidth - $('.sidebar').width(), window.innerHeight);
+			worldPixelSize = new Point(worldSize.X * tileSize, worldSize.Y * tileSize);
+
+			cv.width = windowSize.X;
+			cv.height = windowSize.Y;
+			ctx = cv.getContext('2d');
+
+
+
+			//var mm = document.getElementById('minimap');
+			minimap.width = worldCellSize.X;
+			minimap.height = worldCellSize.Y;
+			var ct2 = minimap.getContext('2d');
+
+			$('#minimap_overlay').css('width', ((windowSize.X / worldPixelSize.X) * 100) + '%')
+				.css('height', ((windowSize.Y / worldPixelSize.Y) * 100) + '%');
+
+			$('.minimap').css('height', $('#minimap').height() + 4);
+
+
+			$('#cv').on('mousedown', function (e) {
+				if (e.button == 2) {
+					dragging = true;
+					$('html').css('cursor', 'move');
+				}
+				return false;
+			}).on('contextmenu', function() {
+				return false;
+			});
+
+			$(window).on('mouseup', function () {
+				dragging = false;
+				$('html').css('cursor', 'default');
+			}).on('mousemove', function (e) {
+				if (lastMousePos != undefined && dragging) {
+					origin = new Point(origin.X + (e.pageX - lastMousePos.X), origin.Y + (e.pageY - lastMousePos.Y));
+					dragVelocity = new Point(e.pageX - lastMousePos.X, e.pageY - lastMousePos.Y);
+					ConstrainCamera();
+
+					if (!running) {
+						DrawTerrain();
+					}
+				}
+				lastMousePos = new Point(e.pageX, e.pageY);
+			});
+
+			$('#btnPlay').on('click', function () {
+				if (running) {
+					running = false;
+					$(this).html('Play');
+				}
+				else {
+					running = true;
+					$(this).html('Pause');
+					GameLoop();
+					
+				}
+			});
+
+			var pmap = PerlinNoise.GetNoiseMap(worldSize.X, worldSize.Y, 4, 0.5, 4, getRandomInt(0, 99999999)),
+				vegMap = PerlinNoise.GetNoiseMap(worldCellSize.X, worldCellSize.Y, 8, 0.4, 8, getRandomInt(0, 99999999));
+
+			//console.log(vegMap);
+
+			tileMap = Create2DArray(worldSize.X);
+			for (x = 0; x < worldSize.X; x++) {
+				for (y = 0; y < worldSize.Y; y++) {
+					tileMap[x][y] =
+						pmap[y][x] < 0.4 ? 2 :
+						pmap[y][x] < 0.5 ? 3 :
+						0;
+
+					ct2.fillStyle = 
+						tileMap[x][y]==0 ? 'lightgreen' :
+						tileMap[x][y] == 2 ? 'blue' :
+						'#D2B48C';
+
+					ct2.fillRect(x * 4, y * 4, 4, 4);
+				}
+			}
+
+
+
+			tiles = images.map(function (i) {
+				var img = new Image();
+				img.onload = function () {
+					
+					if (++loadedCt == images.length) {
+						OnLoad();
+					}
+				};
+				img.src = i;
+				return img;
+			});
+
+			
+			/*
+			tileMap[0][0] = 0;
+			tileMap[0][1] = 2;
+			tileMap[1][0] = 2;
+			
+
+			var sp1 = new Sprite(6, 1, 1);
+			sprites.push(sp1);
+
+			var sp2 = new Sprite(7, 3, 3);
+			sprites.push(sp2);
+
+			var sp3 = new Sprite(8, 1, 3);
+			sprites.push(sp3);
+			*/
+			
+			ct2.fillStyle ='green';
+			for (x = 0; x < worldCellSize.X; x++) {
+				for (y = 0; y < worldCellSize.Y; y++) {
+					if (tileMap[Math.floor(x / 4)][Math.floor(y / 4)] == 0) {
+						if (Math.random()*3 < vegMap[y][x]) {
+							var sp = new Sprite(4, x, y);
+							sprites.push(sp);
+							ct2.fillRect(x, y, 1, 1);
+						}
+					}
+				}
+			}
+			
+			$('#minimap').on('click', function (e) {
+				var xOff = e.offsetX / $('#minimap').width(),
+					yOff = e.offsetY / $('#minimap').height();
+				origin = new Point(
+					Math.floor(-1 * ((worldPixelSize.X * xOff) - (windowSize.X / 2))),
+					Math.floor(-1 * ((worldPixelSize.Y * yOff) - (windowSize.Y / 2))));
+				ConstrainCamera();
+				DrawTerrain();
+			});
+
+
+		});
+
+
+		function OnLoad() {
+			
+			
+			
+
+
+
+			DrawTerrain();
+			$('#loader').hide();
+			GameLoop();
+		}
+
+		function GameLoop() {
+			DrawTerrain();
+			
+			if (running) {
+				var diff = window.performance.now() - tickCount;
+				$('#lblFPS').html((1000 / diff).toFixed(2));
+				setTimeout(GameLoop, 10);
+			}
+			tickCount = window.performance.now();
+		}
+
+		function ConstrainCamera() {
+			if (origin.X > 0) {
+				origin.X = 0;
+			}
+			else if (origin.X < windowSize.X - worldPixelSize.X) {
+				origin.X = windowSize.X - worldPixelSize.X;
+			}
+
+			if (origin.Y > 0) {
+				origin.Y = 0;
+			}
+			else if (origin.Y < windowSize.Y - worldPixelSize.Y) {
+				origin.Y = windowSize.Y - worldPixelSize.Y;
+			}
+
+			$('#minimap_overlay').css('left', ((origin.X / worldPixelSize.X) * -100) + '%')
+				.css('top', ((origin.Y / worldPixelSize.Y) * -100) + '%');
+		}
+
+		function DrawTerrain() {
+			dt = window.performance.now();
+			ct = 0;
+
+			var minX = Math.max(Math.abs(Math.ceil(origin.X / tileSize)), 0),
+				maxX = Math.min(Math.abs(Math.ceil((origin.X - windowSize.X) / tileSize)), worldSize.X - 1),
+				minY = Math.max(Math.abs(Math.ceil(origin.Y / tileSize)), 0),
+				maxY = Math.min(Math.abs(Math.ceil((origin.Y - windowSize.Y) / tileSize)), worldSize.Y - 1);
+
+			for (x = minX; x <= maxX; x++) {
+				for (y = minY; y <= maxY; y++) {
+					ctx.drawImage(tiles[tileMap[x][y]], origin.X + (tileSize * x), origin.Y + (tileSize * y));
+					ct++;
+				}
+			}
+
+			for (i = 0; i < sprites.length; i++) {
+				if (sprites[i].CellX >= minX * 4
+					&& sprites[i].CellX <= (maxX+1) * 4
+					&& sprites[i].CellY >= minY * 4
+					&& sprites[i].CellY <= (maxY+1) * 4) {
+					ctx.drawImage(tiles[sprites[i].ImageID], origin.X + sprites[i].DrawX, origin.Y + sprites[i].DrawY);
+					ct++;
+				}
+			}
+
+
+
+			inc = (window.performance.now() - dt);
+
+			$('#lblTimeToDraw').html(inc.toFixed(2) + 'ms');
+
+			$('#lblDraws').html(ct);
+		}
+
+
+
+		
+
+	</script>
+</body>
+</html>

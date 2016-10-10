@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Edumacatin'!</title>
+		<style type="text/css">
+			* { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }
+
+			html, body, div, span, a, img {margin:0; padding:0; outline:none; border:none; list-style:none;}
+			
+			body {background-color:#f0f0f0;}
+			
+			#site {width:940px; margin:0 auto;}
+			
+			.panel {float:left; height:80px; padding:5px;}
+			.p-25 {width:25%;}
+			.p-50 {width:50%; height:200px;}
+			.p-100 {width:100%;}
+			
+			.panel > div {background-color:#ddd; height:100%;}
+			
+			#footer:after {clear:both;}
+			
+			@media (max-width:940px) {
+				#site {width: 100%;}
+			}
+			@media (max-width:600px) {
+				.p-25 {width:50%;}
+				.p-50 {width:100%;}
+			}
+
+		</style>
+	</head>
+	<body>
+		<div id="site">
+			<div id="header" class="panel p-100">
+				<div>header</div>
+			</div>
+			<div class="panel p-50">
+				<div>panel 1</div>
+			</div>
+			<div class="panel p-50">
+				<div>panel 2</div>
+			</div>
+			<div class="panel p-25">
+				<div>panel 3</div>
+			</div>
+			<div class="panel p-25">
+				<div>panel 4</div>
+			</div>
+			<div class="panel p-25">
+				<div>panel 5</div>
+			</div>
+			<div class="panel p-25">
+				<div>panel 6</div>
+			</div>
+			<div id="footer" class="panel p-100">
+				<div>footer</div>
+			</div>
+		</div>
+	</body>
+</html>

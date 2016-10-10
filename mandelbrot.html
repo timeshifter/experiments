@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Mandelbrot Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:800px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		ul, li {list-style:none;}
+
+		p {line-height:24px;}
+
+		#cv {width:800px; height:550px; background-color:#000;}
+
+		#controls {float:left; width:350px; height:300px; padding:10px;}
+
+		#code {float:right; width:450px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
+
+		#colors a {font-weight:bold; cursor:pointer;}
+
+		input.hex {width:80px;}
+		input.rgb {width:60px;}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's Mandelbrot Thing</h1>
+	<canvas id="cv" width="800" height="550">
+	</canvas>
+	<div id="controls">
+		<p><button id="btnPlay" onclick="Play();">Render</button> curr: <label id="lblIts"></label></p>
+		<p>Render time: <label id="lblTime"></label></p>
+		<h2>Controls</h2>
+		<p>Iterations: <input type="number" id="txtIterations" value="50" /> </p>
+		<p>Color Interval: <input type="number" id="txtInterval" value="15" /></p>
+		<p style="font-weight:bold;">Color cycle:</p>
+		<ul id="colors">
+			<li><input type="color" value="#ff00ff"> <a onclick="RemoveColor(this);">x</a></li>
+			<li><input type="color" value="#0000c3"> <a onclick="RemoveColor(this);">x</a></li>
+			<li><input type="color" value="#007f00"> <a onclick="RemoveColor(this);">x</a></li>
+			<li><input type="color" value="#ffff00"> <a onclick="RemoveColor(this);">x</a></li>
+			<li><input type="color" value="#ffc300"> <a onclick="RemoveColor(this);">x</a></li>
+			<li><input type="color" value="#ff0000"> <a onclick="RemoveColor(this);">x</a></li>
+			<li class="_add"><a onclick="NewColor();">+ add</a></li>
+		</ul>
+	</div>
+	<div id="code">
+		<p>Mouse: <label id="lblMouse"></label></p>
+		<p>Zoom: <input type="number" id="txtZoom" value="1" /></p>
+		<p>Center: X <input type="text" id="txtCenterX" value="-0.75" /> Y 
+			<input type="text" id="txtCenterY" value="0" /></p>
+		<hr />
+		<h3>Presets</h3>
+		<p><a href="javascript:void(0);" onclick="Preset(50, 15, 1, -0.75, 0);">Origin</a></p>
+		<p><a href="Javascript:void(0);" onclick="Preset(400, 25, 512, -0.758, 0.07);">Dragon's Flower</a></p>
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function GetColorFromHex(hex) {
+			hex = hex.replace('#', '');
+			console.log(hex);
+			return new Color(
+				parseInt(hex.substring(0,2), 16),
+				parseInt(hex.substring(2,4), 16),
+				parseInt(hex.substring(4,6), 16)
+				);
+		}
+
+		var canvas, ctx, w, h, imageData, i, j, x, y, map, running = false, iterations=0, interval=0;
+
+		var origin = new Point(-2.5, 1);
+		var scale, currIteration = 0, zoom=1;
+		var mousePoint;
+		var sw = new Date();
+
+		var Colors = [];
+
+		function GetHashParam(param) {
+			var ret = '';
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					var parts = params[i].split('=');
+					if (parts[0] == param)
+						ret = parts[1];
+				}
+			}
+			return ret;
+		}
+		function HashParamExists(param) {
+			var ret = false;
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					if (params[i].split('=')[0] == param)
+						ret = true;
+				}
+			}
+			return ret;
+		}
+
+		function RemoveColor(anc) {
+			$(anc).closest('li').remove();
+
+		}
+
+		function NewColor() {
+			var s = '<li><input type="color"> <a onclick="RemoveColor(this);">x</a></li>';
+			$('li._add').before(s);
+		}
+
+		$(function () {
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			imageData = ctx.createImageData(w, h);
+
+			if (HashParamExists('its'))
+				$('#txtIterations').val(GetHashParam('its'));
+			if (HashParamExists('int'))
+				$('#txtInterval').val(GetHashParam('int'));
+			if (HashParamExists('z'))
+				$('#txtZoom').val(GetHashParam('z'));
+			if (HashParamExists('x'))
+				$('#txtCenterX').val(GetHashParam('x'));
+			if (HashParamExists('y'))
+				$('#txtCenterY').val(GetHashParam('y'));
+			if(HashParamExists('c')){
+				var cols = GetHashParam('c').split(',');
+				$('#colors li').not('._add').remove();
+				for(var i=0;i<cols.length;i++){
+					NewColor();
+					var c='#' + cols[i];
+					$('#colors li._add').prev().find('input').val(c);
+				}
+			}
+
+
+
+			$('#cv').mousemove(function (evt) {
+				var rect = cv.getBoundingClientRect();
+				mousePoint = new Point(Math.floor(evt.clientX - rect.left), Math.floor(evt.clientY - rect.top));
+				$('#lblMouse').html(((mousePoint.X * scale) + origin.X) + ', ' + (origin.Y - (mousePoint.Y * scale)));
+			});
+
+			$('#cv').live('click', function () {
+				zoom *= 2;
+				UpdateForZoom();
+			}).live('contextmenu', function () {
+				if(zoom>1){
+					zoom /= 2;
+					UpdateForZoom();
+				}
+				return false;
+			});
+
+			Play();
+		});
+
+		function UpdateForZoom() {
+			var newCtr = new Point(((mousePoint.X * scale) + origin.X), (origin.Y - (mousePoint.Y * scale)));
+			scale = (3.5 / w) / zoom;
+			$('#txtCenterX').val(newCtr.X);
+			$('#txtCenterY').val(newCtr.Y);
+			$('#txtZoom').val(zoom);
+			origin = new Point(newCtr.X - ((w / 2) * scale), newCtr.Y + ((h / 2) * scale));
+			running = true;
+			Start();
+
+		}
+
+		function Preset(its, int, zoom, x, y) {
+			$('#txtIterations').val(its);
+			$('#txtInterval').val(int);
+			$('#txtZoom').val(zoom);
+			$('#txtCenterX').val(x);
+			$('#txtCenterY').val(y);
+		}
+
+
+		function Step() {
+			var str = '';
+			var dt = new Date().getTime();
+			Update();
+			str += ((new Date()).getTime() - dt) + ' - ';
+			dt = new Date().getTime();
+			Draw();
+			str += ((new Date()).getTime() - dt);
+			$('#lblStepTime').html(str);
+		}
+
+		function Play() {
+			running = !running;
+
+			if (running) {
+				Start();
+			}
+		}
+
+		function Start() {
+			$('#btnPlay').html(running ? 'Pause' : 'Render');
+
+			Colors=[];
+			var c = '';
+			$('#colors li').not('._add').each(function() {
+				Colors.push(GetColorFromHex($(this).find('input').val()));
+				c+=$(this).find('input').val().substring(1) + ',';
+			});
+			c=c.substring(0, c.length-1);
+
+			iterations = parseInt($('#txtIterations').val(), 10);
+			interval = parseInt($('#txtInterval').val(), 10);
+			zoom = parseInt($('#txtZoom').val());
+			currIteration = 0;
+			map = Create2DArray(w);
+			ctx.rect(0, 0, w, h);
+			ctx.fillStyle = 'black';
+			ctx.fill();
+			imageData = ctx.createImageData(w, h);
+
+			scale = (3.5 / w) / zoom;
+			origin = new Point(parseFloat($('#txtCenterX').val()) - ((w / 2) * scale), parseFloat($('#txtCenterY').val()) + ((h / 2) * scale));
+
+			
+
+
+			var base = window.location.href.split('#')[0];
+			base += '#its=' + iterations +
+				'&int=' + interval +
+				'&z=' + zoom +
+				'&x=' + $('#txtCenterX').val() +
+				'&y=' + $('#txtCenterY').val() +
+				'&c=' + c;
+			window.location.href = base;
+
+			sw = new Date();
+			for (y = 0; y < h; y++) {
+				for (x = 0; x < w; x++) {
+					map[x][y] = { iterations: 0, t_x: 0, t_y: 0, out: false };
+				}
+			}			
+			Game();
+
+		}
+
+
+		function Game() {
+
+			if (running) {
+
+				$('#lblIts').html(currIteration + 1);
+				for (x = 0; x < w; x++) {
+					var s_x = origin.X + (x * scale);
+					for (y = 0; y < h; y++) {
+						var s_y = origin.Y - (y * scale);
+						if (!map[x][y].out) {
+							var lmap = map[x][y];
+							var t = (lmap.t_x * lmap.t_x) - (lmap.t_y * lmap.t_y) + s_x;
+							lmap.t_y = 2.0 * lmap.t_x * lmap.t_y + s_y;
+							lmap.t_x = t;
+							lmap.iterations++;
+							if ((lmap.t_x * lmap.t_x) + (lmap.t_y * lmap.t_y) > 4.0) {
+								lmap.out = true;
+
+								var base_index = Math.floor(lmap.iterations / interval);
+								var mod_i = lmap.iterations - (base_index * interval);
+								var base_Col, mod_Col;
+								if (base_index == 0) {
+									base_Col = new Color(255, 255, 255);
+									mod_Col = Colors[0];
+								}
+								else {
+									base_index = (base_index - 1) % Colors.length;
+									base_Col = Colors[base_index];
+									mod_Col = Colors[base_index < (Colors.length - 1) ? base_index + 1 : 0];
+								}
+								var mod = mod_i / interval;
+
+								var index = (x + y * w) * 4;
+								imageData.data[index++] = base_Col.R + Math.floor((mod_Col.R - base_Col.R) * mod);
+								imageData.data[index++] = base_Col.G + Math.floor((mod_Col.G - base_Col.G) * mod);
+								imageData.data[index++] = base_Col.B + Math.floor((mod_Col.B - base_Col.B) * mod);
+								imageData.data[index] = 255;
+							}
+						}
+					}
+				}
+				currIteration++;
+				ctx.putImageData(imageData, 0, 0);
+
+				if (currIteration == iterations)
+					running = false;
+				setTimeout(Game, 1);
+
+			}
+			else {
+				$('#btnPlay').html('Render');
+				$('#lblTime').html(((new Date()) - sw) / 1000);
+				map = null;
+			}
+
+		}
+
+	</script>
+</body>
+</html>

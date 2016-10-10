@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Tank Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:800px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+
+		#cv {width:800px; height:500px; background-color:#000;}
+
+		#controls {float:left; width:250px; height:300px; padding:10px;}
+
+		#code {float:right; width:550px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
+	</style>
+</head>
+<body>
+	<h1>Shifter's Tank Thing</h1>
+	<canvas id="cv" width="800" height="500"></canvas>
+	<div id="controls">
+		<h2>Controls</h2>
+		<button onclick="Step();">Step</button><label id="lblStepTime"></label><br />
+		<button id="btnPlay" onclick="Play();">Play</button>
+	</div>	
+	<div id="code">
+		<h2>Code</h2>
+		<textarea id="txtCode"></textarea>
+	</div>
+	<div style="clear:both;"></div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i=0;i<rows;i++) 
+				arr[i] = [];
+			return arr;
+		}
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+		function Distance2D(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y)));
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function TerrainPoint(filled, fixed, col) {
+			this.Filled = filled;
+			this.Fixed = fixed;
+			this.Color = col;
+			this.Changed = filled;
+		}
+
+		var canvas, ctx, w, h, imageData, i, j, x, y, map, running=false;
+
+
+		var Colors = [
+			new Color(0, 0, 0),
+			new Color(200, 200, 200),
+			new Color(50, 200, 50),
+			new Color(200, 50, 50),
+			new Color(50, 50, 200)
+		];
+
+		function GetRandomColor() {
+			return Colors[GetRandomInt(1, Colors.length)];
+		}
+
+
+		$(function () {
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			imageData = ctx.createImageData(w, h);
+			map = Create2DArray(w);
+
+			//RandomPoints();
+			PedestalAndHill();
+		});
+
+		function RandomPoints() {
+			for (x = 0; x < w; x++) {
+				for (y = 0; y < h; y++) {
+					map[x][y] = new TerrainPoint(GetRandomInt(0, 1000) < 100, false, Colors[1]);
+					if (GetRandomInt(0, 1000) < 0) {
+						map[x][y].Color = Colors[3];
+						map[x][y].Fixed = true;
+					}
+				}
+			}
+			Draw();
+		}
+
+		function PedestalAndHill() {
+			var ht = h / 4, wd = 50, hillHt=0;
+			for (x = 0; x < w; x++) {
+				for (y = 0; y < h; y++) {
+					if (x < wd) {
+						if (y > (h - ht))
+							map[x][y] = new TerrainPoint(true, true, Colors[1]);
+						else
+							map[x][y] = new TerrainPoint(false, false, Colors[0]);
+					}
+					else {
+						if (y > (h - hillHt))
+							map[x][y] = new TerrainPoint(true, true, Colors[2]);
+						else
+							map[x][y] = new TerrainPoint(false, false, Colors[0]);
+					}
+
+				}
+						var z = GetRandomInt(0, 10);
+						if (z == 0)
+							hillHt += 2;
+						else if (z < 3)
+							hillHt++;
+						else if (z == 9)
+							hillHt--;
+
+
+			}
+			Draw();
+		}
+
+		function Update() {
+			for (y = h - 1; y--; y >= 0) {
+				for (x = 0; x < w; x++) {
+					if (map[x][y].Filled && !map[x][y].Fixed && !map[x][y + 1].Filled) {
+						map[x][y + 1].Filled = true;
+						map[x][y + 1].Color = map[x][y].Color;
+						map[x][y + 1].Fixed = false;
+						map[x][y].Filled = false;
+						map[x][y].Changed = true;
+						map[x][y + 1].Changed = true;
+					}
+					else
+						map[x][y].Changed = false;
+
+				}
+			}
+		}
+
+		function Step() {
+			var str = '';
+			var dt = new Date().getTime();
+			Update();
+			str += ((new Date()).getTime() - dt) + ' - ';
+			dt = new Date().getTime();
+			Draw();
+			str += ((new Date()).getTime() - dt);
+			$('#lblStepTime').html(str);
+		}
+
+		function Play() {
+			running = !running;
+			$('#btnPlay').html(running ? 'Pause' : 'Play');
+			if (running)
+				Game();
+		}
+
+		function Game() {
+			if (running) {
+				Step();
+				setTimeout(Game, 1);
+			}
+		}
+
+		function Draw() {
+			for (y = 0; y < h; y++) {
+				for (x = 0; x < w; x++) {
+					if (map[x][y].Changed) {
+						index = (x + y * w) * 4;
+						if (map[x][y].Filled) {
+							col = map[x][y].Color;
+							imageData.data[index++] = col.R;
+							imageData.data[index++] = col.G;
+							imageData.data[index++] = col.B;
+							imageData.data[index] = 255;
+						}
+						else
+							imageData.data[index + 3] = 0;
+					}
+				}
+			}
+			ctx.putImageData(imageData, 0, 0);
+		}
+
+	</script>
+</body>
+</html>

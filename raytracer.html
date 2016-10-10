@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Raytracing Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:1000px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		ul, li {list-style:none;}
+
+		p {line-height:24px;}
+
+		#cv {width:1000px; height:800px; background-color:#000;}
+
+		#controls {float:left; width:350px; height:300px; padding:10px;}
+
+		#code {float:right; width:450px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
+
+		#colors a {font-weight:bold; cursor:pointer;}
+
+		input.hex {width:80px;}
+		input.rgb {width:60px;}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's Raytracing Thing</h1>
+	<canvas id="cv" width="1000" height="800">
+	</canvas>
+	<div id="controls">
+		<button id="btnPlay" value="Pause">Pause</button>
+		<p>FPS: <label id="lblFPS"></label></p>
+		<p><strong>Controls</strong></p>
+		<p>WASD - pan camera</p>
+		<p>Space/LShift - raise/lower camera</p>
+		<p>Mouse left click-and-drag - rotate camera</p>
+		<p>IJKL - move global light source (if enabled)</p>
+	</div>
+	<div id="code">
+		<p>
+			<label><input id="cbEnhance" type="checkbox" /> Progressive enhancement</label>
+		</p>
+		<p>
+			<label><input id="cbAnimate" type="checkbox" /> Allow object animations</label>
+		</p>
+		<p>
+			<label><input id="cbGlobal" type="checkbox" checked /> Global light source</label>
+		</p>
+		<p>Base scale: <input id="numScale" type="number" interval="1" min="1" max="16" value="8" /></p>
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript" src="vector.js"></script>
+	<script type="text/javascript" src="camera.js"></script>
+	<script type="text/javascript" src="geometry.js"></script>
+	<script type="text/javascript">
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		var canvas, ctx, w, h, imageData, wscale, hscale, scalehalf;
+
+		var scale = 8, baseScale=8;
+		
+		var Camera ,
+			objects = [
+				new Triangle(
+					new Vector(-50, 0, -50),
+					new Vector(50, 0, -50),
+					new Vector(50, 0, 50),
+					new Color(200, 200, 200)),
+				new Triangle(
+					new Vector(-50, 0, -50),
+					new Vector(50, 0, 50),
+					new Vector(-50, 0, 50),
+					new Color(200, 200, 200)),
+				new Triangle(
+					new Vector(-5, 0, -5),
+					new Vector(5, 0, -5),
+					new Vector(0, 10, 0),
+					new Color(0, 200, 0)),
+				new Triangle(
+					new Vector(5, 0, -5),
+					new Vector(5, 0, 5),
+					new Vector(0, 10, 0),
+					new Color(255, 0, 0)),
+				new Triangle(
+					new Vector(5, 0, 5),
+					new Vector(-5, 0, 5),
+					new Vector(0, 10, 0),
+					new Color(200, 100, 0)),
+				new Triangle(
+					new Vector(-5, 0, 5),
+					new Vector(-5, 0, -5),
+					new Vector(0, 10, 0),
+					new Color(0, 0, 255)),
+				new Sphere(
+					new Vector(9,3,0),
+					1,
+					new Color(255,255,255),
+					0)
+			];
+
+		var timerId, sceneChanged = true, mouseMove = new Point(0, 0), mouseLastPoint = new Point(0, 0);
+
+		var bgColor = new Color(154, 206, 235),
+			globalLight = {
+				Direction: new Vector(0, 1, 0),
+				Brightness: 1.0,
+				Color: new Vector(1.0,1.0,1.0)
+			};
+
+		var input = {
+			left: false,
+			right: false,
+			forward: false,
+			backward: false,
+			up: false,
+			down: false,
+			rotate: false,
+			lightForward: false,
+			lightBackward: false,
+			lightLeft: false,
+			lightRight:false
+		};
+
+		var progressiveUpdate = false,
+			animateObjects = false,
+			showGlobalLight = true;
+
+		var fpsTot = 0, fpsCount = 0;
+
+		var lightSources = [];
+		var moveVal = 0.5;
+
+
+		$(function () {
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			wscale = w / scale;
+			hscale = h / scale;
+			scalehalf = scale / 2;
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+			imageData = ctx.createImageData(w, h);
+
+			Camera = new Camera(
+				new Vector(15, 8, -18),
+				(new Vector(-0.57, -0.18, 0.79)).unit(),
+				new Point(w, h));
+
+			//preset the canvas
+			for (var i = 0; i < imageData.data.length; i++) {
+				imageData.data[i] = 255;
+			}
+
+			
+			//add orbiting light source
+			var s = new Sphere(
+				new Vector(12, 12, 0),
+				0.5,
+				new Color(220, 191, 180),
+				0);
+			s.Angle = 0;
+			s.OnUpdate = function () {
+				this.Angle += (Math.PI/36) % (Math.PI*2);
+				this.Center.x = Math.cos(this.Angle) * 10;
+				this.Center.z = Math.sin(this.Angle) * 10;
+			};
+			objects.push(s);
+
+			//add orange mirror sphere
+			var s2 = new Sphere(
+				new Vector(7, 7, 0),
+				2,
+				new Color(200, 120, 32),
+				0);
+			//s2.Opacity = 0.5;
+			s2.Reflectivity = 0.75;
+			objects.push(s2);
+
+			var sGlass = new Sphere(
+				new Vector(10, 10, -10),
+				1.5,
+				new Color(0, 0, 0),
+				0);
+			sGlass.Opacity = 0.01;
+			sGlass.IndexOfRefraction = 1.52;
+			objects.push(sGlass);
+
+			//add mirror panel
+			var r1 = new Triangle(
+				new Vector(-10, 0, 15),
+				new Vector(10, 0, 15),
+				new Vector(10, 15, 15),
+				new Color(127, 127, 127));
+			r1.Reflectivity = 0.9;
+			objects.push(r1);
+			var r2 = new Triangle(
+				new Vector(-10, 0, 15),
+				new Vector(10, 15, 15),
+				new Vector(-10, 15, 15),
+				new Color(127, 127, 127));
+			r2.Reflectivity = 0.9;
+			objects.push(r2);
+
+
+			for (var i = 0; i < objects.length; i++) {
+				//precache light sources
+				if (objects[i].LightIntensity > 0) {
+					lightSources.push(i);
+				}
+
+				//preset global light source dot products for triangles
+				if (objects[i].Type == 0) {
+					objects[i].UpdateGlobalDot(globalLight.Direction);
+				}
+			}
+
+			
+			//keyboad input captures
+			$(window).keydown(function (e) {
+				switch (e.keyCode) {
+					case 65:
+						input.left = true;
+						break;
+					case 68:
+						input.right = true;
+						break;
+					case 87:
+						input.forward = true;
+						break;
+					case 83:
+						input.backward = true;
+						break;
+					case 32:
+						input.up = true;
+						break;
+					case 16:
+						input.down = true;
+						break;
+					case 73:
+						input.lightForward = true;
+						break;
+					case 74:
+						input.lightLeft = true;
+						break;
+					case 75:
+						input.lightBackward = true;
+						break;
+					case 76:
+						input.lightRight = true;
+						break;
+					default:
+						return;
+						break;
+				}
+				e.preventDefault();
+			}).keyup(function (e) {
+				switch (e.keyCode) {
+					case 65:
+						input.left = false;
+						break;
+					case 68:
+						input.right = false;
+						break;
+					case 87:
+						input.forward = false;
+						break;
+					case 83:
+						input.backward = false;
+						break;
+					case 32:
+						input.up = false;
+						break;
+					case 16:
+						input.down = false;
+						break;
+					case 73:
+						input.lightForward = false;
+						break;
+					case 74:
+						input.lightLeft = false;
+						break;
+					case 75:
+						input.lightBackward = false;
+						break;
+					case 76:
+						input.lightRight = false;
+						break;
+					default:
+						return;
+						break;
+				}
+				e.preventDefault();
+			});
+
+			//camera rotation
+			$('#cv').mousedown(function (e) {
+				input.rotate = true;
+				mouseLastPoint = new Point(e.offsetX, e.offsetY);
+			});
+			$(window).mouseup(function () {
+				input.rotate = false;
+			}).mousemove(function (e) {
+				if (input.rotate) {
+					mouseMove = new Point(e.offsetX - mouseLastPoint.X, e.offsetY - mouseLastPoint.Y);
+					mouseLastPoint = new Point(e.offsetX, e.offsetY);
+				}
+			});
+
+			//UI controls
+			$('#btnPlay').click(function () {
+				if ($(this).html() == 'Pause') {
+					$(this).html('Play');
+					clearInterval(timerId);
+				}
+				else {
+					$(this).html('Pause');
+					timerId = setInterval(GameLoop, 1);
+				}
+			});
+
+			$('#cbGlobal').change(function () {
+				showGlobalLight = $(this).is(':checked');
+				DrawScene();
+			});
+			$('#cbEnhance').change(function () {
+				progressiveUpdate = $(this).is(':checked');
+			});
+			$('#cbAnimate').change(function () {
+				animateObjects = $(this).is(':checked');
+			});
+
+			$('#numScale').change(function () {
+				baseScale = parseInt($(this).val(), 10);
+				scale = baseScale;
+				sceneChanged = true;
+				fpsCount = 0;
+				fpsTot = 0;
+			});
+
+			//begin game loop
+			timerId = setInterval(GameLoop, 1);
+		});
+
+		//main game loop
+		function GameLoop() {
+			var dtStart = new Date();
+			var pos = Camera.Position,
+				dir = Camera.Direction;
+			var globalLightUpdate = false;
+
+			//check all inputs
+			if (input.forward == true) {
+				pos.z += moveVal * dir.z;
+				pos.x += moveVal * dir.x;
+				sceneChanged = true;
+			}
+			else if (input.backward == true) {
+				pos.z -= moveVal * dir.z;
+				pos.x -= moveVal * dir.x;
+				sceneChanged = true;
+			}
+
+			if (input.left == true) {
+				pos.x += moveVal * dir.left().x;
+				pos.z += moveVal * dir.left().z;
+				sceneChanged = true;
+			}
+			else if (input.right == true) {
+				pos.x -= moveVal * dir.left().x;
+				pos.z -= moveVal * dir.left().z;
+				sceneChanged = true;
+			}
+
+			if (input.up == true) {
+				pos.y += moveVal * dir.up().y;
+				sceneChanged = true;
+			}
+			else if (input.down == true) {
+				pos.y -= moveVal * dir.up().y;
+				sceneChanged = true;
+			}
+
+			if (input.rotate) {
+				var angles = dir.toAngles();
+
+				var yRot = angles.phi;
+				if (mouseMove.Y != 0) {
+					yRot = angles.phi - (mouseMove.Y / 100); //((Math.PI / 360) * mouseMove.Y);
+					dir.y = Math.sin(yRot);
+				}
+				if (mouseMove.X != 0) {
+					var xRot = angles.theta - ((Math.PI / 180) * mouseMove.X);
+
+					dir.x = Math.cos(xRot) * Math.cos(yRot);
+					dir.z = Math.sin(xRot) * Math.cos(yRot);
+				}
+
+
+				dir = dir.unit();
+				mouseMove = new Point(0, 0);
+				sceneChanged = true;
+			}
+
+			if (input.lightForward) {
+				globalLight.Direction.z += 0.1;
+				sceneChanged = true;
+				globalLightUpdate = true;
+			}
+			else if (input.lightBackward) {
+				globalLight.Direction.z -= 0.1;
+				sceneChanged = true;
+				globalLightUpdate = true;
+			}
+
+			if (input.lightLeft) {
+				globalLight.Direction.x -= 0.1;
+				sceneChanged = true;
+				globalLightUpdate = true;
+			}
+			else if (input.lightRight) {
+				globalLight.Direction.x += 0.1;
+				sceneChanged = true;
+				globalLightUpdate = true;
+			}
+
+			//update global light source and triangle global dot products if global light moved
+			if (globalLightUpdate) {
+				globalLight.Direction = globalLight.Direction.unit();
+				for (var i = 0; i < objects.length; i++) {
+					if (objects[i].Type == 0) {
+						objects[i].UpdateGlobalDot(globalLight.Direction);
+					}
+				}
+			}
+
+			//fire object animations if enabled
+			if (animateObjects) {
+				for (var i = 0; i < objects.length; i++) {
+					if (objects[i].OnUpdate != null) {
+						objects[i].OnUpdate();
+						sceneChanged = true;
+					}
+				}
+			}
+
+			if (sceneChanged) { //redraw scene at base scale
+				scale = baseScale;
+				Camera.Update(pos, dir);
+				DrawScene();
+				sceneChanged = false;
+			}
+			else if (progressiveUpdate && scale > 1) { //increase resolution and draw scene
+				scale -= 1;
+				DrawScene();
+				sceneChanged = false;
+			}
+
+			//output fps and average fps
+			var dtSpan = (new Date()) - dtStart;
+			if (animateObjects) {
+				fpsTot += 1000 / dtSpan;
+				fpsCount++;
+			}
+			$('#lblFPS').html((1000 / dtSpan).toFixed(2) + " (" + (fpsTot / fpsCount).toFixed(2) + ")");
+		}
+
+		//main draw method
+		function DrawScene() {
+			wscale = w / scale;
+			hscale = h / scale;
+			var l = wscale * hscale, y = 0, x = 0, r, hitCol;
+			for (var i = 0; i < l; i++) {
+				r = Camera.GetRay(x * scale + scalehalf, h - (y * scale + scalehalf));
+				hitCol = GetColorFromRay(r, 0, -1, -1, 1);
+				DrawPoint(x, y, hitCol);
+				x++;
+				if (x >= wscale) {
+					x = 0;
+					y++;
+				}
+			}
+			ctx.putImageData(imageData, 0, 0);
+		}
+
+
+		//main ray processing function
+		//project a ray out from a specified point, return the color of whatever it hits
+		//iteration is used to prevent infinite reflection loops
+		//ignoreIdx defines what surface the projected ray originates from, to prevent very small-scale self collisions
+		function GetColorFromRay(ray, iteration, ignoreIdx, dotDir, refractionIndex) {
+			var hit = HitTest(ray, ignoreIdx, -1);
+			var hitCol = bgColor;
+			if (hit != null ) {
+				var ambientLight = 0.2, lightVal = ambientLight, ambInv = 1 - ambientLight;
+
+				var hitIdx = hit.Index;
+				hitCol = objects[hitIdx].Color;
+
+
+				if (objects[hitIdx].Reflectivity > 0 && iteration < 4) {
+					//if hit surface is reflective, calculate surface normal, reflect ray, cast out a new ray from that point, combine resulting color with surface color
+					
+					var reflectedR = ray.Direction.reflect(hit.Normal);
+					var refCol = GetColorFromRay(new Ray(hit.Intersection, reflectedR), iteration + 1, hitIdx, dotDir, refractionIndex);
+					var objRef = 1.0 - objects[hitIdx].Reflectivity,
+						refl = objects[hitIdx].Reflectivity;
+					hitCol = new Color(
+						(hitCol.R * objRef) + (refCol.R*refl),
+						(hitCol.G * objRef) + (refCol.G*refl),
+						(hitCol.B * objRef) + (refCol.B*refl)
+						);
+
+				}
+
+				else if (objects[hitIdx].LightIntensity == 0) {
+					//ray hit any non-reflective surface
+					var dot = 0;
+
+					var globalHit = HitTest(new Ray(hit.Intersection, globalLight.Direction), hitIdx);
+
+					if (globalHit == null && showGlobalLight) {
+						//not in global shadow and global light enabled, calculate global lighting
+						dot = hit.Normal.dot(globalLight.Direction);
+						//if (objects[hitIdx].Type == 0) {
+						//	dot = objects[hitIdx].GlobalDot;
+						//}
+						//else {
+						//	dot = hit.Intersection.subtract(objects[hitIdx].Center).unit().dot(globalLight.Direction);
+						//}
+
+						if (dot > 0) {
+							dot = dot * ambInv + ambientLight;
+							lightVal = dot;
+						}
+					}
+
+					//calculating lighting against any other non-global light sources
+					for (var i = 0; i < lightSources.length; i++) {
+						var lightIdx = lightSources[i];
+						var lightDir = objects[lightIdx].Center.subtract(hit.Intersection).unit();
+						var lightHit = HitTest(new Ray(hit.Intersection, lightDir), hitIdx);
+
+						if (lightIdx == lightHit.Index) {
+
+							//if (objects[hitIdx].Type == 0) {
+							//	dot = objects[hitIdx].Normal.dot(lightDir);
+							//}
+							//else {
+							//	dot = hit.Intersection.subtract(objects[hitIdx].Center).unit().dot(lightDir);
+							//}
+							dot = hit.Normal.dot(lightDir);
+							if (dot > 0) {
+								dot = dot * ambInv + ambientLight;
+								lightVal += dot * (objects[lightIdx].LightIntensity / (lightHit.Distance * lightHit.Distance));
+							}
+						}
+					}
+					hitCol = new Color(hitCol.R * lightVal, hitCol.G * lightVal, hitCol.B * lightVal);
+
+					
+				}
+
+
+				if (objects[hitIdx].Opacity < 1.0) {
+					var exitHit;
+					var refrDir = ray.Direction;
+					//calculate refracted ray
+					if (objects[hitIdx].IndexOfRefraction != 1) {
+						var r = CalculateRefraction(1, objects[hitIdx].IndexOfRefraction, ray.Direction, hit.Normal);
+						if (r != null)
+							refrDir = r;
+					}
+					
+
+					if (objects[hitIdx].Type == 0) {
+						exitHit = HitTest(new Ray(hit.Intersection, refrDir), -1, 1);
+					}
+					else {
+
+						exitHit = HitTest(new Ray(hit.Intersection.add(refrDir.multiplyNum(objects[hitIdx].Radius * 2)), refrDir.negative()), -1, -1);
+					}
+
+					//return GetColorFromRay(new Ray(hit.Intersection, refrDir), iteration, -1, 1, objects[hitIdx].IndexOfRefraction);
+					if (exitHit != null) { //exit point found
+						var depth = exitHit.Intersection.subtract(hit.Intersection).length();
+						var exitRay = CalculateRefraction(objects[hitIdx].IndexOfRefraction, 1, refrDir, exitHit.Normal.negative());
+						var exitCol = GetColorFromRay(new Ray(exitHit.Intersection, exitRay), iteration, hitIdx),
+							 exitVal = 1.0 - objects[hitIdx].Opacity;// Math.pow(objects[hitIdx].Opacity, depth);
+						var objVal = 1.0 - exitVal;
+						hitCol = new Color(
+							(hitCol.R * objVal) + (exitCol.R * exitVal),
+							(hitCol.G * objVal) + (exitCol.G * exitVal),
+							(hitCol.B * objVal) + (exitCol.B * exitVal)
+							);
+
+					}
+					else {
+						//wat, how did this happen
+
+					}
+				}
+			}
+			return hitCol;
+		}
+
+		function CalculateRefraction(i1, i2, dir, normal) {
+			var eta = i1 / i2;
+			var c1 = -dir.dot(normal);
+			var cs2 = 1 - eta * eta * (1 - c1 * c1);
+			if (cs2 < 0)
+				return null;
+			
+			return dir.multiplyNum(eta).add(normal.multiplyNum(eta * c1 - Math.sqrt(cs2))).unit();
+		}
+
+		Math.sign = Math.sign || function (x) {
+			x = +x;
+			if (x === 0 || isNaN(x)) {
+				return x;
+			}
+			return x > 0 ? 1 : -1;
+		}
+		
+		//test if a specified ray hits any objects
+		//ignoreIdx is to prevent self-collision
+		function HitTest(ray, ignoreIdx, dotSign) {
+			var idx = -1, minDist = 100, hitNrml = 0, intr;
+			if (dotSign == null)
+				dotSign = 0;
+			for (var i = 0; i < objects.length; i++) {
+				if (i != ignoreIdx) {
+					var dist = ray.Intersects(objects[i]);
+					var tmpNrml = 0;
+					var tmpIntr = ray.Position.add(ray.Direction.multiplyNum(dist));
+					if (objects[i].Type == 0) {
+						tmpNrml = objects[i].Normal;
+					}
+					else {
+						tmpNrml = tmpIntr.subtract(objects[i].Center).unit();
+					}
+					var dot = ray.Direction.dot(tmpNrml);
+					if (dist != null && dist < minDist && (dotSign==0 || dotSign==Math.sign(dot))) {
+						minDist = dist;
+						intr = tmpIntr;
+						hitNrml = tmpNrml;
+						idx = i;
+					}
+				}
+			}
+
+			if (idx == -1) {
+				return null;
+			}
+
+			
+			return {
+				Index: idx,
+				Distance: minDist,
+				Normal: hitNrml,
+				Intersection: intr
+			};
+			
+		}
+
+		//draw a scaled pixel of the specified color c
+		function DrawPoint(x, y, c) {
+			var xs = x * scale, ys = y * scale, xbound = xs + scale, ybound = ys + scale;
+			if (xbound > w) xbound = w ;
+			if (ybound > h) ybound = h ;
+			for (var y2 = ys; y2 < ybound; y2++) {
+				var ymod = y2 * w;
+				for (var x2 = xs; x2 < xbound; x2++) {
+					var index = (x2 + ymod) * 4;
+
+					imageData.data[index++] = c.R;
+					imageData.data[index++] = c.G;
+					imageData.data[index++] = c.B;
+					//imageData.data[index] = 255; //alpha channel not required, as it's preset when the page loads
+				}
+			}
+		}
+
+
+	</script>
+</body>
+</html>

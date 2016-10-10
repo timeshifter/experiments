@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>thing</title>
+	<link rel="stylesheet" href="css/bootstrap.css">
+
+	<style>
+		html, body {
+			overflow:hidden; 
+			width:100%; 
+			height:100%; 
+			text-align:center;
+			background-color:#555;
+		}
+		canvas {
+			/*width:100%; /
+			float:right;*/
+			height:100%;
+			image-rendering: optimizeSpeed;
+			image-rendering: crisp-edges;
+			image-rendering: -moz-crisp-edges;
+			image-rendering: -o-crisp-edges;
+			image-rendering: -webkit-optimize-contrast;
+			-ms-interpolation-mode: nearest-neighbor;
+		}
+
+		#cv {
+			height:100%;
+		}
+
+		#settings_button {
+			cursor:pointer;
+			position:fixed;
+			top:15px;
+			left:15px;
+			opacity:0.3;
+			transition:opacity 0.5s;
+			z-index:1100;
+		}
+		#settings_button:hover {
+			opacity:1.0;
+		}
+
+		#settings {
+			position:fixed;
+			top:10px;
+			left:10px;
+			width:300px;
+			margin:0;
+			text-align:left;
+		}
+
+		#options {
+			position:fixed;
+			top:10px;
+			right:10px;
+			width:415px;
+			margin:0;
+			text-align:left;
+		}
+
+		.modal:not(.fade) {
+			left: auto;
+		}
+
+		.modal-header {
+			padding-left:40px;
+		}
+
+		.modal-header h4 {
+			margin:0;
+		}
+
+		.modal-body {
+			max-height: none;
+		}
+
+		.modal-body > input[type="number"],
+		.modal-body > input[type="color"],
+		.modal-body > div {
+			float:right;
+		}
+
+		.modal-body label.radio {
+			margin-right:15px;
+			margin-bottom:15px;
+		}
+		.modal-body label {
+			clear:right;
+			float:left;
+		}
+
+		#deformations td {
+			padding:4px 2px;
+		}
+
+		#deformations td input
+		 {
+			width:50px;
+		}
+		
+		
+	</style>
+</head>
+<body>
+	<canvas id="cv"></canvas>
+	<canvas id="cvPrint" style="display:none;"></canvas>
+	<div id="settings" class="modal">
+		<div class="modal-header">
+			<h4>Settings</h4>
+		</div>
+		<div class="modal-body">
+
+			<label>Number of objects per side</label>
+			<input type="number" id="txtSize" step="1" min="1" max="200" value="20" class="input-mini" />
+			<label>Object spacing</label>
+			<input type="number" id="txtSpacing" step="1" min="-50" max="200" value="2" class="input-mini" />
+			<label class="checkbox input-block-level">
+			<input type="checkbox" id="cbCircle" onchange="ToggleCircles();" />
+			Draw circles</label>
+			<label>Polygon sides</label>
+			<input type="number" id="txtSides" step="1" min="3" max="360" value="4" class="input-mini" />
+			<label class="checkbox input-block-level">
+				<input type="checkbox" id="cbCurveEdges" onchange="CreateObjects();" /> Deformable edges
+			</label>
+			<label>Starting angle</label>
+			<input type="number" id="txtAngle" step="1" min="0" max="360" value="0" class="input-mini" />
+			<label>Background color</label>
+			<input type="color" id="colBG" value="#202020" class="input-mini" />
+			<label>Primary color</label>
+			<input type="color" id="colPrimary" value="#e020e0" class="input-mini" />
+			<label>Bubble color</label>
+			<input type="color" id="colBubble" value="#ff2020" class="input-mini" />
+			<label>Dimple color</label>
+			<input type="color" id="colDimple" value="#2020ff" class="input-mini" />
+			<label>Deformation size</label>
+			<input type="number" id="txtDefSize" value="15" step="1" min="1" max="100" class="input-mini" />
+			<p class="clearfix"></p>
+			<button id="btnBubble" class="btn btn-info" onclick="SetLiveDeformation(2.0);">Place Bubble</button>
+			<button id="btnDimple" class="btn btn-info" onclick="SetLiveDeformation(0.5);">Place Dimple</button>
+			<hr />
+			<button id="btnSave" class="btn" onclick="Save(true);">Save stencil</button>
+			<a id="ancSave" style="display:none;"></a>
+			<hr />
+			<button id="btnShare" class="btn" onclick="Share();"><i class="icon-share-alt"></i> Share</button>
+			<button id="btnLoad" class="btn" data-toggle="modal" href="#load"><i class="icon-folder-open"></i> Load</button>
+		</div>
+
+	</div>
+	<a id="settings_button">
+		<img src="settings.png" alt="" width="30" /></a>
+
+	<div id="options" class="modal">
+		<div class="modal-header">
+			<h4>Deformations</h4>
+			
+		</div>
+		<div class="modal-body">
+			<table id="deformations" class="table table-striped table-condensed">
+				<thead>
+					<tr>
+						<th></th>
+						<th title="Center X coordinate, as a percentage of the canvas. 0 = left">X pos</th>
+						<th title="Center Y coordinate, as a percentage of the canvas. 0 = top">Y pos</th>
+						<th title="Radius of deformation, as a percentage of the canvas.">Radius</th>
+						<th title="Strength of deformation. >1.0 = bubble, <1.0 = dimple">Strength</th>
+						<th></th>
+					</tr>
+					
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+		<div class="modal-header">
+			<h4>Formulas</h4>
+		</div>
+		<div class="modal-body">
+			<span class="info">pending development</span>
+		</div>
+
+	</div>
+
+	<div id="share" class="modal hide fade">
+		<div class="modal-body">
+			<p>Share this text with a friend, or save it as a backup.</p>
+			<textarea id="txtSave" class="input-block-level" rows="4" onclick="this.select()"></textarea>
+		</div>
+		<div class="modal-footer">
+			<a class="btn" data-dismiss="modal">Close</a>
+		</div>
+	</div>
+
+	<div id="load" class="modal hide fade">
+		<div class="modal-body">
+			<p>Paste in your data string and click Load.</p>
+			<textarea id="txtLoad" class="input-block-level" rows="4"></textarea>
+		</div>
+		<div class="modal-footer">
+			<a class="btn" data-dismiss="modal">Cancel</a>
+			<a class="btn btn-success" onclick="LoadShareString();">Load</a>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="bootstrap.js"></script>
+	<script>
+		var cos = [1, 0.99992, 0.99968, 0.99928, 0.99873, 0.99801, 0.99714, 0.9961, 0.99491, 0.99356, 0.99205, 0.99038, 0.98856, 0.98658, 0.98444, 0.98215, 0.97969, 0.97709, 0.97432, 0.9714, 0.96833, 0.9651, 0.96172, 0.95819, 0.9545, 0.95067,
+			0.94668, 0.94254, 0.93825, 0.93381, 0.92922, 0.92448, 0.9196, 0.91457, 0.90939, 0.90407, 0.89861, 0.893, 0.88725, 0.88136, 0.87533, 0.86916, 0.86285, 0.85641, 0.84983, 0.84311, 0.83626, 0.82927, 0.82216, 0.81491, 0.80753,
+			0.80003, 0.79239, 0.78463, 0.77675, 0.76874, 0.76061, 0.75236, 0.74399, 0.7355, 0.72689, 0.71817, 0.70933, 0.70038, 0.69132, 0.68215, 0.67287, 0.66349, 0.65399, 0.6444, 0.6347, 0.6249, 0.615, 0.605, 0.59491, 0.58472,
+			0.57444, 0.56406, 0.5536, 0.54305, 0.53241, 0.52169, 0.51089, 0.5, 0.48903, 0.47799, 0.46687, 0.45568, 0.44441, 0.43307, 0.42167, 0.41019, 0.39865, 0.38705, 0.37539, 0.36366, 0.35188, 0.34004, 0.32815, 0.31621, 0.30421,
+			0.29217, 0.28008, 0.26795, 0.25577, 0.24355, 0.2313, 0.21901, 0.20668, 0.19432, 0.18193, 0.1695, 0.15706, 0.14459, 0.13209, 0.11957, 0.10704, 0.09449, 0.08192, 0.06934, 0.05675, 0.04414, 0.03154, 0.01892, 0.00631, -0.00631,
+			-0.01892, -0.03154, -0.04414, -0.05675, -0.06934, -0.08192, -0.09449, -0.10704, -0.11957, -0.13209, -0.14459, -0.15706, -0.1695, -0.18193, -0.19432, -0.20668, -0.21901, -0.2313, -0.24355, -0.25577, -0.26795, -0.28008, -0.29217, -0.30421, -0.31621,
+			-0.32815, -0.34004, -0.35188, -0.36366, -0.37539, -0.38705, -0.39865, -0.41019, -0.42167, -0.43307, -0.44441, -0.45568, -0.46687, -0.47799, -0.48903, -0.5, -0.51089, -0.52169, -0.53241, -0.54305, -0.5536, -0.56406, -0.57444, -0.58472, -0.59491,
+			-0.605, -0.615, -0.6249, -0.6347, -0.6444, -0.65399, -0.66349, -0.67287, -0.68215, -0.69132, -0.70038, -0.70933, -0.71817, -0.72689, -0.7355, -0.74399, -0.75236, -0.76061, -0.76874, -0.77675, -0.78463, -0.79239, -0.80003, -0.80753, -0.81491,
+			-0.82216, -0.82927, -0.83626, -0.84311, -0.84983, -0.85641, -0.86285, -0.86916, -0.87533, -0.88136, -0.88725, -0.893, -0.89861, -0.90407, -0.90939, -0.91457, -0.9196, -0.92448, -0.92922, -0.93381, -0.93825, -0.94254, -0.94668, -0.95067, -0.9545,
+			-0.95819, -0.96172, -0.9651, -0.96833, -0.9714, -0.97432, -0.97709, -0.97969, -0.98215, -0.98444, -0.98658, -0.98856, -0.99038, -0.99205, -0.99356, -0.99491, -0.9961, -0.99714, -0.99801, -0.99873, -0.99928, -0.99968, -0.99992, -1];
+
+		var ctx, ctxPrint, shapes = [], RAD = 180.0 / Math.PI, pressurePoints = [];
+		var shapeDiameter = 40,
+			shapeSpacing = 1,
+			polyAngle = 90;
+		var live = false;
+		var viewIdx = -1;
+
+		function Point(x, y) {
+			this.X = x*1.0;
+			this.Y = y*1.0;
+		}
+
+		function Shape() {
+			this.Center = new Point(0, 0);
+			this.Points = [];
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function GetColorFromHex(hex) {
+			hex = hex.replace('#', '');
+			return new Color(
+				parseInt(hex.substring(0, 2), 16),
+				parseInt(hex.substring(2, 4), 16),
+				parseInt(hex.substring(4, 6), 16)
+				);
+		}
+
+		function componentToHex(c) {
+			var hex = c.toString(16);
+			return hex.length == 1 ? "0" + hex : hex;
+		}
+
+		function rgbToHex(r, g, b) {
+			return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+		}
+
+		$(function () {
+			cv.width = window.innerHeight;
+			cv.height = window.innerHeight;
+			cvPrint.width = 5000;
+			cvPrint.height = 5000;
+			ctx = cv.getContext('2d');
+			ctxPrint = cvPrint.getContext('2d');
+
+			ctx.rect(0, 0, cv.width, cv.height);
+			ctx.fillStyle = "rgb(20,20,20)";
+			ctx.fill();
+
+			
+
+			$('#settings input[type="number"], #settings input[type="color"]').on('change', SetVars);
+
+			$('#settings_button').click(function () {
+				if ($('#settings').is(':visible'))
+					$('#settings').fadeOut();
+				else
+					$('#settings').fadeIn();
+			});
+
+			$('#cv').on('mousedown', function (e) {
+				if (e.button == 0) {
+					if (live) {
+						live = false;
+						UpdateDeformations();
+						DrawCircles();
+					}
+				}
+				else if (e.button == 2) {
+					if (live && false) {
+						//var str = prompt('Factor to modify by:');
+						//var radius = prompt('Radius to affect:');
+						//pressurePoints.push({ str: str, rad: radius, center: new Point(e.pageX, e.pageY) });
+						live = false;
+						
+						pressurePoints.pop();
+UpdateDeformations();
+						DrawCircles();
+
+					}
+					//return false;
+				}
+				//return false;
+			}).on('contextmenu', function () {
+				if (live) {
+					live = false;
+					
+					pressurePoints.pop();
+					UpdateDeformations();
+					DrawCircles();
+					return false;
+				}
+			}).on('mousemove', function (e) {
+				if (live) {
+					//console.log(e);
+					pressurePoints[pressurePoints.length - 1].center = new Point(e.offsetX*1.0, e.offsetY*1.0);
+					//pressurePoints[pressurePoints.length - 1].rad = cv.width * (parseFloat($('#txtDefSize').val()) / 100.0);
+					UpdateDeformations();
+					DrawCircles();
+				}
+			});
+
+			$('#options').on('change', 'input', function () {
+				var $li = $(this).closest('tr');
+				var idx = $li.index();
+				console.log(idx);
+				pressurePoints[idx].center.X = parseFloat($li.find('.x_coord').val())/100.0 * cv.width;
+				pressurePoints[idx].center.Y = parseFloat($li.find('.y_coord').val())/100.0 * cv.width;
+				pressurePoints[idx].rad = parseFloat($li.find('.rad').val()) / 100.0 * cv.width;
+				pressurePoints[idx].str = parseFloat($li.find('.str').val());
+				DrawCircles();
+			}).on('click', '.remove', function() {
+				var idx = $(this).closest('tr').index();
+				pressurePoints.splice(idx, 1);
+				DrawCircles();
+				UpdateDeformations();
+			}).on('mouseenter', 'a.view', function () {
+				var newIdx = $(this).closest('tr').index();
+				//if (newIdx != viewIdx)
+				//DrawCircles();
+				viewIdx = newIdx;
+				DrawCircles();
+			}).on('mouseleave', 'a.view', function () {
+				viewIdx = -1;
+				DrawCircles();
+			});
+
+			SetVars();
+		});
+
+		function SetLiveDeformation(val) {
+			if (!live) {
+				pressurePoints.push({ str: val, rad: cv.width * (parseFloat($('#txtDefSize').val()) / 100.0), center: new Point(cv.width / 2, cv.height / 2) });
+				live = true;
+			}
+		}
+
+		function ResetSurface() {
+			pressurePoints = [];
+			DrawCircles();
+		}
+
+		function ToggleCircles() {
+			if ($('#cbCircle').is(':checked')) {
+				polyAngle = 1;
+				$('#txtSides').attr('disabled', 'disabled');
+				CreateObjects();
+			}
+			else {
+				$('#txtSides').removeAttr('disabled');
+				SetVars();
+			}
+		}
+
+		function SetVars() {
+			//shapeDiameter = parseInt($('#txtSize').val(), 10);
+			shapeSpacing = parseInt($('#txtSpacing').val(), 10)*1.0;
+			var t = (cv.width - shapeSpacing - 1) / parseFloat($('#txtSize').val())*1.0;
+			shapeDiameter = t - shapeSpacing;
+			
+			if (!$('#cbCircle').is(':checked')) {
+				polyAngle = 360.0 / parseFloat($('#txtSides').val());
+			}
+			CreateObjects();
+		}
+
+		function CreateObjects() {
+			var centerPoints = [];
+			shapes = [];
+
+			//cbCurveEdges
+			var curveEdges = $('#cbCurveEdges').is(':checked') && parseInt($('#txtSides').val(), 10) <= 8;
+			console.log(curveEdges);
+
+			for (var x = shapeSpacing + (shapeDiameter / 2.0) ; x < cv.width - (shapeSpacing + (shapeDiameter / 2.0)) ; x += (shapeSpacing + shapeDiameter)) {
+				for (var y = shapeSpacing + (shapeDiameter / 2.0) ; y < cv.height - (shapeSpacing + (shapeDiameter / 2.0)) ; y += (shapeSpacing + shapeDiameter)) {
+					var s = new Shape();
+					s.Center = new Point(x, y);
+					shapes.push(s);
+				}
+			}
+
+			var angle = parseInt($('#txtAngle').val(), 10);
+			var lastPt, segments = 10;
+
+
+			for (var i = 0; i < shapes.length; i++) {
+				var pts = [];
+				for (var r = 0; r < 360; r += polyAngle) {
+					var newPt = new Point(
+						shapes[i].Center.X + (Math.cos((r + angle) / RAD) * (shapeDiameter / 2)),
+						shapes[i].Center.Y + (Math.sin((r + angle) / RAD) * (shapeDiameter / 2))
+					);
+
+					
+
+
+					if (curveEdges && r > 0) {
+						var dist = GetDistance(lastPt, newPt);
+						if (dist > 10) {
+							segments = Math.ceil(dist / 10);
+						}
+
+						for (var s = 1; s < segments; s++) {
+							var inc = s * 1.0 / segments;
+
+							var incPt = new Point(
+								lastPt.X + ((newPt.X - lastPt.X) * inc),
+								lastPt.Y + ((newPt.Y - lastPt.Y) * inc)
+							);
+							pts.push(incPt);
+						}
+					}
+
+					lastPt = newPt;
+					pts.push(lastPt);
+				}
+				shapes[i].Points = pts;
+			}
+			DrawCircles();
+		}
+
+		function Interpolate(v1, v2, x) {
+			var f = (1.0 - cos[Math.floor(x * cos.length)]) * 0.5;
+			return v1 * (1.0 - f) + (v2 * f);
+		}
+
+		function DrawCircles() {
+			ctx.rect(0, 0, cv.width, cv.height);
+			ctx.fillStyle = $('#colBG').val();
+			ctx.fill();
+			
+			var pt;
+			for (var i = 0; i < shapes.length; i++) {
+				var depthList = [];
+				var maxDepth = 0;
+				var isHighlighted = false;
+				for (var p = 0; p < pressurePoints.length; p++) {
+					var dist = GetDistance(pressurePoints[p].center, shapes[i].Center);
+					if (dist < pressurePoints[p].rad) {
+						if (p == viewIdx)
+							isHighlighted = true;
+
+						var ratio = Interpolate(pressurePoints[p].str, 1, dist / pressurePoints[p].rad);
+						depthList.push(ratio);
+
+						maxDepth += (ratio - 1);
+					}
+				}
+
+				var col = $('#colPrimary').val();
+				if (depthList.length > 0) {
+					var tot = depthList.reduce(function (a, b) { return (a - 1) + (b - 1); }) + 1;// / depthList.length;
+					tot = maxDepth + 1;
+
+					var baseCol = GetColorFromHex(col), interpCol = baseCol, interpTarget = 0;
+					if (tot > 1) {
+						interpCol = GetColorFromHex($('#colBubble').val());
+						interpTarget = Math.max.apply(null, pressurePoints.map(function (a) { return a.str; }));
+					}
+					else if (tot < 1) {
+						interpCol = GetColorFromHex($('#colDimple').val());
+						interpTarget = Math.min.apply(null, pressurePoints.map(function (a) { return a.str; }));
+					}
+
+					var mod = (tot - 1.0) / (interpTarget - 1.0);
+					//console.log(interpTarget);
+					var outCol = new Color(
+						baseCol.R + Math.floor((interpCol.R - baseCol.R) * mod),
+						baseCol.G + Math.floor((interpCol.G - baseCol.G) * mod),
+						baseCol.B + Math.floor((interpCol.B - baseCol.B) * mod)
+						);
+					col = rgbToHex(outCol.R, outCol.G, outCol.B);
+				}
+
+				ctx.beginPath();
+				pt = AlterPoint(shapes[i].Points[0]);
+				ctx.moveTo(pt.X, pt.Y);
+				for (var c = 1; c < shapes[i].Points.length; c++) {
+					pt = AlterPoint(shapes[i].Points[c]);
+					ctx.lineTo(pt.X, pt.Y);
+				}
+				if (isHighlighted)
+					ctx.fillStyle = 'yellow';
+				else
+					ctx.fillStyle = col;
+				ctx.fill();
+			}
+		}
+
+		function UpdateDeformations() {
+			var s = '';
+			for (var i = 0; i < pressurePoints.length; i++) {
+				s +=
+					'<tr>' +
+						'<td><a class="btn btn-link view" style="margin-bottom:10px;"><i class="icon-eye-open"></i></a></td>' +
+						'<td><input type="number" class="x_coord input-mini" step="1" min="0" max="100" value="' + (pressurePoints[i].center.X / cv.width * 100) + '" /></td>' + 
+						'<td><input type="number" class="y_coord input-mini" step="1" min="0" max="100" value="' + (pressurePoints[i].center.Y / cv.width * 100) + '" /></td>' +
+						'<td><input type="number" class="rad input-mini" step="1" min="0" max="100" value="' + (pressurePoints[i].rad / cv.width * 100) + '" /></td>' +
+						'<td><input type="number" class="str input-mini" step="0.1" min="0.1" max="3" value="' + pressurePoints[i].str + '" /></td>' +
+						'<td><a class="btn btn-danger remove" style="margin-bottom:10px;"><i class="icon-remove icon-white"></i></a></td>' +
+					'</tr>';
+			}
+			$('#deformations tbody').html(s);
+		}
+
+		function GetAngle(p1, p2) {
+			return Math.atan2(p2.Y - p1.Y, p2.X - p1.X)*1.0;
+		}
+
+		function GetDistance(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y)))*1.0;
+		}
+
+		function AlterPoint(pt) {
+			var retPt = new Point(pt.X, pt.Y);
+
+			for (var i = 0; i < pressurePoints.length; i++) {
+				var dist = GetDistance(pressurePoints[i].center, retPt) * 1.0;
+				if (dist < pressurePoints[i].rad) {
+					var theta = GetAngle(pressurePoints[i].center, retPt);
+					var ratio = Interpolate(pressurePoints[i].str * 1.0, 1, dist / pressurePoints[i].rad * 1.0);
+
+					retPt = new Point(
+						pressurePoints[i].center.X * 1.0 + (dist * Math.cos(theta) * ratio),
+						pressurePoints[i].center.Y * 1.0 + (dist * Math.sin(theta) * ratio)
+						);
+
+				}
+			}
+			return retPt;
+		}
+
+		function Save(stencil) {
+			$('#btnSave').html('Working...');
+			$('body').css('cursor', 'wait');
+
+			setTimeout(function () {
+
+				ctxPrint.rect(0, 0, cvPrint.width, cvPrint.height);
+				ctxPrint.fillStyle = "#fff";
+				ctxPrint.fill();
+
+				
+
+				var diff = cvPrint.width*1.0 / cv.width * 1.0;
+
+				var pt;
+				
+
+
+				for (var i = 0; i < shapes.length; i++) {
+
+
+					ctxPrint.beginPath();
+					pt = AlterPoint(shapes[i].Points[0]);
+					ctxPrint.moveTo(pt.X * 1.0 * diff, pt.Y * 1.0 * diff);
+
+					//console.log(pt);
+
+					
+					for (var c = 1; c < shapes[i].Points.length; c++) {
+						pt = AlterPoint(shapes[i].Points[c]);
+						ctxPrint.lineTo(pt.X * 1.0 * diff, pt.Y * 1.0 * diff);
+					}
+
+					
+					ctxPrint.fillStyle = '#000';
+					ctxPrint.fill();
+				}
+
+				console.log('done drawing');
+
+				var url = cvPrint.toDataURL();
+
+				ancSave.download = 'stencil.png';
+				ancSave.href = url;
+				ancSave.dataset.downloadurl = ['image/png', ancSave.download, ancSave.href].join(':');
+
+				console.log('size: ' + url.length);
+				//console.log('done saving');
+
+				ancSave.click();
+
+
+				$('#btnSave').html('Save stencil');
+				$('body').css('cursor', '');
+				
+			}, 1);
+		}
+
+		function b64toBlob(b64Data, contentType, sliceSize) {
+			contentType = contentType || '';
+			sliceSize = sliceSize || 512;
+
+			var byteCharacters = atob(b64Data);
+			var byteArrays = [];
+
+			for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+				var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+				var byteNumbers = new Array(slice.length);
+				for (var i = 0; i < slice.length; i++) {
+					byteNumbers[i] = slice.charCodeAt(i);
+				}
+
+				var byteArray = new Uint8Array(byteNumbers);
+
+				byteArrays.push(byteArray);
+			}
+
+			var blob = new Blob(byteArrays, { type: contentType });
+			return blob;
+		}
+
+		function GetShareString() {
+			var o = {};
+			o.size = parseInt($('#txtSize').val(), 10);
+			o.spacing = parseInt($('#txtSpacing').val(), 10);
+			o.circles = $('#cbCircle').is(':checked');
+			o.sides = parseInt($('#txtSides').val(), 10);
+			o.deform = $('#cbCurveEdges').is(':checked');
+			o.angle = parseFloat($('#txtAngle').val());
+			o.bg = $('#colBG').val();
+			o.primary = $('#colPrimary').val();
+			o.bubble = $('#colBubble').val();
+			o.dimple = $('#colDimple').val();
+			o.radius = parseInt($('#txtDefSize').val(), 10);
+
+			var newDef=[];
+			$.extend(true, newDef, pressurePoints);
+			for (var i = 0; i < newDef.length; i++) {
+				newDef[i].center.X = newDef[i].center.X / cv.width;
+				newDef[i].center.Y = newDef[i].center.Y / cv.width;
+				newDef[i].rad = newDef[i].rad / cv.width;
+			}
+			o.deformations = newDef;
+			return JSON.stringify(o);
+		}
+
+		function LoadShareString() {
+			
+			var o = JSON.parse($('#txtLoad').val());
+
+			$('#txtSize').val(o.size);
+			$('#txtSpacing').val(o.spacing);
+			if (o.circles)
+				$('#cbCircle').attr('checked', 'checked');
+			else
+				$('#cbCircle').removeAttr('checked');
+
+			$('#txtSides').val(o.sides);
+			if (o.deform)
+				$('#cbCurveEdges').attr('checked', 'checked');
+			else
+				$('#cbCurveEdges').removeAttr('checked');
+			$('#txtAngle').val(o.angle);
+			$('#colBG').val(o.bg);
+			$('#colPrimary').val(o.primary);
+			$('#colBubble').val(o.bubble);
+			$('#colDimple').val(o.dimple);
+			$('#txtDefSize').val(o.radius);
+
+			pressurePoints = o.deformations;
+			for (var i = 0; i < pressurePoints.length; i++) {
+				pressurePoints[i].center.X = pressurePoints[i].center.X * cv.width;
+				pressurePoints[i].center.Y = pressurePoints[i].center.Y * cv.width;
+				pressurePoints[i].rad = pressurePoints[i].rad * cv.width;
+			}
+
+			ToggleCircles();
+			SetVars();
+			UpdateDeformations();
+			CreateObjects();
+			DrawCircles();
+
+			$('#load').modal('hide');
+
+			//console.log(o);
+		}
+
+		function Share() {
+			$('#txtSave').val(GetShareString());
+			$('#share').modal('show');
+			//txtSave.focus();
+			//txtSave.select();
+		}
+
+		/*
+		strings
+
+		{"size":20,"spacing":-5,"circles":false,"sides":8,"deform":true,"angle":22.5,"bg":"#84dce6","primary":"#84dce6","bubble":"#9506b9","dimple":"#50cb3a","radius":15,"deformations":[{"str":0.7,"rad":0.33,"center":{"X":0.5,"Y":0.5}},{"str":0.1,"rad":0.25,"center":{"X":0.25,"Y":0.25}},{"str":0.1,"rad":0.25,"center":{"X":0.25,"Y":0.75}},{"str":0.1,"rad":0.25,"center":{"X":0.75,"Y":0.25}},{"str":0.1,"rad":0.25,"center":{"X":0.75,"Y":0.75}},{"str":1.3,"rad":0.5,"center":{"X":0.5,"Y":0.5}}]}
+
+		*/
+	</script>
+</body>
+</html>

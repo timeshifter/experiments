@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Trajectory Prediction</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		* { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {height:100%;}
+		body {height:100%; padding:2px;}
+		h3 {margin:10px 0;}
+		#container {height:100%; background-color:#f0f0f0;}
+		#controls {
+			position:fixed; 
+			top:2px; 
+			left:2px; 
+			color:#222; 
+			width:250px; 
+			padding:10px;
+			background-color:#bbb;
+		}
+		#control_wrapper {margin-top:10px;}
+		#control_wrapper p {margin:4px 0;}
+	</style>
+
+</head>
+<body>
+	<div id="container"></div>
+	<div id="controls">
+		<div id="control_wrapper">
+			<h3>Settings</h3>
+			<p>Click and drag to move objects.</p>
+			<p><label><input type="checkbox" id="cbFollow"> Turret follows mouse</label></p>
+			
+		</div>
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript" src="kinetic-v4.6.0.min.js"></script>
+	<script type="text/javascript" defer="defer">
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+
+		function Distance2D(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y)));
+		}
+
+		function CalculateAngle(X1, Y1, X2, Y2) {
+			var ret = Math.atan((Y2 - Y1) / (X2 - X1)) * RAD;
+
+			if (X2 > X1 && Y2 < Y1)
+				ret = Math.abs(ret);
+			else if (X2 < X1 && Y2 < Y1)
+				ret = 180.0 - ret;
+			else if (X2 < X1 && Y2 > Y1)
+				ret = Math.abs(ret) + 180.0;
+			else
+				ret = 360.0 - ret;
+
+			ret = 270 - ret;
+			if(ret<0) ret += 360.0;
+
+			return ret;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+
+		var stage, layer, turret, projectile, anim;
+		var i = 0,
+			j = 0,
+			targetAngle = 0,
+			turretAngle = 0,
+			targetVelocity = 0,
+			turretTurnRate = 45,
+			timerId = 0;
+		var worldSize = new Point(),
+			targetPos = new Point(),
+			turretPos = new Point(),
+			mousePos = new Point(),
+			projectileVelocity = new Point();
+		var selecting = false,
+			running = false;
+		var RAD = 180.0 / Math.PI;
+
+
+		worldSize = new Point($('#container').width(), $('#container').height());
+		turretPos = new Point(worldSize.X - 300, worldSize.Y / 2);
+		stage = new Kinetic.Stage({
+			container: 'container',
+			width: worldSize.X,
+			height: worldSize.Y
+		});
+		var layer = new Kinetic.Layer();
+		turret = new Kinetic.Polygon({
+			points: [-15, -20, 15, -20, 0, 20],
+			x: turretPos.X,
+			y: turretPos.Y,
+			fill: '#00d2ff',
+			stroke: '#000',
+			strokeWidth: 2,
+			draggable: true
+		});
+		turret.on('dragstart', function() {
+			running=false;
+		});
+		turret.on('dragend', function() {
+			turretPos = new Point(turret.attrs.x, turret.attrs.y);
+		})
+		projectile = new Kinetic.Line({
+			points: [0, -3, 0, 3],
+			stroke: 'black',
+			strokeWidth: 3,
+			lineCap: 'square',
+		});
+		layer.add(turret);
+		layer.add(projectile);
+		stage.add(layer);
+
+
+
+		stage.on('mousemove', function() {
+			var m = stage.getPointerPosition();
+			mousePos = new Point(m.x, m.y);
+
+			if($('#cbFollow').is(':checked')) {
+				turretAngle = CalculateAngle(turretPos.X, turretPos.Y, mousePos.X, mousePos.Y);
+				console.log(turretAngle);
+				turret.setRotationDeg(turretAngle);
+				layer.draw();
+			}
+		});
+
+		stage.on('click', function() {
+			Fire();
+			layer.draw();
+		});
+
+		function Fire() {
+			if(anim != undefined)
+				anim.stop();
+			projectile.setAttrs({
+				rotationDeg: turretAngle,
+				x: turretPos.X,
+				y: turretPos.Y
+			});
+			
+			projectileVelocity = new Point(Math.sin(turretAngle / RAD) * 3, Math.cos(turretAngle / RAD) * 3);
+
+			anim = new Kinetic.Animation(function(frame) {
+				projectile.setX(projectile.getX() - projectileVelocity.X);
+				projectile.setY(projectile.getY() + projectileVelocity.Y);
+
+				if(projectile.getX() < 0 || projectile.getX() > worldSize.X || projectile.getY() < 0 || projectile.getY() > worldSize.Y)
+					anim.stop();
+			}, layer);
+
+			anim.start();
+		}
+
+
+
+
+	</script>
+</body>
+</html>

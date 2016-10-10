@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's 4D Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:1000px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		ul, li {list-style:none;}
+
+		p {line-height:24px;}
+
+		#cv {width:1000px; height:800px; background-color:#000;}
+
+		#controls {float:left; width:350px; height:300px; padding:10px;}
+
+		#code {float:right; width:450px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
+
+		#colors a {font-weight:bold; cursor:pointer;}
+
+		input.hex {width:80px;}
+		input.rgb {width:60px;}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's 4D Thing
+	</h1>
+	<canvas id="cv" width="1000" height="800">
+	</canvas>
+	<div id="controls">
+		<p>A/D to rotate</p>
+		<p>W/S to change vertical ratio (tilt)</p>
+        <p>Angle: <label id="lblAngle"></label></p>
+        <p>Ratio: <label id="lblRatio"></label></p>
+
+	</div>
+	<div id="code">
+
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<script src="perlin.js"></script>
+<!--	<script type="text/javascript" src="vector.js"></script>
+	<script type="text/javascript" src="camera.js"></script>-->
+
+	<script type="text/javascript">
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+
+		function Create3DArray(x, y, z) {
+			var arr = [];
+			for (var i = 0; i < x; i++) {
+				var arrY = [];
+				for (var j = 0; j < y; j++) {
+					arrY[j] = [];
+				}
+				arr[i] = arrY;
+			}
+			return arr;
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function Point3D(x, y, z) {
+			this.X = x;
+			this.Y = y;
+			this.Z = z;
+		}
+
+		function getRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+
+		function GetAngle(p1, p2) {
+			return Math.atan2(p2.Y - p1.Y, p2.X - p1.X) * 1.0;
+		}
+
+		function GetDistance(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y))) * 1.0;
+		}
+
+		var canvas, ctx, w, h, angle, vertRatio, distMap = [], worldSize, voxelSize = 15;
+
+		var map;
+
+		var camera;
+
+		var RAD = Math.PI / 180.0;
+
+		$(function () {
+		    worldSize = new Point3D(40, 40, 40);
+
+			angle = 45;
+			vertRatio = 0.5;
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+			//ctx.translate(-0.5, -0.5);
+
+			map = Create3DArray(worldSize.X, worldSize.Y, worldSize.Z);
+
+			//var perlin2 = PerlinNoise.GetNoiseMap(worldSize.X, worldSize.Z, 2, 0.5, 4, getRandomInt(0, 99999999));
+			var perlin3 = PerlinNoise.GetNoiseMap3D(worldSize.X, worldSize.Y, worldSize.Z, 2, 0.5, 4, getRandomInt(0, 9999999));
+
+			//console.log(perlin3);
+
+			for (x = 0; x < worldSize.X; x++) {
+				for (z = 0; z < worldSize.Z; z++) {
+					var max = getRandomInt(1, worldSize.Y-1);
+					for (y = 0; y < worldSize.Y; y++) {
+
+						//map[x][y][z] = (y <= max);
+
+						//map[x][y][z] = false;
+
+						//if (y == 0)
+						//	map[x][y][z] = true;
+
+						//if(x == 0 || z == 0 || x == (worldSize.X-1) || z == (worldSize.Z-1)){
+							
+						//	map[x][y][z] = true;
+							
+						//}
+
+
+						map[x][y][z] = perlin3[x][y][z] >= 0.5;
+							
+						
+
+
+					}
+
+					//ap[x][0][z] = perlin2[x][z] >= 0.5;
+
+					distMap.push({
+					    X: x,
+					    Y: z,
+					    Dist: 0
+					});
+				}
+			}
+
+			$(window).keydown(function (e) {
+				switch (e.keyCode) {
+					case 65:
+					    angle -= 5;
+					    if (angle < 0)
+					        angle += 360;
+						DrawScene();
+						break;
+					case 68:
+					    angle += 5;
+					   
+					    if (angle >= 360)
+					        angle -= 360;
+						DrawScene();
+						break;
+					case 87:
+						if (vertRatio < 1.0) {
+							vertRatio += 0.1;
+							DrawScene();
+						}
+						break;
+					case 83:
+						if (vertRatio > 0.1) {
+							vertRatio -= 0.1;
+							DrawScene();
+						}
+						break;
+				}
+			});
+
+			$(window).on('swipe', function (e) {
+				var diff = e.swipestop.coords[0] - e.swipestart.coords[0];
+				if (diff > 0) {
+					angle -= 5;
+					if (angle < 0)
+						angle += 360;
+					DrawScene();
+				}
+				else {
+					angle += 5;
+
+					if (angle >= 360)
+						angle -= 360;
+					DrawScene();
+				}
+
+				//console.log(e);
+			});
+
+			DrawScene();
+		});
+
+
+		function DrawScene() {
+		    var camAngle = (angle + 270) % 360;
+		    $('#lblAngle').html(angle);
+		    $('#lblRatio').html(vertRatio);
+		    
+		    var drawTime = performance.now();
+
+		    ctx.fillStyle = '#f0f0f0';
+		    ctx.rect(0, 0, cv.width, cv.height);
+		    ctx.fill();
+
+		    var camPt = new Point(
+                (worldSize.X / 2) + (Math.cos(camAngle * RAD) * 250),
+                (worldSize.Z / 2) - (Math.sin(camAngle * RAD) * 250));
+		    //console.log(camPt);
+		    for (var i = 0; i < distMap.length; i++) {
+		        distMap[i].Dist = GetDistance(new Point(distMap[i].X + 0.5, distMap[i].Y + 0.5), camPt);
+		    }
+		    distMap.sort(function (a, b) { return (a.Dist < b.Dist) ? 1 : (a.Dist > b.Dist) ? -1 : 0; });
+
+		    var center = new Point(w / 2, h / 2 + 140);
+
+
+
+		    //2d diagonal of one voxel
+		    var d = Math.pow((voxelSize * voxelSize) + (voxelSize * voxelSize), 0.5);
+
+		    var ptBase = [];
+
+		    var minIdx = 5, minVal = 999;
+
+		    for (var theta = 0; theta < 360; theta += 90) {
+		        ptBase.push(new Point(
+				(Math.cos((angle + 135 + theta) * RAD) * d * 0.5),
+				((Math.sin((angle + 135 + theta) * RAD) * d * 0.5) * vertRatio)));
+		    }
+		    // 0 == x-neg
+		    // 1 == z-neg
+		    // 2 == x-pos
+		    // 3 == z-pos
+
+			var w1 = worldSize.X - 1,
+				y1=worldSize.Y-1,
+				z1 = worldSize.Z - 1;
+			var base = [], inc = [];
+
+			var vRatio = voxelSize * vertRatio;
+
+			for (var n = 0; n < distMap.length; n++) {
+		        var x = distMap[n].X, z = distMap[n].Y;
+
+		        var theta = GetAngle(new Point(0, 0), new Point(x - (w1 / 2), z - (z1 / 2))) / RAD;
+		        d = GetDistance(new Point(0, 0), new Point(x - (w1 / 2), z - (z1 / 2))) * voxelSize;
+
+		        var root = new Point(
+                    center.X + (Math.cos((angle + theta) * RAD) * d),
+                    center.Y + ((Math.sin((angle + theta) * RAD) * d) * vertRatio) //- (y * voxelSize * vertRatio)
+                    );
+
+		       
+
+
+		        for (var y = 0; y < worldSize.Y; y++) {
+
+		            if (map[x][y][z]) {
+		            	//base = [];
+		            	//inc = [];
+
+
+		                for (var i = 0; i < 4; i++) {
+		                	base[i] = (new Point(Math.round(root.X + ptBase[i].X), Math.round(root.Y + ptBase[i].Y - (y * vRatio))));
+		                	inc[i] = (new Point(Math.round(root.X + ptBase[i].X), Math.round(root.Y + ptBase[i].Y - ((y + 1.0) * vRatio))));
+		                }
+
+
+
+		                //x neg
+		                if ((angle > 180) && (x == 0 || (x > 0 && !map[x - 1][y][z]))) {
+		                    ctx.fillStyle = 'rgb(255,0,0)';
+		                    ctx.beginPath();
+		                    ctx.moveTo(base[0].X, base[0].Y);
+		                    ctx.lineTo(base[1].X, base[1].Y);
+		                    ctx.lineTo(inc[1].X, inc[1].Y);
+		                    ctx.lineTo(inc[0].X, inc[0].Y);
+		                    ctx.lineTo(base[0].X, base[0].Y);
+		                    ctx.fill();
+		                }
+
+		                //x pos
+		                if ((angle > 0 && angle < 180) && (x == w1 || (x < w1 && !map[x + 1][y][z]))) {
+		                    ctx.fillStyle = 'rgb(255, 127, 127)';
+		                    ctx.beginPath();
+		                    ctx.moveTo(base[2].X, base[2].Y);
+		                    ctx.lineTo(base[3].X, base[3].Y);
+		                    ctx.lineTo(inc[3].X, inc[3].Y);
+		                    ctx.lineTo(inc[2].X, inc[2].Y);
+		                    ctx.lineTo(base[2].X, base[2].Y);
+		                    ctx.fill();
+		                }
+
+		                //z neg
+		                if ((angle > 90 && angle < 270) && (z == 0 || (z > 0 && !map[x][y][z - 1]))) {
+		                    ctx.fillStyle = 'rgb(0,0,255)';
+		                    ctx.beginPath();
+		                    ctx.moveTo(base[1].X, base[1].Y);
+		                    ctx.lineTo(base[2].X, base[2].Y);
+		                    ctx.lineTo(inc[2].X, inc[2].Y);
+		                    ctx.lineTo(inc[1].X, inc[1].Y);
+		                    ctx.lineTo(base[1].X, base[1].Y);
+		                    ctx.fill();
+		                }
+
+		                //z pos
+		                if ((angle < 90 || angle > 270) && (z == z1 || (z < z1 && !map[x][y][z + 1]))) {
+		                    ctx.fillStyle = 'rgb(127,127,255)';
+		                    ctx.beginPath();
+		                    ctx.moveTo(base[3].X, base[3].Y);
+		                    ctx.lineTo(base[0].X, base[0].Y);
+		                    ctx.lineTo(inc[0].X, inc[0].Y);
+		                    ctx.lineTo(inc[3].X, inc[3].Y);
+		                    ctx.lineTo(base[3].X, base[3].Y);
+		                    ctx.fill();
+		                }
+
+		                if (y == y1 || (y < y1 && !map[x][y + 1][z])) {
+		                    ctx.fillStyle = '#cccccc';
+		                    ctx.beginPath();
+		                    ctx.moveTo(inc[0].X, inc[0].Y);
+		                    ctx.lineTo(inc[1].X, inc[1].Y);
+		                    ctx.lineTo(inc[2].X, inc[2].Y);
+		                    ctx.lineTo(inc[3].X, inc[3].Y);
+		                    ctx.lineTo(inc[0].X, inc[0].Y);
+		                    ctx.fill();
+		                }
+
+
+		            }
+
+		        }
+
+
+		    }
+
+			console.log(performance.now() - drawTime);
+
+
+		}
+
+        
+
+	</script>
+</body>
+</html>

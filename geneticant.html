@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Ant Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:800px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto;}
+		p {margin:10px 0;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+
+		#cv-container {width:600px; margin:0 auto;}
+		#cv {width:600px; height:600px; background-color:#000;}
+
+		#controls {float:left; width:250px; height:300px; padding:10px;}
+
+		#code {float:right; width:550px; height:300px; padding:10px;}
+		#txtRule {width:100%; height:250px; font-size:11px; font-family:monospace;}
+	</style>
+</head>
+<body>
+	<h1>Shifter's Ant Thing</h1>
+	<div id="cv-container">
+		<canvas id="cv" width="600" height="600"></canvas>
+	</div>
+	<div id="controls">
+		<h2>Controls</h2>
+		<p>
+			<button id="btnPlay" onclick="Play();">Play</button>
+			<button id="btnReset" onclick="Reset();">Reset</button>
+		</p>
+		<p>
+			Max generations (-1 for no limit)<br>
+			<input type="text" id="txtMaxGens" value="1000000" class="control">
+		</p>
+		<p>
+			Generations per frame<br>
+			<input type="text" id="txtFrameSteps" value="1000" class="control">
+		</p>
+		<p>
+			<label><input type="checkbox" id="cbStepColors" class="control" checked="checked">Color cells by steps?</label><br>
+			If disabled, will color by number of times hit
+		</p>
+	</div>	
+	<div id="code">
+		<h2>Rule</h2>
+		<textarea id="txtRule" class="control">LR</textarea>
+	</div>
+	<div style="clear:both;"></div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+			this.AddPoint = function (pt) {
+				this.X += pt.X;
+				this.Y += pt.Y;
+			};
+		}
+
+		var canvas, ctx, imageData, //canvas stuff
+			i, j, x, y, //temps
+			map, w, h, //map vars
+			running = false, totalGenerations = 0, maxGenerations = -1, frameSteps = 1000, tmrID, stepColor=true, //control vars
+			antPos, antDir = 0, rule = 'RLR', antStep = 0,   //ant vars
+			dirs = [
+				new Point(0, 1),
+				new Point(1, 0),
+				new Point(0, -1), 
+				new Point(-1, 0)
+			];
+
+		function Play() {
+			running = !running;
+			if (running) {
+				$('.control').attr('disabled','disabled');
+				maxGenerations = parseInt($('#txtMaxGens').val());
+				frameSteps = parseInt($('#txtFrameSteps').val());
+				stepColor = $('#cbStepColors').is(':checked');
+				rule = $('#txtRule').val();
+				StartLoop();
+				$('#btnPlay').html('Stop');
+			}
+			else {
+				$('.control').removeAttr('disabled');
+				$('#btnPlay').html('Play');
+			}
+		}
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+		function GetColor(step) {
+			return new Color(Math.floor((parseFloat(step) / parseFloat(rule.length-1)) * 255.0), 0, 0);
+		}
+
+		$(function () {
+
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			imageData = ctx.createImageData(w, h);
+			map = Create2DArray(w);
+
+			Reset();
+		});
+
+		function Reset() {
+
+			antPos = new Point(w / 2, h / 2);
+			antDir = 0;
+			antStep = 0;
+
+			for (y = 0; y < h; y++) {
+				for (x = 0; x < w; x++) {
+					map[x][y] = 0;
+					var index = (x + y * w) * 4;
+					imageData.data[index++] = 0;
+					imageData.data[index++] = 0;
+					imageData.data[index++] = 0;
+					imageData.data[index] = 255;
+
+				}
+			}
+
+
+			Draw();
+		}
+
+		function StartLoop() {
+			tmrID = setInterval(function () {
+				Calc();
+			}, 100);
+
+		}
+
+
+
+		function Calc() {
+			for (var i = 0; i < frameSteps; i++) {
+
+				if (rule.substr(map[antPos.X][antPos.Y] % rule.length, 1) == 'R') {
+					antDir++;
+					if (antDir == 4) antDir = 0;
+				}
+				else if (rule.substr(map[antPos.X][antPos.Y] % rule.length, 1) == 'L') {
+					antDir--;
+					if (antDir == -1) antDir = 3;
+				}
+
+
+
+				map[antPos.X][antPos.Y]++;
+				var col;
+
+				if(stepColor){
+					if (map[antPos.X][antPos.Y] == rule.length) map[antPos.X][antPos.Y] = 0;
+					col = GetColor(map[antPos.X][antPos.Y]);
+				}
+				else {
+					col = new Color(255, (map[antPos.X][antPos.Y] * 2) % 256, 0);
+				}
+				
+				var index = (antPos.X + antPos.Y * w) * 4;
+				imageData.data[index++] = col.R;
+				imageData.data[index++] = col.G;
+				imageData.data[index++] = col.B;				
+
+
+				antPos.AddPoint(dirs[antDir]);
+
+				if (antPos.X == w) antPos.X = 0;
+				else if (antPos.X == -1) antPos.X = w - 1;
+				if (antPos.Y == h) antPos.Y = 0;
+				else if (antPos.Y == -1) antPos.Y = h - 1;
+
+
+				antStep++;
+				if (antStep == rule.length) antStep = 0;
+
+				totalGenerations++;
+
+
+			}
+			var index = (antPos.X + antPos.Y * w) * 4;
+			imageData.data[index++] = 255;
+			imageData.data[index++] = 255;
+			imageData.data[index++] = 255;
+
+			Draw();
+
+			if ((totalGenerations > maxGenerations && maxGenerations != -1) || !running) {
+				clearTimeout(tmrID);
+				running = true;
+				Play();
+			}
+
+		}
+
+		function Draw() {
+			ctx.putImageData(imageData, 0, 0);
+		}
+
+	</script>
+</body>
+</html>

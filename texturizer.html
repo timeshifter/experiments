@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Shifter's Texturizer Thing</title>
+	<link rel="stylesheet" href="css/bootstrap.css">
+	<style type="text/css">
+		body {
+			background-color:#eee;
+		}
+	</style>
+</head>
+<body>
+	<form action="" id="form1" name="form1">
+	<div class="container">
+		<h2>Shifter's Texturizer Thing</h2>
+		<img src="" alt="" id="img1">
+		<br>
+		<input type="file" data-img="img1">
+	</div>
+	</form>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+		$(function() {
+
+			$('input[type="file"]').on('change', function() {
+				 var filename = document.form1.filesent.value;
+				  var Img = new Image();
+				  if (navigator.appName == "Netscape")
+				  {
+				    alert("Previews do not work in Netscape.");
+				  }
+				  else
+				  {
+				    Img.src = filename;
+				    document.images[0].src = Img.src;
+				  }
+			});
+		});
+	</script>
+</body>
+</html>

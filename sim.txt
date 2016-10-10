@@ -1,0 +1,27 @@
+
+Traits
+	Intelligence
+	Isolated | Curious
+	Aggressive | Friendly
+	Resourcefulness
+	Tech level
+
+
+Planet stats
+	Fertility
+	Population
+	Minerals
+	Tax rate
+
+
+Epochs
+	Prehistoric
+	Stone 
+	Bronze
+	Iron
+	Industrial
+	Information
+	Post-scarcity
+	Space
+
+

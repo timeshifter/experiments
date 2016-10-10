@@ -1,0 +1,249 @@
+<!doctype html>
+<html>
+<head>
+	<title>Shifter's Hexvolution Thing</title>
+	<link rel="stylesheet" href="css/bootstrap.css">
+	<style type="text/css">
+		body {
+			background-color:#eee;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Shifter's Hexvolution Thing</h1>
+		<div id="cv-container">
+			<canvas id="cv" width="1000" height="1000"></canvas>
+		</div>
+		<div class="row">
+			<div class="span6">
+				<h2>Info</h2>
+				<div class="input-append">
+					<input id="seed" name="seed" type="number" class="input-small">
+					<span id="random_seed" class="btn add-on"><i class="icon-refresh"></i></span>
+				</div>
+				<button class="btn btn-success" onclick="CreateMap();">Generate map</button>
+			</div>
+		</div>	
+	</div>
+
+
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript" src="perlin.js"></script>
+	<script type="text/javascript">
+
+		function GetRandomInt(min, max) {
+			return Math.floor(Math.random() * (max - min) + min);
+		}
+
+		function Distance2D(p1, p2) {
+			return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y)));
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Cell(pos) {
+			this.PixelX = (cellWidth / 2) + (pos.X * cellWidth);
+			this.PixelY = (cellHeight / (pos.X % 2 == 0 ? 2 : 1)) + (pos.Y * cellHeight);
+			this.SetHeight = function (ht, veg) {
+				this.Height = ht;
+				var type = 'Unknown', col = new Color(0, 0, 0);
+				var limits = [
+				0.15, //deep water
+				0.2,  //water
+				0.24,  //sand
+				0.65, //grass
+				1.0];
+				if (ht < limits[0]) {
+					type = 'Deep Water';
+					col = GetColorFromHex('00008b');
+				}
+				else if (ht < limits[1]) {
+					type = 'Shallow Water';
+					col = GetColorFromHex('0000ff');
+				}
+				else if (ht < limits[2]) {
+					type = 'Sand';
+					col = GetColorFromHex('d2b48c');
+				}
+				else if (ht < limits[3]) {
+					type = 'Grass';
+
+					//veg = (Math.random() + 0.333) < PerlinNoise.CosineInterpolate(0, 1, veg) ? 1 : 0;	
+					if (veg == 1)
+						col = new Color(64, 196, 64);
+					else
+						col = GetColorFromHex('90ee90');
+					col = GetColorGradient(
+						new GetColorFromHex('90ee90'),
+						new Color(32, 196, 21),
+						veg / 3
+					);
+				}
+				else {
+					type = 'Mountain';
+					col = GetColorGradient(
+					new Color(100, 100, 100),
+					new Color(255, 255, 255),
+					(ht - limits[3]) / (limits[4] - limits[3])
+					);
+				}
+				this.Vegetation = veg;
+				this.Type = type;
+				this.Color = col;
+
+			};
+		}
+
+		function GetColorFromHex(hex) {
+			hex = hex.replace('#', '');
+			return new Color(
+				parseInt(hex.substring(0, 2), 16),
+				parseInt(hex.substring(2, 4), 16),
+				parseInt(hex.substring(4, 6), 16)
+				);
+		}
+
+		function GetColorGradient(min, max, v) {
+			return new Color(
+				min.R + Math.floor((max.R - min.R) * v),
+				min.G + Math.floor((max.G - min.G) * v),
+				min.B + Math.floor((max.B - min.B) * v)
+				);
+		}
+
+		var HexPerimiter = [],
+			HexGridPerimiter=[],
+			cellWidth = 0,
+			cellHeight = 0;
+
+		var stage;
+		var i = 0,
+			j = 0,
+			selectedIdx = -1;
+
+		var worldSize = new Point(),
+			worldCellSize = new Point(),
+			world = [];
+		var selecting = false,
+			running = false;
+
+		var canvas, ctx, cellSize=19;
+
+
+
+		$(function () {
+			worldSize = new Point($('#cv-container').width(), 800);
+			$('#cv').attr('width', worldSize.X).attr('height', worldSize.Y);
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+
+			var r = (cellSize / 2), rad = Math.PI / 180.0;
+			HexGridPerimiter.push(new Point(r, 0));
+			HexGridPerimiter.push(new Point(Math.cos(60.0 * rad) * r, Math.sin(60 * rad) * r));
+			HexGridPerimiter.push(new Point(Math.cos(120.0 * rad) * r, Math.sin(120 * rad) * r));
+			HexGridPerimiter.push(new Point(-r, 0));
+			HexGridPerimiter.push(new Point(Math.cos(240.0 * rad) * r, Math.sin(240 * rad) * r));
+			HexGridPerimiter.push(new Point(Math.cos(300.0 * rad) * r, Math.sin(300 * rad) * r));
+
+			var r = ((cellSize - 0.5) / 2);
+			HexPerimiter.push(new Point(r, 0));
+			HexPerimiter.push(new Point(Math.cos(60.0 * rad) * r, Math.sin(60 * rad) * r));
+			HexPerimiter.push(new Point(Math.cos(120.0 * rad) * r, Math.sin(120 * rad) * r));
+			HexPerimiter.push(new Point(-r, 0));
+			HexPerimiter.push(new Point(Math.cos(240.0 * rad) * r, Math.sin(240 * rad) * r));
+			HexPerimiter.push(new Point(Math.cos(300.0 * rad) * r, Math.sin(300 * rad) * r));
+
+			$('#random_seed').click(function () {
+				$('#seed').val(GetRandomInt(0, 999999999));
+			}).click();
+
+
+			cellWidth = cellSize * 0.75;
+			cellHeight = (cellSize / 2) * Math.sqrt(3);
+
+			worldCellSize = new Point(Math.floor(worldSize.X / cellWidth) - 1, Math.floor((worldSize.Y - (cellHeight / 2)) / cellHeight));
+			CreateMap();
+		});
+
+		function CreateMap() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			var perlinSize = new Point(Math.floor(worldSize.X / 4), Math.floor(worldSize.Y / 4));
+			world = Create2DArray(worldCellSize.Y);
+			var seed = parseInt($('#seed').val(), 10);
+			var ht1 = PerlinNoise.GetNoiseMap(perlinSize.X, perlinSize.Y, 5, 0.5, 5, seed),
+				ht2 = PerlinNoise.GetNoiseMap(perlinSize.X, perlinSize.Y, 5, 0.5, 5, seed + 13),
+				veg = PerlinNoise.GetNoiseMap(perlinSize.X, perlinSize.Y, 5, 0.5, 4, seed + 27);
+			for (i = 0; i < worldCellSize.X; i++) {
+				for (j = 0; j < worldCellSize.Y; j++) {
+
+					DrawHex(HexGridPerimiter, '#444444', new Point(i, j));
+				}
+			}
+			for (i = 0; i < worldCellSize.X; i++) {
+				for (j = 0; j < worldCellSize.Y; j++) {
+					//DrawHex(HexGridPerimiter, '#a0a0a0', new Point(i, j));
+					world[j][i] = new Cell(new Point(i, j));
+					var pixelCoord = new Point(Math.floor(world[j][i].PixelX / 4), Math.floor(world[j][i].PixelY / 4));
+
+					var ht = ht1[pixelCoord.Y][pixelCoord.X] / 2.0;
+					if (ht2[pixelCoord.Y][pixelCoord.X] >= 0.4 && ht >= 0.175) {
+						//ht+=PerlinNoise.CosineInterpolate(0.0, 0.5, ((ht2[y][x]/2.0)-0.2)/0.3);
+						ht += ht2[pixelCoord.Y][pixelCoord.X] / 2.0;
+					}
+					world[j][i].SetHeight(ht, 0);//(PerlinNoise.RNG.next() + 0.333) < PerlinNoise.CosineInterpolate(0, 1, veg[pixelCoord.Y][pixelCoord.X]) ? Math.floor(PerlinNoise.RNG.next() * 2) + 2 : 0);
+
+					FillHex(HexPerimiter, 'rgb(' + world[j][i].Color.R + ',' + world[j][i].Color.G + ',' + world[j][i].Color.B + ')', new Point(i, j));
+				}
+			}
+		}
+
+		function DrawHex(perim, col, pos) {
+			var xStart = cellSize / 2,
+				yStart = cellHeight / (pos.X % 2 == 0 ? 2 : 1);
+
+			ctx.beginPath();
+			ctx.moveTo(perim[0].X + (pos.X * cellWidth) + xStart, perim[0].Y + (pos.Y * cellHeight) + yStart);
+			for (var i = 1; i < 6; i++) {
+				ctx.lineTo(perim[i].X + (pos.X * cellWidth) + xStart, perim[i].Y + (pos.Y * cellHeight) + yStart);
+			}
+			ctx.closePath();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = col;
+			ctx.stroke();
+		}
+
+		function FillHex(perim, col, pos) {
+			var xStart = cellSize / 2,
+				yStart = cellHeight / (pos.X % 2 == 0 ? 2 : 1);
+
+			ctx.beginPath();
+			ctx.moveTo(perim[0].X + (pos.X * cellWidth) + xStart, perim[0].Y + (pos.Y * cellHeight) + yStart);
+			for (var i = 1; i < 6; i++) {
+				ctx.lineTo(perim[i].X + (pos.X * cellWidth) + xStart, perim[i].Y + (pos.Y * cellHeight) + yStart);
+			}
+			ctx.closePath();
+			//ctx.lineWidth = 1;
+			ctx.fillStyle = col;
+			ctx.fill();
+		}
+
+	</script>
+</body>
+</html>

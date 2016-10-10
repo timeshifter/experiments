@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Shifter's Fire Thing</title>
+	<link rel="stylesheet" type="text/css" href="reset.css">
+	<style type="text/css">
+		*, *:before, *:after {-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; font-family:Arial;}
+		html {background-color:#eee; width:100%; height:100%;}
+		body {width:800px; min-height:100%; background-color:#fff; box-shadow: 0 0 10px #666; margin:0 auto; padding-bottom:100px;}
+		h1 {font-size:24px; padding:10px 0; text-align:center;}
+		h2 {font-size:18px; padding:5px 0;}
+		ul, li {list-style:none;}
+
+		p {line-height:24px;}
+
+		.bg {
+			padding-bottom: 10px;
+			background-color: lightblue;
+		}
+
+		#cv {width:800px; height:550px; background-color:#000;}
+
+		#controls {float:left; width:350px; height:300px; padding:10px; }
+
+		#code {float:right; width:450px; height:300px; padding:10px;}
+		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
+
+		#colors a {font-weight:bold; cursor:pointer;}
+
+		input.hex {width:80px;}
+		input.rgb {width:60px;}
+	</style>
+</head>
+<body>
+	<h1>
+		Shifter's Fire Thing
+	</h1>
+	<div class="bg">
+	<canvas id="cv" width="800" height="550">
+	</canvas>
+	</div>
+	<div id="controls">
+		<p>
+			<button id="btnPlay" onclick="Play();">Play</button> 
+			<button id="btnGenerate" onclick="Generate();">Regenerate</button> 
+			<button id="btnStep" onclick="Step();">Step</button>
+		</p>
+		<p>FPS: <label id="lblFPS"></label></p>
+
+	</div>
+	<div id="code">
+
+	</div>
+	<div style="clear: both;">
+	</div>
+	<script type="text/javascript" src="jquery-1.7.2.js"></script>
+	<script type="text/javascript">
+
+		function Create2DArray(rows) {
+			var arr = [];
+			for (var i = 0; i < rows; i++)
+				arr[i] = [];
+			return arr;
+		}
+
+		function Color(r, g, b) {
+			this.R = r;
+			this.G = g;
+			this.B = b;
+		}
+
+		function Point(x, y) {
+			this.X = x;
+			this.Y = y;
+		}
+
+		function GetColorFromHex(hex) {
+			hex = hex.replace('#', '');
+			console.log(hex);
+			return new Color(
+				parseInt(hex.substring(0, 2), 16),
+				parseInt(hex.substring(2, 4), 16),
+				parseInt(hex.substring(4, 6), 16)
+				);
+		}
+
+		var canvas, ctx, w, h, imageData, i, j, x, y, map, running = false, sixtyConst = 1000.0/60.0, FPS=0;
+
+
+		var sw = new Date();
+
+		var colors = [
+			new Color(0, 0, 0),
+			new Color(200, 0, 0),
+			new Color(255, 127, 0),
+			new Color(255, 255, 0),
+			new Color(255,255,255)
+		],
+		probabilities = [
+			0.0,
+			0.25,
+			0.4,
+			0.75
+		];
+
+		function GetHashParam(param) {
+			var ret = '';
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					var parts = params[i].split('=');
+					if (parts[0] == param)
+						ret = parts[1];
+				}
+			}
+			return ret;
+		}
+
+		function HashParamExists(param) {
+			var ret = false;
+			if (window.location.hash) {
+				var i = 0;
+				var hash = window.location.href.split('#')[1];
+				var params = hash.split('&');
+				for (i = 0; i < params.length; i++) {
+					if (params[i].split('=')[0] == param)
+						ret = true;
+				}
+			}
+			return ret;
+		}
+
+
+		$(function () {
+			canvas = document.getElementById('cv');
+			ctx = canvas.getContext('2d');
+
+			w = $('#cv').width();
+			h = $('#cv').height();
+			imageData = ctx.createImageData(w, h);
+			map = Create2DArray(w);
+
+			for (y = 0; y < h; y++) {
+				for (x = 0; x < w; x++) {
+					map[x][y] = 0;
+				}
+			}
+
+			/*
+			if (HashParamExists('its'))
+				$('#txtIterations').val(GetHashParam('its'));
+			if (HashParamExists('int'))
+				$('#txtInterval').val(GetHashParam('int'));
+			if (HashParamExists('z'))
+				$('#txtZoom').val(GetHashParam('z'));
+			if (HashParamExists('x'))
+				$('#txtCenterX').val(GetHashParam('x'));
+			if (HashParamExists('y'))
+				$('#txtCenterY').val(GetHashParam('y'));
+			if (HashParamExists('c')) {
+				var cols = GetHashParam('c').split(',');
+				$('#colors li').not('._add').remove();
+				for (var i = 0; i < cols.length; i++) {
+					NewColor();
+					var c = '#' + cols[i];
+					$('#colors li._add').prev().find('input').val(c);
+				}
+			}
+			*/
+			setInterval(function () {
+				$('#lblFPS').html(FPS);
+				FPS = 0;
+			}, 1000);
+		});
+
+
+		function Play() {
+			running = !running;
+			$('#btnPlay').html(running ? 'Pause' : 'Play');
+			if (running) {
+				Step();
+			}
+		}
+
+		function Generate() {
+
+			for (y = h - 1; y >= 0; y--) {
+				for (x = 0; x < w; x++) {
+					var ct = 0;
+					if (y == h - 1) {
+						ct = 3;
+					}
+					else {
+						if (x > 0)
+							if (map[x - 1][y + 1]>0)
+								ct++;
+
+						if (map[x][y + 1]>0)
+							ct++;
+
+						if (x < (w - 1))
+							if (map[x + 1][y + 1]>0)
+								ct++;
+
+
+						if (Math.random() > probabilities[ct]) {
+							ct = 0;
+
+						}
+						else {
+							ct++;
+						}
+					}
+
+					
+					
+					map[x][y] = ct;
+					//if (!map[x][y])
+					//	ct = 0;
+
+					var index = (x + y * w) * 4;
+					imageData.data[index++] = colors[ct].R;
+					imageData.data[index++] = colors[ct].G;
+					imageData.data[index++] = colors[ct].B;
+					imageData.data[index] = 255;
+
+
+				}
+			}
+
+			ctx.putImageData(imageData, 0, 0);
+
+		}
+
+
+		function Step() {
+			for (y = h - 2; y >= 0; y--) {
+				for (x = 0; x < w; x++) {
+					if (map[x][y] > 0)
+						map[x][y]--;
+				}
+			}
+
+			for (y = h - 2; y >= 0; y--) {
+				for (x = 0; x < w; x++) {
+					var ct = 0;
+
+					if (x > 0)
+						if (map[x - 1][y + 1] > 0)
+							ct++;
+
+					if (map[x][y + 1] > 0)
+						ct++;
+
+					if (x < (w - 1))
+						if (map[x + 1][y + 1] > 0)
+							ct++;
+
+
+
+					if (Math.random() > probabilities[ct]) {
+						if (ct > 0)
+							ct--;
+					}
+					else {
+						ct++;
+					}
+
+					map[x][y] = ct;
+
+					var index = (x + y * w) * 4;
+					imageData.data[index++] = colors[ct].R;
+					imageData.data[index++] = colors[ct].G;
+					imageData.data[index++] = colors[ct].B;
+					imageData.data[index] = 255;
+
+
+				}
+				ctx.putImageData(imageData, 0, 0);
+
+			}
+
+			ctx.putImageData(imageData, 0, 0);
+
+			if (running) {
+
+				setTimeout(Step, sixtyConst);
+				FPS++;
+
+			}
+			else {
+				//$('#btnPlay').html('Play');
+				//$('#lblTime').html(((new Date()) - sw) / 1000);
+				//map = null;
+			}
+
+		}
+
+		
+
+	</script>
+</body>
+</html>

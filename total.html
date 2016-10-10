@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Total it!</title>
+</head>
+<body>
+	<p>Drag the link into your bookmarks toolbar.</p>
+	<p><a href="javascript:var start = prompt('Starting block\nLeave blank for all blocks on the page'),end = prompt('Ending block\nLeave blank for all blocks after the specified start'),total = 0.0;start = (start == '' ? 0 : parseInt(start, 10));end = (end == '' ? 0 : parseInt(end, 10));$($('table')[1]).find('tr').each(function(idx) {if(idx>0) {var b = parseInt($(this).find('a').html(), 10);if($(this).find('span.label').html() != 'Orphaned' && b >= start && (b <= end || end == 0))total += parseFloat($(this).find('font').html());}});alert(total);">Total it!</a></p>
+	<p>Then go <a href="https://doge.rapidhash.net/index.php?page=account&action=transactions&filter[type]=Credit&filter[status]=">here</a> and click the bookmarklet, then follow instructions.</p>
+</body>
+</html>
