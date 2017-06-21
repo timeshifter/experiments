@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<title>Anno 2070 Consumption Calculator</title>
+		<script type="text/javascript" src="jquery-1.7.2.js"></script>
+		<script type="text/javascript" src="prettyprint.js"></script>
+		<script type="text/javascript" src="consumption.js"></script>
+		<script type="text/javascript" src="jquery.tablesorter.js"></script>
+		<script type="text/javascript">
+			
+			function print() {
+				ConsumptionCalc.Ecos.Residency.Houses = parseInt($('#txtEco').val(), 10);
+				ConsumptionCalc.Techs.Residency.Houses = parseInt($('#txtTech').val(), 10);
+				ConsumptionCalc.Tycoons.Residency.Houses = parseInt($('#txtTycoon').val(), 10);
+				ConsumptionCalc.Ecos.Residency.Max_Level = parseInt($('#ddlEco').val(), 10);
+				ConsumptionCalc.Techs.Residency.Max_Level = parseInt($('#ddlTech').val(), 10);
+				ConsumptionCalc.Tycoons.Residency.Max_Level = parseInt($('#ddlTycoon').val(), 10);
+				
+				$('#table').html( prettyPrint($('#cbShowAll').is(':checked') ? ConsumptionCalc.Totals : ConsumptionCalc, {expanded: true, maxDepth: 10}));
+				$('table').each(function() {
+					$(this).tablesorter();
+				});
+			}
+		</script>
+	</head>
+	<body>
+		<table>
+			<thead>
+				<tr>
+					<th>Class</th>
+					<th>Houses</th>
+					<th>Max level</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>Eco</td>
+					<td><input type="text" id="txtEco" value="200" /></td>
+					<td><select id="ddlEco"><option value="1">Worker</option><option value="2">Employee</option><option value="3">Engineer</option><option value="4" selected>Executive</option></select></td>
+				</tr>
+				<tr>
+					<td>Tycoon</td>
+					<td><input type="text" id="txtTycoon" value="200" /></td>
+					<td><select id="ddlTycoon"><option value="1">Worker</option><option value="2">Employee</option><option value="3">Engineer</option><option value="4" selected>Executive</option></select></td>
+				</tr>
+				<tr>
+					<td>Tech</td>
+					<td><input type="text" id="txtTech" value="100" /></td>
+					<td><select id="ddlTech"><option value="1">Assistant</option><option value="2">Researcher</option><option value="3" selected>Genius</option></select></td>
+				</tr>
+				<tr>
+					<td colspan="3"><hr/></td>
+				</tr>
+				<tr>
+					<td>Eco boost</td>
+					<td colspan="2"><input type="text" id="txtEcoboost" value="100" /></td>
+			</tbody>
+		</table>
+		<input id="cbShowAll" type="checkbox" /><label for="cbShowAll">Only show totals</label><br />
+		<input type="button" onclick="print();" value="Calculate" />
+		<div id="table"></div>
+	</body>
+</html>
