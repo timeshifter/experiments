@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
@@ -295,9 +295,12 @@
 			DrawTerrain();
 			
 			if (running) {
-				var diff = window.performance.now() - tickCount;
+                var diff = window.performance.now() - tickCount;
+
+                
+
 				$('#lblFPS').html((1000 / diff).toFixed(2));
-				setTimeout(GameLoop, 10);
+				setTimeout(GameLoop, 1);
 			}
 			tickCount = window.performance.now();
 		}
