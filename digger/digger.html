@@ -50,10 +50,27 @@
         }
 
         #controls {
-           
+           position:relative;
             padding: 10px;
         }
+        .minimap {
+            margin: 10px;
+            border: ridge 2px #ccc;
+            position: relative;
+        }
 
+        #minimap {
+            width: 100%;
+        }
+
+        #minimap_overlay {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 0;
+            background-color: rgba(255,255,255,0.3);
+            border: solid 1px yellow;
+        }
         #loader {
             background-color: #f0f0f0;
             border-radius: 4px;
@@ -242,18 +259,7 @@
                 sprites.push(sp3);
                 */
 
-                ct2.fillStyle = 'green';
-                for (x = 0; x < worldCellSize.X; x++) {
-                    for (y = 0; y < worldCellSize.Y; y++) {
-                        if (tileMap[Math.floor(x / 4)][Math.floor(y / 4)] == 0) {
-                            if (Math.random() * 3 < vegMap[y][x]) {
-                                var sp = new Sprite(4, x, y);
-                                sprites.push(sp);
-                                ct2.fillRect(x, y, 1, 1);
-                            }
-                        }
-                    }
-                }
+
 
                 $('#minimap').on('click', function (e) {
                     var xOff = e.offsetX / $('#minimap').width(),
