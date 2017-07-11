@@ -106,7 +106,7 @@
             <p>FPS: <label id="lblFPS"></label></p>
             <p>Draws: <label id="lblDraws"></label></p>
             <p>Zoom: <label id="lblZoom"></label></p>
-            <p>Game loop: <button id="btnPlay">Start</button></p>
+            <p>Game loop: <button id="btnPlay">Stop</button></p>
        </div>
     </div>
 
@@ -144,7 +144,7 @@
                 dragVelocity = new Point(0, 0),
                 zoomLevel = 1.0;
 
-            var running = false,
+            var running = true,
                 tickCount = 0,
                 sixtyConst = 1000 / 60;
 
