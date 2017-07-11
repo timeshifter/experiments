@@ -23,10 +23,20 @@ function Point(x,y) {
 
 function Sprite(imageId, cellX, cellY) {
 	this.ImageID = imageId;
-	this.X = (cellX * 25) + 12;
-	this.Y = (cellY * 25) + 12;
+    this.X = (cellX * tileSize) + 16;
+    this.Y = (cellY * tileSize) + 16;
 	this.CellX = cellX;
-	this.CellY = cellY;
-	this.DrawX = (cellX * 25) - Math.floor((tiles[this.ImageID].width / 2) - 12);
-	this.DrawY = (cellY * 25) + (25 - tiles[this.ImageID].height);
+    this.CellY = cellY;
+    this.tileSize = tileSize;
+   // SetDrawPos();
+    this.DrawX = (cellX * tileSize);// - Math.floor((tiles[this.ImageID].width / 2) - 16);
+    this.DrawY = (cellY * tileSize);// + (tileSize - tiles[this.ImageID].height);
+
+    this.SetDrawPos = function () {
+        this.X = (this.CellX * tileSize) + 16;
+        this.Y = (this.CellY * tileSize) + 16;
+        this.DrawX = (this.CellX * tileSize);// - Math.floor((tiles[this.ImageID].width / 2) - 16);
+        this.DrawY = (this.CellY * tileSize);// + (tileSize - tiles[this.ImageID].height);
+    }
 }
+
