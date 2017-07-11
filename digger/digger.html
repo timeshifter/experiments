@@ -107,6 +107,8 @@
             <p>Draws: <label id="lblDraws"></label></p>
             <p>Zoom: <label id="lblZoom"></label></p>
             <p>Game loop: <button id="btnPlay">Stop</button></p>
+            <p>Origin: <label id="lblOrigin"></label></p>
+            <p>Mouse: <label id="lblMouse"></label></p>
        </div>
     </div>
 
@@ -116,15 +118,15 @@
 
 
     <script src="../jquery-2.1.4.min.js"></script>
-    <script src="objects.js"></script>
-
+    <script src="js/objects.js"></script>
+    <script src="js/utils.js"></script>
         <script>
             var images = [
-                'surface.gif',
-                'sky.gif',
-                'ug-tile2.gif',
-                'drill.gif',
-                'ug-empty.gif'
+                'img/surface.gif',
+                'img/sky.gif',
+                'img/ug-tile2.gif',
+                'img/drill.gif',
+                'img/ug-empty.gif'
             ];
 
             var tiles = [],
@@ -186,57 +188,87 @@
                 }).on('contextmenu', function () {
                     return false;
                 }).on('mousewheel', function (e) {
+
+
+                    var originalCenter = new Point(
+                        ((origin.X - (windowSize.X / 2)) / zoomLevel) ,
+                        ((origin.Y - (windowSize.Y / 2)) / zoomLevel) 
+                    );
+
+                    console.log(originalCenter);
+
+
                     if (e.originalEvent.wheelDelta < 0) { //wheel down
-                        if (zoomLevel > 1.0)
-                            zoomLevel--;
-                        else if(zoomLevel>0.1)
+
+                        if (zoomLevel > 0.1) {
                             zoomLevel -= 0.1;
+                            
+                        }
                     }
                     else { //wheel up
-                        if (zoomLevel >= 1.0)
-                            zoomLevel++;
-                        else
-                            zoomLevel += 0.1;
-                    }
+
+                        zoomLevel += 0.1;
+                        //origin.X -= tileSize*2;
+                        //origin.Y -= tileSize*2;
+                        }
+
+
+                    origin.X = (originalCenter.X * zoomLevel) + (windowSize.X / 2);
+                    origin.Y = (originalCenter.Y * zoomLevel) + (windowSize.Y / 2);
                     zoomLevel = Math.round(zoomLevel * 10) / 10;
+                    ConstrainCamera();
                     $('#lblZoom').html(zoomLevel);
                     return false;
                 });
 
-                $(window).on('mouseup', function () {
+                $(window).on('contextmenu', function () {
+                    return false;
+                })
+                    .on('mouseup', function () {
                     dragging = false;
                     $('html').css('cursor', 'default');
                 }).on('mousemove', function (e) {
+
+                    //console.log(e);
                     if (lastMousePos != undefined && dragging) {
-                        origin = new Point(origin.X + (e.pageX - lastMousePos.X), origin.Y + (e.pageY - lastMousePos.Y));
-                        dragVelocity = new Point(e.pageX - lastMousePos.X, e.pageY - lastMousePos.Y);
+                        origin = new Point(
+                            origin.X + (e.pageX - cv.offsetLeft - lastMousePos.X),
+                            origin.Y + (e.pageY - cv.offsetTop - lastMousePos.Y)
+                        );
+                        //dragVelocity = new Point(e.pageX - lastMousePos.X, e.pageY - lastMousePos.Y);
                         ConstrainCamera();
 
                         if (!running) {
                             DrawTerrain();
                         }
                     }
-                    lastMousePos = new Point(e.pageX, e.pageY);
-                    }).on('keydown', function (e) {
-                  
-                        switch (e.keyCode) {
-                            case 87: // W
-                                sprites[0].CellY--;
-                                sprites[0].SetDrawPos();
-                                break;
-                            case 65: // A
-                                sprites[0].CellX--;
-                                sprites[0].SetDrawPos();
-                                break;
-                            case 83: // S
-                                sprites[0].CellY++;
-                                sprites[0].SetDrawPos();
-                                break;
-                            case 68: // D
-                                sprites[0].CellX++;
-                                sprites[0].SetDrawPos();
-                                break;
-                        }
+                    lastMousePos = new Point(e.pageX - cv.offsetLeft, e.pageY - cv.offsetTop);
+                    $('#lblOrigin').html('{0}, {1}'.format(origin.X, origin.Y));
+                    $('#lblMouse').html('{0}, {1}'.format(lastMousePos.X, lastMousePos.Y));
+
+
+
+
+                }).on('keydown', function (e) {
+
+                    switch (e.keyCode) {
+                        case 87: // W
+                            sprites[0].CellY--;
+                            sprites[0].SetDrawPos();
+                            break;
+                        case 65: // A
+                            sprites[0].CellX--;
+                            sprites[0].SetDrawPos();
+                            break;
+                        case 83: // S
+                            sprites[0].CellY++;
+                            sprites[0].SetDrawPos();
+                            break;
+                        case 68: // D
+                            sprites[0].CellX++;
+                            sprites[0].SetDrawPos();
+                            break;
+                    }
                     //console.log(e.keyCode);
                 });
 
@@ -253,7 +285,7 @@
                     }
                 });
                 $('#lblZoom').html(zoomLevel);
-              
+
 
                 tileMap = Create2DArray(worldSize.X);
                 for (x = 0; x < worldSize.X; x++) {
@@ -273,10 +305,10 @@
 
                         ct2.fillStyle =
                             tileMap[x][y] == 0 ? 'lightgreen' :
-                            tileMap[x][y] == 1 ? 'blue' :
-                                tileMap[x][y] == 2 ? '#a06416' :
-                                    tileMap[x][y] == 4 ? '#5b390c' :
-                                    'fail';
+                                tileMap[x][y] == 1 ? 'blue' :
+                                    tileMap[x][y] == 2 ? '#a06416' :
+                                        tileMap[x][y] == 4 ? '#5b390c' :
+                                            'fail';
 
                         ct2.fillRect(x * 4, y * 4, 4, 4);
                     }
@@ -304,8 +336,8 @@
                     var xOff = e.offsetX / $('#minimap').width(),
                         yOff = e.offsetY / $('#minimap').height();
                     origin = new Point(
-                        Math.floor(-1 * ((worldPixelSize.X * xOff) - (windowSize.X / 2))),
-                        Math.floor(-1 * ((worldPixelSize.Y * yOff) - (windowSize.Y / 2))));
+                        Math.floor(-1 * (((worldPixelSize.X * zoomLevel) * xOff) - (windowSize.X / 2))),
+                        Math.floor(-1 * (((worldPixelSize.Y * zoomLevel) * yOff) - (windowSize.Y / 2))));
                     ConstrainCamera();
                     DrawTerrain();
                 });
@@ -337,24 +369,34 @@
                 tickCount = window.performance.now();
             }
 
+
             function ConstrainCamera() {
-                if (origin.X > 0) {
+                if (origin.X > 0 || (worldPixelSize.X * zoomLevel < windowSize.X)) {
                     origin.X = 0;
                 }
-                else if (origin.X < windowSize.X - worldPixelSize.X) {
-                    origin.X = windowSize.X - worldPixelSize.X;
+                else if (origin.X < windowSize.X - (worldPixelSize.X * zoomLevel) ) {
+                    origin.X = windowSize.X - (worldPixelSize.X * zoomLevel);
                 }
 
-                if (origin.Y > 0) {
+
+                if (origin.Y > 0 || (worldPixelSize.Y * zoomLevel < windowSize.Y)) {
                     origin.Y = 0;
                 }
-                else if (origin.Y < windowSize.Y - worldPixelSize.Y) {
-                    origin.Y = windowSize.Y - worldPixelSize.Y;
+                else if (origin.Y < windowSize.Y - (worldPixelSize.Y * zoomLevel)) {
+                    origin.Y = windowSize.Y - (worldPixelSize.Y * zoomLevel);
                 }
+                
 
-                $('#minimap_overlay').css('left', ((origin.X / worldPixelSize.X) * -100) + '%')
-                    .css('top', ((origin.Y / worldPixelSize.Y) * -100) + '%');
+
+                $('#minimap_overlay').css('left', ((origin.X / (worldPixelSize.X*zoomLevel)) * -100) + '%')
+                    .css('top', ((origin.Y / (worldPixelSize.Y * zoomLevel)) * -100) + '%');
+
+                $('#minimap_overlay').css('width', ((windowSize.X / (worldPixelSize.X * zoomLevel)) * 100) + '%')
+                    .css('height', ((windowSize.Y / (worldPixelSize.Y * zoomLevel)) * 100) + '%');
             }
+
+
+
 
             function DrawTerrain() {
                 dt = window.performance.now();

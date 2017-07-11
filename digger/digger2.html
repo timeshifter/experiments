@@ -1,0 +1,343 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Shifter's Digger Thing</title>
+    <link rel="stylesheet" type="text/css" href="../reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 1280px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        #cv-container {
+            width: 1280px;
+            margin: 0 auto;
+        }
+
+        #cv {
+            background-color: #000;
+        }
+
+        #controls {
+            position: relative;
+            padding: 10px;
+        }
+
+        .minimap {
+            margin: 10px;
+            border: ridge 2px #ccc;
+            position: relative;
+        }
+
+        #minimap {
+            width: 100%;
+        }
+
+        #minimap_overlay {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            top: 0;
+            background-color: rgba(255,255,255,0.3);
+            border: solid 1px yellow;
+        }
+
+        #loader {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #333;
+            text-align: center;
+            position: fixed;
+            width: 250px;
+            left: 50%;
+            top: 300px;
+            margin-left: -125px;
+            margin-top: -50px;
+            font-size: 2.0em;
+            font-weight: bold;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shifter's Digger Thing</h1>
+    <div id="cv-container">
+        <canvas id="cv" width="1280" height="720"></canvas>
+        <div id="loader">Loading...</div>
+    </div>
+
+    <div id="controls">
+        <div class="minimap" style="float:right;">
+            <canvas id="minimap"></canvas>
+            <div id="minimap_overlay"></div>
+        </div>
+        <div class="panel" style="float:left;">
+            <p>Time to draw: <label id="lblTimeToDraw"></label></p>
+            <p>FPS: <label id="lblFPS"></label></p>
+            <p>Draws: <label id="lblDraws"></label></p>
+            <p>Zoom: <label id="lblZoom"></label></p>
+            <p>Game loop: <button id="btnPlay">Stop</button></p>
+            <p>Origin: <label id="lblOrigin"></label></p>
+        </div>
+    </div>
+
+    <script src="../jquery-2.1.4.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/objects.js"></script>
+    <script src="js/images.js"></script>
+    <script src="js/camera.js"></script>
+
+    <script>
+
+        var
+            viewportSize
+            , worldSize = new Point(100, 200)
+            ,world
+            , worldPixelSize
+            , tileSize = 32
+            , zoomLevel=1
+            , camera
+            , images
+            , loadedCt = 0
+            , origin = new Point(0, 0)
+            , running = false
+            , lastMousePos
+            ,dragging=false
+            ;
+
+
+
+
+        $(function() {
+            viewportSize = new Point(cv.width, cv.height);
+
+            worldPixelSize = new Point(worldSize.X * tileSize, worldSize.Y * tileSize);
+
+            camera = new Camera(viewportSize);
+
+            ctx = cv.getContext('2d');
+
+            ctx.imageSmoothingEnabled = false;
+
+
+            GenerateTerrain();
+
+       
+
+            $('#cv').on('mousedown', function (e) {
+                if (e.button == 2) {
+                    camera.Dragging = true;
+                    $('html').css('cursor', 'move');
+                }
+                return false;
+            }).on('contextmenu', function () {
+                return false;
+                }).on('mousewheel', function (e) {
+                    camera.OnZoom(e);
+                    $('#lblZoom').html(camera.ZoomLevel);
+                    return false;
+                });
+
+
+
+
+            $(window).on('mouseup', function () {
+                camera.Dragging = false;
+                $('html').css('cursor', 'default');
+            }).on('mousemove', function (e) {
+                camera.OnMouseMove(e);
+                if (!running) {
+                    DrawTerrain();
+                }
+            }).on('keydown', function (e) {
+
+                switch (e.keyCode) {
+                    case 87: // W
+                        sprites[0].CellY--;
+                        sprites[0].SetDrawPos();
+                        break;
+                    case 65: // A
+                        sprites[0].CellX--;
+                        sprites[0].SetDrawPos();
+                        break;
+                    case 83: // S
+                        sprites[0].CellY++;
+                        sprites[0].SetDrawPos();
+                        break;
+                    case 68: // D
+                        sprites[0].CellX++;
+                        sprites[0].SetDrawPos();
+                        break;
+                }
+                //console.log(e.keyCode);
+            });
+
+            $('#btnPlay').on('click', function () {
+                if (running) {
+                    running = false;
+                    $(this).html('Start');
+                }
+                else {
+                    running = true;
+                    $(this).html('Stop');
+                    GameLoop();
+
+                }
+            });
+            $('#lblZoom').html(zoomLevel);
+
+
+
+
+
+            images = imageList.map(function (i) {
+                var img = new Image();
+                img.onload = function () {
+
+                    if (++loadedCt == images.length) {
+                        OnLoad();
+                    }
+                };
+                img.src = i;
+                return img;
+            })
+        });
+
+
+
+        function GenerateTerrain() {
+            world = Create2DArray(worldSize.X);
+            for (x = 0; x < worldSize.X; x++) {
+                for (y = 0; y < worldSize.Y; y++) {
+
+                    if (y < 10) { //sky
+                        world[x][y] = 1;
+                    }
+                    else if (y == 10) { //surface
+                        world[x][y] = 0;
+                    }
+                    else { //underground
+                        if (Math.random() < 0.8)
+                            world[x][y] = 2;
+                        else
+                            world[x][y] = 4;
+                    }
+
+                    //ct2.fillStyle =
+                    //    tileMap[x][y] == 0 ? 'lightgreen' :
+                    //        tileMap[x][y] == 1 ? 'blue' :
+                    //            tileMap[x][y] == 2 ? '#a06416' :
+                    //                tileMap[x][y] == 4 ? '#5b390c' :
+                    //                    'fail';
+
+                    //ct2.fillRect(x * 4, y * 4, 4, 4);
+                }
+            }
+        }
+
+
+
+
+
+        function OnLoad() {
+
+            DrawTerrain();
+            $('#loader').hide();
+            //GameLoop();
+        }
+
+
+        function GameLoop() {
+            DrawTerrain();
+
+            if (running) {
+                var diff = window.performance.now() - tickCount;
+
+
+
+                $('#lblFPS').html((1000.0 / diff).toFixed(2));
+                setTimeout(GameLoop, 1);
+            }
+            tickCount = window.performance.now();
+        }
+
+        function DrawTerrain() {
+
+            dt = window.performance.now();
+            ct = 0;
+
+
+
+            //ctx.fillStyle = '#000000';
+            //ctx.fillRect(0, 0, windowSize.X, windowSize.Y);
+
+            ctx.clearRect(0, 0, windowSize.X, windowSize.Y);
+
+            var zoomTileSize = tileSize * zoomLevel;
+
+            var minX = Math.max(Math.abs(Math.ceil(origin.X / zoomTileSize)), 0),
+                maxX = Math.min(Math.abs(Math.ceil((origin.X - windowSize.X) / zoomTileSize)), worldSize.X - 1),
+                minY = Math.max(Math.abs(Math.ceil(origin.Y / zoomTileSize)), 0),
+                maxY = Math.min(Math.abs(Math.ceil((origin.Y - windowSize.Y) / zoomTileSize)), worldSize.Y - 1);
+
+            for (x = minX; x <= maxX; x++) {
+                for (y = minY; y <= maxY; y++) {
+                    ctx.drawImage(tiles[tileMap[x][y]], origin.X + (zoomTileSize * x), origin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
+                    ct++;
+                }
+            }
+
+            for (i = 0; i < sprites.length; i++) {
+                if (sprites[i].CellX >= minX
+                    && sprites[i].CellX <= (maxX + 1)
+                    && sprites[i].CellY >= minY
+                    && sprites[i].CellY <= (maxY + 1)) {
+
+                    ctx.drawImage(tiles[sprites[i].ImageID], origin.X + (sprites[i].DrawX * zoomLevel), origin.Y + (sprites[i].DrawY * zoomLevel), tiles[sprites[i].ImageID].width * zoomLevel, tiles[sprites[i].ImageID].height * zoomLevel);
+                    ct++;
+                }
+            }
+
+
+
+            inc = (window.performance.now() - dt);
+
+            $('#lblTimeToDraw').html(inc.toFixed(2) + 'ms');
+
+            $('#lblDraws').html(ct);
+        }
+
+    </script>
+
+    </body>
+</html>
