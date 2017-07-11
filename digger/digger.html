@@ -117,18 +117,18 @@
 
 
     <script src="../jquery-2.1.4.min.js"></script>
-    <script src="../village/objects.js"></script>
+    <script src="objects.js"></script>
 
         <script>
             var images = [
-                '../village/grass-tile.gif',
-                '../village/sand.gif',
-                '../village/water.gif',
+                'surface.gif',
+                'sky.gif',
+                'underground.gif',
             ];
 
             var tiles = [],
                 loadedCt = 0,
-                tileSize = 100;
+                tileSize = 32;
 
             var canvas, ctx;
 
@@ -217,12 +217,19 @@
                 tileMap = Create2DArray(worldSize.X);
                 for (x = 0; x < worldSize.X; x++) {
                     for (y = 0; y < worldSize.Y; y++) {
-                        tileMap[x][y] = Math.random() < 0.5 ? 0 : 1;
-
+                        if (y < 20) {
+                            tileMap[x][y] = 1;
+                        }
+                        else if (y == 20) {
+                            tileMap[x][y] = 0;
+                        }
+                        else {
+                            tileMap[x][y] = 2;
+                        }
                         ct2.fillStyle =
                             tileMap[x][y] == 0 ? 'lightgreen' :
-                                tileMap[x][y] == 2 ? 'blue' :
-                                    '#D2B48C';
+                                tileMap[x][y] == 1 ? 'blue' :
+                                    'brown';
 
                         ct2.fillRect(x * 4, y * 4, 4, 4);
                     }
