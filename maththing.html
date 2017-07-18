@@ -7,6 +7,10 @@
         body {
             background-color: #eee;
         }
+
+        input[type=color]{
+            width:60px;
+        }
     </style>
 </head>
 <body>
@@ -65,6 +69,7 @@
                             <span class="add-on">Weight</span>
                             <input type="number" name="name" class="input-small _weight" />
                         </div>
+                        <input type="color" value="#000000" class="_color input-small" />
                         <a class="btn pull-right btn-danger btn-small _remove"><i class="icon icon-remove icon-white"></i></a>
                    </li>
                    <li>
@@ -99,7 +104,14 @@
         function getRandomInt(min, max) {
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
+        function componentToHex(c) {
+            var hex = c.toString(16);
+            return hex.length == 1 ? "0" + hex : hex;
+        }
 
+        function rgbToHex(r, g, b) {
+            return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+        }
         var ctx;
 
         var anchors = [
@@ -140,6 +152,7 @@
                 $t.find('._x').val(anchors[i].X);
                 $t.find('._y').val(anchors[i].Y);    
                 $t.find('._weight').val(anchors[i].Weight);
+                $t.find('._color').val(anchors[i].Color);
 
                 $('#ulAnchors li:last-child').before($t);
 
@@ -161,6 +174,9 @@
                         anchors[i].Weight = parseFloat($(this).val());
                         RecalculateWeights();
                     }
+                    else if ($(this).hasClass('_color')) {
+                        anchors[i].Color = $(this).val();
+                    }
 
 
                 }
@@ -172,13 +188,15 @@
                 var anc = new Anchor(
                     getRandomInt(0, cv.width),
                     getRandomInt(0, cv.height),
-                    1
+                    1,
+                    rgbToHex(getRandomInt(0, 255) , getRandomInt(0, 255) ,getRandomInt(0, 255))
                 );
                 anchors.push(anc);
                 var $t = $template.clone();
                 $t.find('._x').val(anc.X);
                 $t.find('._y').val(anc.Y);
                 $t.find('._weight').val(1);
+                $t.find('._color').val(anc.Color);
 
                 $('#ulAnchors li:last-child').before($t);
             });
@@ -266,7 +284,7 @@
                     }
                 }
 
-                var t = 2.0 / 4.0;// 0.5;
+                var t = 0.5;
 
                 var newPt = new Point(
                     lastPoint.X + ((anchors[idx].X - lastPoint.X) * t),
@@ -274,6 +292,7 @@
                 );
                 lastPoint = newPt;
 
+                ctx.fillStyle = anchors[idx].Color;
                 ctx.fillRect(lastPoint.X, lastPoint.Y, 1, 1);
 
 
