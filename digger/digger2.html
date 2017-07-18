@@ -122,17 +122,17 @@
         var
             viewportSize
             , worldSize = new Point(100, 200)
-            ,world
+            , world
             , worldPixelSize
             , tileSize = 32
-            , zoomLevel=1
+            , zoomLevel = 1
             , camera
             , images
             , loadedCt = 0
             , origin = new Point(0, 0)
             , running = false
             , lastMousePos
-            ,dragging=false
+            , dragging = false
             ;
 
 
@@ -301,32 +301,32 @@
             //ctx.fillStyle = '#000000';
             //ctx.fillRect(0, 0, windowSize.X, windowSize.Y);
 
-            ctx.clearRect(0, 0, windowSize.X, windowSize.Y);
+            ctx.clearRect(0, 0, viewportSize.X, viewportSize.Y);
 
             var zoomTileSize = tileSize * zoomLevel;
 
             var minX = Math.max(Math.abs(Math.ceil(origin.X / zoomTileSize)), 0),
-                maxX = Math.min(Math.abs(Math.ceil((origin.X - windowSize.X) / zoomTileSize)), worldSize.X - 1),
+                maxX = Math.min(Math.abs(Math.ceil((origin.X - viewportSize.X) / zoomTileSize)), worldSize.X - 1),
                 minY = Math.max(Math.abs(Math.ceil(origin.Y / zoomTileSize)), 0),
-                maxY = Math.min(Math.abs(Math.ceil((origin.Y - windowSize.Y) / zoomTileSize)), worldSize.Y - 1);
+                maxY = Math.min(Math.abs(Math.ceil((origin.Y - viewportSize.Y) / zoomTileSize)), worldSize.Y - 1);
 
             for (x = minX; x <= maxX; x++) {
                 for (y = minY; y <= maxY; y++) {
-                    ctx.drawImage(tiles[tileMap[x][y]], origin.X + (zoomTileSize * x), origin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
+                    ctx.drawImage(images[world[x][y]], origin.X + (zoomTileSize * x), origin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
                     ct++;
                 }
             }
 
-            for (i = 0; i < sprites.length; i++) {
-                if (sprites[i].CellX >= minX
-                    && sprites[i].CellX <= (maxX + 1)
-                    && sprites[i].CellY >= minY
-                    && sprites[i].CellY <= (maxY + 1)) {
+            //for (i = 0; i < sprites.length; i++) {
+            //    if (sprites[i].CellX >= minX
+            //        && sprites[i].CellX <= (maxX + 1)
+            //        && sprites[i].CellY >= minY
+            //        && sprites[i].CellY <= (maxY + 1)) {
 
-                    ctx.drawImage(tiles[sprites[i].ImageID], origin.X + (sprites[i].DrawX * zoomLevel), origin.Y + (sprites[i].DrawY * zoomLevel), tiles[sprites[i].ImageID].width * zoomLevel, tiles[sprites[i].ImageID].height * zoomLevel);
-                    ct++;
-                }
-            }
+            //        ctx.drawImage(images[sprites[i].ImageID], origin.X + (sprites[i].DrawX * zoomLevel), origin.Y + (sprites[i].DrawY * zoomLevel), images[sprites[i].ImageID].width * zoomLevel, images[sprites[i].ImageID].height * zoomLevel);
+            //        ct++;
+            //    }
+            //}
 
 
 

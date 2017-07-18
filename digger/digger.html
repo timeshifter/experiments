@@ -122,11 +122,50 @@
     <script src="js/utils.js"></script>
         <script>
             var images = [
-                'img/surface.gif',
+                //0-9: surface
                 'img/sky.gif',
+                'img/surface.gif',
+                'img/water.gif',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                //10-19: ground/background
+                'img/ug-empty.gif',
+                'img/ug-tile1.gif',
                 'img/ug-tile2.gif',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                //20-29: ores
+                'img/ore-red.gif',
+                'img/ore-green.gif',
+                'img/ore-blue.gif',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                //30-39: sprites
                 'img/drill.gif',
-                'img/ug-empty.gif'
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                ''
+
             ];
 
             var tiles = [],
@@ -138,7 +177,6 @@
 
             var tileMap = [],
                 worldSize = new Point(100, 200),
-                worldCellSize = new Point(worldSize.X * 4, worldSize.Y * 4),
                 windowSize,
                 origin = new Point(0, 0),
                 worldPixelSize,
@@ -169,8 +207,8 @@
                 ctx.imageSmoothingEnabled = false;
 
                 //var mm = document.getElementById('minimap');
-                minimap.width = worldCellSize.X;
-                minimap.height = worldCellSize.Y;
+                minimap.width = worldSize.X*2;
+                minimap.height = worldSize.Y*2;
                 var ct2 = minimap.getContext('2d');
 
                 $('#minimap_overlay').css('width', ((windowSize.X / worldPixelSize.X) * 100) + '%')
@@ -191,8 +229,8 @@
 
 
                     var originalCenter = new Point(
-                        ((origin.X - (windowSize.X / 2)) / zoomLevel) ,
-                        ((origin.Y - (windowSize.Y / 2)) / zoomLevel) 
+                        ((origin.X - (windowSize.X / 2)) / zoomLevel),
+                        ((origin.Y - (windowSize.Y / 2)) / zoomLevel)
                     );
 
                     console.log(originalCenter);
@@ -202,15 +240,14 @@
 
                         if (zoomLevel > 0.1) {
                             zoomLevel -= 0.1;
-                            
+
                         }
                     }
                     else { //wheel up
 
                         zoomLevel += 0.1;
-                        //origin.X -= tileSize*2;
-                        //origin.Y -= tileSize*2;
-                        }
+
+                    }
 
 
                     origin.X = (originalCenter.X * zoomLevel) + (windowSize.X / 2);
@@ -291,29 +328,30 @@
                 for (x = 0; x < worldSize.X; x++) {
                     for (y = 0; y < worldSize.Y; y++) {
                         if (y < 10) {
-                            tileMap[x][y] = 1;
+                            tileMap[x][y] = 0;
                         }
                         else if (y == 10) {
-                            tileMap[x][y] = 0;
+                            tileMap[x][y] = 1;
                         }
                         else {
                             if (Math.random() < 0.8)
-                                tileMap[x][y] = 2;
+                                tileMap[x][y] = 11;
                             else
-                                tileMap[x][y] = 4;
+                                tileMap[x][y] = 10;
                         }
 
-                        ct2.fillStyle =
-                            tileMap[x][y] == 0 ? 'lightgreen' :
-                                tileMap[x][y] == 1 ? 'blue' :
-                                    tileMap[x][y] == 2 ? '#a06416' :
-                                        tileMap[x][y] == 4 ? '#5b390c' :
-                                            'fail';
+                        //ct2.fillStyle =
+                        //    tileMap[x][y] == 0 ? 'lightgreen' :
+                        //        tileMap[x][y] == 1 ? 'blue' :
+                        //            tileMap[x][y] == 2 ? '#a06416' :
+                        //                tileMap[x][y] == 4 ? '#5b390c' :
+                        //                    'fail';
 
-                        ct2.fillRect(x * 4, y * 4, 4, 4);
+                        //ct2.fillRect(x * 4, y * 4, 4, 4);
                     }
                 }
 
+                
 
 
                 tiles = images.map(function (i) {
@@ -324,12 +362,14 @@
                             OnLoad();
                         }
                     };
+                    if (i == '')
+                        loadedCt++;
                     img.src = i;
                     return img;
                 });
 
 
-                sprites.push(new Sprite(3, 4, 9));
+                sprites.push(new Sprite(30, 4, 9));
 
 
                 $('#minimap').on('click', function (e) {
@@ -365,6 +405,7 @@
 
                     $('#lblFPS').html((1000.0 / diff).toFixed(2));
                     setTimeout(GameLoop, 1);
+                    //requestAnimationFrame(GameLoop);
                 }
                 tickCount = window.performance.now();
             }
@@ -434,7 +475,7 @@
                     }
                 }
 
-
+               
 
                 inc = (window.performance.now() - dt);
 

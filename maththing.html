@@ -1,0 +1,292 @@
+<!doctype html>
+<html>
+<head>
+    <title>Shifter's Math Thing</title>
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <style type="text/css">
+        body {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shifter's Math Thing</h1>
+        <div id="cv-container">
+            <canvas id="cv"></canvas>
+        </div>
+        <div class="row">
+            <div class="span6">
+                <div class="btn-toolbar">
+                    <div class="btn-group">
+                        <a id="btnStart" class="btn btn-success">Start</a>
+                        <a id="btnStep"  class="btn">Step</a>
+                        <a id="btnStop" class="btn btn-danger">Pause</a>
+                    </div>
+                    <div class="btn-group">
+                        <a id="btnReset" class="btn btn-primary">Reset</a>
+                    </div>
+                </div>
+                <div class="form-horizontal">
+                    <div class="control-group">
+                        <label class="control-label">Iterations</label>
+                        <div class="controls">
+                            <label id="lblIterations">0</label>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">
+                            Max iterations:
+                        </label>
+                        <div class="controls">
+                            <input type="number" id="numMaxIterations" value="10000" class="input-small" />
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">
+                            Iterations per step:
+                        </label>
+                        <div class="controls">
+                            <input type="number" id="numStep" value="10" class="input-small" />
+                        </div>
+                    </div>
+                </div>
+                <ul class="unstyled" id="ulAnchors">
+                    <li id="template">
+                        <div class="input-prepend">
+                            <span class="add-on">X</span>
+                            <input type="number" name="name"  class="input-small _x" />
+                        </div>
+                        <div class="input-prepend">
+                            <span class="add-on">Y</span>
+                            <input type="number" name="name" class="input-small _y" />
+                        </div>
+                        <div class="input-prepend">
+                            <span class="add-on">Weight</span>
+                            <input type="number" name="name" class="input-small _weight" />
+                        </div>
+                        <a class="btn pull-right btn-danger btn-small _remove"><i class="icon icon-remove icon-white"></i></a>
+                   </li>
+                   <li>
+                       <a id="btnAdd" class="btn btn-success"><i class="icon icon-white icon-plus"></i> Add anchor</a>
+                   </li>
+                </ul>
+            </div>
+            <div class="span6">
+                <h2>Info</h2>
+                <label>Based on <a href="https://www.youtube.com/watch?v=kbKtFN71Lfs">this video</a> by Numberphile.</label>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+
+    <script>
+
+        function Anchor(x, y, weight, col) {
+            this.X = x;
+            this.Y = y;
+            this.Weight = weight;
+            this.WeightLimit = 0;
+            this.Color = col;
+        }
+
+        function Point(x, y) {
+            this.X = x;
+            this.Y = y;
+        }
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        var ctx;
+
+        var anchors = [
+            new Anchor(200, 600, 1, '#ff0000'),
+            new Anchor(970, 600, 1, '#00ff00'),
+            new Anchor(1170 / 2, 50, 1, '#0000ff')
+        ];
+
+        var drawing = false,
+            drawStep = 10,
+            iterations = 0,
+            lastPoint = new Point(1170 / 2, 300),
+            totalWeight = 0,
+            $template = '',
+            limit = 10000;
+
+        
+
+        $(function () {
+            var w = $('#cv-container').width();
+            var h = w / (4.0 / 3.0);
+
+            cv.width = w;
+            cv.height = h;
+
+            ctx = cv.getContext('2d');
+
+            $template = $($('<li>').append($('#template').clone()).html()).removeAttr('id');
+            $('#template').remove();
+
+
+            var currLim = 0;
+            for (var i = 0; i < anchors.length; i++) {
+                currLim += anchors[i].Weight;
+                anchors[i].WeightLimit = currLim;
+
+                var $t = $template.clone();
+                $t.find('._x').val(anchors[i].X);
+                $t.find('._y').val(anchors[i].Y);    
+                $t.find('._weight').val(anchors[i].Weight);
+
+                $('#ulAnchors li:last-child').before($t);
+
+            }
+            totalWeight = currLim;
+
+            $('#ulAnchors').on('change', 'input', function () {
+                if ($(this).closest('#ulAnchors').length > 0) {
+                    var i = $(this).closest('li').index();
+                    if ($(this).hasClass('_x')) {
+                        anchors[i].X = parseInt($(this).val(), 10);
+                        RecalculateWeights();
+                    }
+                    else if ($(this).hasClass('_y')) {
+                        anchors[i].Y = parseInt($(this).val(), 10);
+                        RecalculateWeights();
+                    }
+                    else if ($(this).hasClass('_weight')) {
+                        anchors[i].Weight = parseFloat($(this).val());
+                        RecalculateWeights();
+                    }
+
+
+                }
+
+
+            });
+
+            $('#btnAdd').on('click', function () {
+                var anc = new Anchor(
+                    getRandomInt(0, cv.width),
+                    getRandomInt(0, cv.height),
+                    1
+                );
+                anchors.push(anc);
+                var $t = $template.clone();
+                $t.find('._x').val(anc.X);
+                $t.find('._y').val(anc.Y);
+                $t.find('._weight').val(1);
+
+                $('#ulAnchors li:last-child').before($t);
+            });
+
+            $('._remove').on('click', function () {
+                if ($('#ulAnchors li').length > 4) {
+                    var i = $(this).closest('li').index();
+                    $(this).closest('li').remove();
+                    anchors.splice(i, 1);
+                    Reset();
+
+                }
+
+            });
+
+            $('#numStep').on('change', function () {
+                drawStep = parseInt($(this).val(), 10);
+            });
+
+            $('#btnStep').on('click', function () {
+                Draw();
+            });
+
+            $('#btnReset').on('click', Reset);
+
+            $('#btnStart').on('click', function () {
+                
+
+                drawing = true;
+                RecalculateWeights();
+                Draw();
+            });
+
+            $('#btnStop').on('click', function () {
+                drawing = false;
+            });
+
+            $('#numMaxIterations').on('change', function () {
+                limit = parseInt($(this).val(), 10);
+            });
+
+
+
+            Reset();
+            ctx.fillStyle = '#00ff00';
+            //Draw();
+        });
+
+        function Reset() {
+            iterations = 0;
+            drawing = false;
+            RecalculateWeights();
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, cv.width, cv.height);
+            $('#lblIterations').html('0');
+            ctx.fillStyle = '#00ff00';
+        }
+
+        function RecalculateWeights() {
+            var currLim = 0;
+            for (var i = 0; i < anchors.length; i++) {
+                currLim += anchors[i].Weight;
+                anchors[i].WeightLimit = currLim;
+
+
+               
+
+            }
+            totalWeight = currLim;
+
+        }
+
+        function Draw() {
+
+            for (var i = 0; i < drawStep; i++) {
+
+
+                var n = Math.random() * totalWeight;
+                var idx = -1;
+
+                for (var c = 0; c < anchors.length; c++) {
+                    if (n < anchors[c].WeightLimit) {
+                        idx = c;
+                        break;
+                    }
+                }
+
+                var t = 2.0 / 4.0;// 0.5;
+
+                var newPt = new Point(
+                    lastPoint.X + ((anchors[idx].X - lastPoint.X) * t),
+                    lastPoint.Y + ((anchors[idx].Y - lastPoint.Y) * t)
+                );
+                lastPoint = newPt;
+
+                ctx.fillRect(lastPoint.X, lastPoint.Y, 1, 1);
+
+
+                iterations++;
+            }
+
+            $('#lblIterations').html(iterations);
+
+            if (drawing && iterations < limit)
+                setTimeout(Draw, 1);
+
+        }
+
+    </script>
+    </body>
+</html>
