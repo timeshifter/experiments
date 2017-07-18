@@ -39,6 +39,12 @@
                         </div>
                     </div>
                     <div class="control-group">
+                        <label class="control-label">Mouse</label>
+                        <div class="controls">
+                            <label class="checkbox" id="lblMouse"></label>
+                        </div>
+                    </div>
+                    <div class="control-group">
                         <label class="control-label">
                             Max iterations:
                         </label>
@@ -79,7 +85,9 @@
             </div>
             <div class="span6">
                 <h2>Info</h2>
-                <label>Based on <a href="https://www.youtube.com/watch?v=kbKtFN71Lfs">this video</a> by Numberphile.</label>
+                <p>Based on <a href="https://www.youtube.com/watch?v=kbKtFN71Lfs">this video</a> by Numberphile.</p>
+                <p>Modify anchor points to the left.</p>
+                <p>Click and drag on anchors to move them.</p>
             </div>
         </div>
     </div>
@@ -112,6 +120,21 @@
         function rgbToHex(r, g, b) {
             return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
         }
+        function GetDistance(p1, p2) {
+            return Math.sqrt(((p2.X - p1.X) * (p2.X - p1.X)) + ((p2.Y - p1.Y) * (p2.Y - p1.Y))) * 1.0;
+        }
+       if (!String.prototype.format) {
+            String.prototype.format = function () {
+                var args = arguments;
+                return this.replace(/{(\d+)}/g, function (match, number) {
+                    return typeof args[number] != 'undefined'
+                        ? args[number]
+                        : match
+                        ;
+                });
+            };
+        }
+
         var ctx;
 
         var anchors = [
@@ -126,7 +149,11 @@
             lastPoint = new Point(1170 / 2, 300),
             totalWeight = 0,
             $template = '',
-            limit = 10000;
+            limit = 10000,
+            dragging = false,
+            dragIndex = -1,
+            mousePoint = new Point(0, 0);
+
 
         
 
@@ -150,7 +177,7 @@
 
                 var $t = $template.clone();
                 $t.find('._x').val(anchors[i].X);
-                $t.find('._y').val(anchors[i].Y);    
+                $t.find('._y').val(anchors[i].Y);
                 $t.find('._weight').val(anchors[i].Weight);
                 $t.find('._color').val(anchors[i].Color);
 
@@ -177,7 +204,7 @@
                     else if ($(this).hasClass('_color')) {
                         anchors[i].Color = $(this).val();
                     }
-
+                    UpdateScene();
 
                 }
 
@@ -189,7 +216,7 @@
                     getRandomInt(0, cv.width),
                     getRandomInt(0, cv.height),
                     1,
-                    rgbToHex(getRandomInt(0, 255) , getRandomInt(0, 255) ,getRandomInt(0, 255))
+                    rgbToHex(getRandomInt(0, 255), getRandomInt(0, 255), getRandomInt(0, 255))
                 );
                 anchors.push(anc);
                 var $t = $template.clone();
@@ -199,18 +226,62 @@
                 $t.find('._color').val(anc.Color);
 
                 $('#ulAnchors li:last-child').before($t);
+                UpdateScene();
             });
 
-            $('._remove').on('click', function () {
+            $('#ulAnchors').on('click', '._remove', function () {
                 if ($('#ulAnchors li').length > 4) {
                     var i = $(this).closest('li').index();
                     $(this).closest('li').remove();
                     anchors.splice(i, 1);
                     Reset();
-
+                    UpdateScene();
                 }
 
             });
+
+            $('#cv').on('mousemove', function (e) {
+                mousePoint = new Point(
+                     (e.pageX - cv.offsetLeft),
+                    (e.pageY - cv.offsetTop)
+                );
+                $('#lblMouse').html("{0}, {1}".format(mousePoint.X, mousePoint.Y));
+                if (dragging) {
+                    anchors[dragIndex].X = mousePoint.X;
+                    anchors[dragIndex].Y = mousePoint.Y;
+                    var $li = $('#ulAnchors li').eq(dragIndex);
+                    $li.find('._x').val(mousePoint.X);
+                    $li.find('._y').val(mousePoint.Y);
+                    UpdateScene();
+                }
+                else {
+                    var idx = -1;
+                    for (var i = 0; i < anchors.length; i++) {
+                        if (GetDistance(new Point(anchors[i].X, anchors[i].Y), new Point(mousePoint.X, mousePoint.Y)) <= 5) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    if (idx == -1) {
+                        $('html').css('cursor', 'default');
+                        dragIndex = -1;
+                    }
+                    else {
+                        $('html').css('cursor', 'move');
+                        dragIndex = idx;
+                    }
+                }
+            }).on('doubleclick', function (e) {
+
+                return false;
+            })
+                .on('mousedown', function (e) {
+                    if (e.button == 0 && dragIndex > -1)
+                        dragging = true;
+
+                }).on('mouseup', function (e) {
+                    dragging = false;
+                });
 
             $('#numStep').on('change', function () {
                 drawStep = parseInt($(this).val(), 10);
@@ -223,7 +294,7 @@
             $('#btnReset').on('click', Reset);
 
             $('#btnStart').on('click', function () {
-                
+
 
                 drawing = true;
                 RecalculateWeights();
@@ -252,7 +323,9 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, cv.width, cv.height);
             $('#lblIterations').html('0');
+            UpdateScene();
             ctx.fillStyle = '#00ff00';
+            
         }
 
         function RecalculateWeights() {
@@ -267,6 +340,24 @@
             }
             totalWeight = currLim;
 
+        }
+
+        function DrawCircle(x, y, r, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function UpdateScene() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.font = '16px serif';
+            for (var i = 0; i < anchors.length; i++) {
+                DrawCircle(anchors[i].X, anchors[i].Y, 2, '#f0f0c0');
+                ctx.fillText(i + 1, anchors[i].X + 5, anchors[i].Y + 15);
+            }
+            ctx.fillStyle = '#000000';
         }
 
         function Draw() {
