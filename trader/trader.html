@@ -1,0 +1,50 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Bittrex Trader</title>
+    <link href="../css/bootstrap.css" rel="stylesheet" />
+    <style></style>
+</head>
+<body>
+    <input type="text" id="txtKey" value="" placeholder="key" />
+    
+
+
+
+    <script src="sha512.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        var key = '',
+            secret = '',
+            nonce = getRandomInt(100000, 999999999);
+
+        $(function () {
+
+            //var sha = new jsSHA("SHA-512", "B64");
+            //sha.setHMACKey(secret, "B64");
+            //sha.update(key);
+            //var hmac = sha.getHMAC("B64");
+            //alert(hmac);
+
+            $.ajax({
+                method: 'GET',
+                url: 'https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-doge&apikey= ' + $('#txtKey').val() + '&nonce=' + nonce,
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Accept': '*/*'
+                }
+            }).done(
+                function (result) {
+                    console.log(result);
+                });
+
+        })
+
+
+    </script>
+</body>
+</html>
