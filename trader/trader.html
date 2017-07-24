@@ -31,23 +31,22 @@
             //alert(hmac);
             $('button').on('click', function () {
 
-                $.getJSON('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-doge&apikey= ' + $('#txtKey').val() + '&nonce=' + nonce,
-                    function (result) {
-                        console.log(result);
-                    }
-                )
-
-                //$.ajax({
-                //    method: 'GET',
-                //    url: 'https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-doge&apikey= ' + $('#txtKey').val() + '&nonce=' + nonce,
-                //    headers: {
-                //        'Access-Control-Allow-Origin': '*',
-                //        'Accept': '*/*'
-                //    }
-                //}).done(
+                //$.getJSON('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-doge&apikey= ' + $('#txtKey').val() + '&nonce=' + nonce,
                 //    function (result) {
                 //        console.log(result);
-                //    });
+                //    }
+                //)
+
+                $.ajax({
+                    method: 'GET',
+                    url: 'https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-doge&apikey= ' + $('#txtKey').val() + '&nonce=' + nonce,
+                    headers: {
+                        'apisign':'07D751233FE04B6114519C2D8A574ED7E352D2DD7834864966588C0D93743C166639D3700074145E6BBC3BABFA9FC27A5AA1111859956AF9EC51CD0B42FE3F14'
+                    }
+                }).done(
+                    function (result) {
+                        console.log(result);
+                    });
             });
         })
 
