@@ -106,8 +106,10 @@
             <p>FPS: <label id="lblFPS"></label></p>
             <p>Draws: <label id="lblDraws"></label></p>
             <p>Zoom: <label id="lblZoom"></label></p>
-            <p>Game loop: <button id="btnPlay">Stop</button></p>
-            <p>Origin: <label id="lblOrigin"></label></p>
+            <p>Game loop: <button id="btnPlay">Start</button></p>
+            <p>Center: <label id="lblOrigin"></label></p>
+            <p>Bounding box: <label id="lblBoundingBox"></label></p>
+            <p>Mouse: <label id="lblMouse"></label></p>
         </div>
     </div>
 
@@ -130,7 +132,7 @@
             , images
             , loadedCt = 0
             , origin = new Point(0, 0)
-            , running = false
+            , gameState = GAMESTATE.PAUSED
             , lastMousePos
             , dragging = false
             ;
@@ -144,6 +146,9 @@
             worldPixelSize = new Point(worldSize.X * tileSize, worldSize.Y * tileSize);
 
             camera = new Camera(viewportSize);
+            camera.MouseLabel = document.getElementById('lblMouse');
+            camera.CenterLabel = document.getElementById('lblOrigin');
+            camera.BoundingLabel = document.getElementById('lblBoundingBox');
 
             ctx = cv.getContext('2d');
 
@@ -152,7 +157,49 @@
 
             GenerateTerrain();
 
-       
+            InitUI();
+
+
+            $('#btnPlay').on('click', function () {
+                if (gameState==GAMESTATE.running) {
+                    gameState = GAMESTATE.PAUSED;
+                    $(this).html('Start');
+                }
+                else {
+                    gameState = GAMESTATE.running;
+                    $(this).html('Stop');
+                    GameLoop();
+
+                }
+            });
+            $('#lblZoom').html(zoomLevel);
+
+
+
+
+
+            images = imageList.map(function (i) {
+                var img = new Image();
+                img.onload = function () {
+
+                    if (++loadedCt == images.length) {
+                        OnLoad();
+                    }
+                };
+                if (i == '')
+                    loadedCt++;
+                img.src = i;
+                return img;
+            })
+
+
+
+
+        });
+
+
+
+        function InitUI() {
 
             $('#cv').on('mousedown', function (e) {
                 if (e.button == 2) {
@@ -160,26 +207,37 @@
                     $('html').css('cursor', 'move');
                 }
                 return false;
-            }).on('contextmenu', function () {
+            });
+
+            $('#cv').on('contextmenu', function () {
                 return false;
-                }).on('mousewheel', function (e) {
-                    camera.OnZoom(e);
-                    $('#lblZoom').html(camera.ZoomLevel);
-                    return false;
-                });
+            });
 
+            $('#cv').on('mousewheel', function (e) {
+                camera.OnZoom(e);
+                $('#lblZoom').html(camera.ZoomLevel);
+                return false;
+            });
 
+            $('#cv').on('mousemove', function (e) {
+                camera.OnMouseMove(e);
+                if (gameState == GAMESTATE.PAUSED) {
+                    DrawTerrain();
+                }
+            });
 
+            $('#cv').on('mouseexit', function (e) {
+                camera.Dragging = false;
+            });
 
             $(window).on('mouseup', function () {
                 camera.Dragging = false;
                 $('html').css('cursor', 'default');
-            }).on('mousemove', function (e) {
-                camera.OnMouseMove(e);
-                if (!running) {
-                    DrawTerrain();
-                }
-            }).on('keydown', function (e) {
+            });
+
+            
+            /*
+            $(window).on('keydown', function (e) {
 
                 switch (e.keyCode) {
                     case 87: // W
@@ -201,37 +259,8 @@
                 }
                 //console.log(e.keyCode);
             });
-
-            $('#btnPlay').on('click', function () {
-                if (running) {
-                    running = false;
-                    $(this).html('Start');
-                }
-                else {
-                    running = true;
-                    $(this).html('Stop');
-                    GameLoop();
-
-                }
-            });
-            $('#lblZoom').html(zoomLevel);
-
-
-
-
-
-            images = imageList.map(function (i) {
-                var img = new Image();
-                img.onload = function () {
-
-                    if (++loadedCt == images.length) {
-                        OnLoad();
-                    }
-                };
-                img.src = i;
-                return img;
-            })
-        });
+            */
+        }
 
 
 
@@ -241,16 +270,16 @@
                 for (y = 0; y < worldSize.Y; y++) {
 
                     if (y < 10) { //sky
-                        world[x][y] = 1;
+                        world[x][y] = 0;
                     }
                     else if (y == 10) { //surface
-                        world[x][y] = 0;
+                        world[x][y] = 1;
                     }
                     else { //underground
                         if (Math.random() < 0.8)
-                            world[x][y] = 2;
+                            world[x][y] = 11;
                         else
-                            world[x][y] = 4;
+                            world[x][y] = 10;
                     }
 
                     //ct2.fillStyle =
@@ -276,11 +305,11 @@
             //GameLoop();
         }
 
-
+        var tickCount = 0;
         function GameLoop() {
             DrawTerrain();
 
-            if (running) {
+            if (gameState == GAMESTATE.RUNNING) {
                 var diff = window.performance.now() - tickCount;
 
 
@@ -290,6 +319,9 @@
             }
             tickCount = window.performance.now();
         }
+
+
+
 
         function DrawTerrain() {
 
@@ -304,15 +336,18 @@
             ctx.clearRect(0, 0, viewportSize.X, viewportSize.Y);
 
             var zoomTileSize = tileSize * zoomLevel;
+            var bbMin = camera.BoundingBoxMin(),
+                bbMax = camera.BoundingBoxMax();
 
-            var minX = Math.max(Math.abs(Math.ceil(origin.X / zoomTileSize)), 0),
-                maxX = Math.min(Math.abs(Math.ceil((origin.X - viewportSize.X) / zoomTileSize)), worldSize.X - 1),
-                minY = Math.max(Math.abs(Math.ceil(origin.Y / zoomTileSize)), 0),
-                maxY = Math.min(Math.abs(Math.ceil((origin.Y - viewportSize.Y) / zoomTileSize)), worldSize.Y - 1);
+            var minX = Math.max(Math.floor(bbMin.X / tileSize), 0),
+                maxX = Math.min(Math.ceil(bbMax.X / tileSize), worldSize.X - 1),
+                minY = Math.max(Math.floor(bbMin.Y / tileSize), 0),
+                maxY = Math.min(Math.ceil(bbMax.Y / tileSize), worldSize.Y - 1); 
 
             for (x = minX; x <= maxX; x++) {
                 for (y = minY; y <= maxY; y++) {
-                    ctx.drawImage(images[world[x][y]], origin.X + (zoomTileSize * x), origin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
+
+                    ctx.drawImage(images[world[x][y]], bbMin.X + (zoomTileSize * x), bbMin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
                     ct++;
                 }
             }

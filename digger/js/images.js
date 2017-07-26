@@ -1,7 +1,46 @@
 var imageList = [
-    'img/surface.gif',
+    //0-9: surface
     'img/sky.gif',
+    'img/surface.gif',
+    'img/water.gif',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    //10-19: ground/background
+    'img/ug-empty.gif',
+    'img/ug-tile1.gif',
     'img/ug-tile2.gif',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    //20-29: ores
+    'img/ore-red.gif',
+    'img/ore-green.gif',
+    'img/ore-blue.gif',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    //30-39: sprites
     'img/drill.gif',
-    'img/ug-empty.gif'
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    ''
+
 ];

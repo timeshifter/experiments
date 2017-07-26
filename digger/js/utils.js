@@ -24,3 +24,24 @@ function Create2DArray(rows) {
         arr[i] = [];
     return arr;
 }	
+
+
+
+
+
+
+
+
+
+
+
+var GAMESTATE = {
+    RUNNING: 1,
+    PAUSED: 2,
+    props: {
+        1: {},
+        2: {}
+
+    }
+
+}
