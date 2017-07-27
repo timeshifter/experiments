@@ -12,25 +12,34 @@ function Point(x,y) {
 
 
 
-function Tile(imageId, x, y) {
-	this.X = x;
-	this.Y = y;
+function Tile(imageId, explored, spriteId) {
 
-	this.ImageID = imageId;
+    this.ImageID = imageId;
+    this.SpriteID = -1;
+    this.Mask = -1;
+    this.Explored = true;
 
-	this.Mask = -1;
+
+    if (spriteId)
+        this.SpriteID = spriteId;
+
+    if (explored != undefined)
+        this.Explored = explored;
+
+    
+	
 	
 
 }
 
 
 
-function Sprite(imageId, cellX, cellY) {
+function Sprite(imageId, x, y) {
 	this.ImageID = imageId;
-	this.X = (cellX * tileSize) + 16;
-	this.Y = (cellY * tileSize) + 16;
-	this.CellX = cellX;
-	this.CellY = cellY;
+	this.X = x;
+	this.Y = y;
+	this.DrawX = x;
+	this.DrawY = y;
 
 }
 

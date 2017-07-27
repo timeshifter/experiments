@@ -34,7 +34,6 @@ function Create2DArray(rows) {
 
 
 
-
 var GAMESTATE = {
     RUNNING: 1,
     PAUSED: 2,

@@ -113,6 +113,7 @@
             <p>Tile bounds: <label id="lblTileBounds"></label>  </p>
             <p>World size: <label id="lblWorldSize"></label>
             </p>
+            <p>Keyboard: <label id="lblKeyboard"></label></p>
         </div>
     </div>
 
@@ -138,9 +139,10 @@
             , gameState = GAMESTATE.PAUSED
             , lastMousePos
             , dragging = false
+            , keyboardState = []
             ;
 
-
+        var UNEXPLORED_ID = 13;
 
 
         $(function() {
@@ -166,12 +168,12 @@
 
 
             $('#btnPlay').on('click', function () {
-                if (gameState==GAMESTATE.running) {
+                if (gameState == GAMESTATE.RUNNING) {
                     gameState = GAMESTATE.PAUSED;
                     $(this).html('Start');
                 }
                 else {
-                    gameState = GAMESTATE.running;
+                    gameState = GAMESTATE.RUNNING;
                     $(this).html('Stop');
                     GameLoop();
 
@@ -195,7 +197,10 @@
                     loadedCt++;
                 img.src = i;
                 return img;
-            })
+            });
+
+
+
 
 
 
@@ -245,9 +250,12 @@
             });
 
             
-            /*
+            
             $(window).on('keydown', function (e) {
-
+                if (keyboardState.indexOf(e.key.toLowerCase()) == -1)
+                    keyboardState.push(e.key.toLowerCase());
+                
+                /*
                 switch (e.keyCode) {
                     case 87: // W
                         sprites[0].CellY--;
@@ -266,9 +274,17 @@
                         sprites[0].SetDrawPos();
                         break;
                 }
-                //console.log(e.keyCode);
+                
+                */
             });
-            */
+
+            $(window).on('keyup', function (e) {
+                var i = keyboardState.indexOf(e.key.toLowerCase());
+                if (i > -1)
+                    keyboardState.splice(i, 1);
+                
+            });
+            
         }
 
 
@@ -279,16 +295,27 @@
                 for (y = 0; y < worldSize.Y; y++) {
 
                     if (y < 10) { //sky
-                        world[x][y] = 0;
+                        world[x][y] = new Tile(0, true);
                     }
                     else if (y == 10) { //surface
-                        world[x][y] = 1;
+                        world[x][y] = new Tile(1, true);
                     }
                     else { //underground
-                        if (Math.random() < 0.8)
-                            world[x][y] = 11;
+                        if (Math.random() < 0.8) {
+                            var t = new Tile(11, true);
+                            var z = Math.random();
+                            if (z < 0.2)
+                                t.SpriteID = 20;
+                            else if (z < 0.25)
+                                t.SpriteID = 21;
+                            else if (z < 0.275)
+                                t.SpriteID = 22;
+
+                            world[x][y] = t;
+
+                        }
                         else
-                            world[x][y] = 10;
+                            world[x][y] = new Tile(10, true);
                     }
 
                     //ct2.fillStyle =
@@ -315,7 +342,9 @@
         }
 
         var tickCount = 0;
+
         function GameLoop() {
+            Update();
             DrawTerrain();
 
             if (gameState == GAMESTATE.RUNNING) {
@@ -330,14 +359,18 @@
         }
 
 
+        function Update() {
 
+
+
+        }
 
         function DrawTerrain() {
 
             dt = window.performance.now();
             ct = 0;
 
-
+            $('#lblKeyboard').html(keyboardState.join(', '));
 
             //ctx.fillStyle = '#000000';
             //ctx.fillRect(0, 0, windowSize.X, windowSize.Y);
@@ -374,11 +407,21 @@
             for (x = minX; x <= maxX; x++) {
                 for (y = minY; y <= maxY; y++) {
                     if (x >= 0 && x < worldSize.X && y >= 0 && y < worldSize.Y) {
-                        ctx.drawImage(images[world[x][y]],
-                            (zoomTileSize * x) - (bbMin.X*camera.ZoomLevel),
-                            (zoomTileSize * y) - (bbMin.Y*camera.ZoomLevel),
+                        ctx.drawImage(images[world[x][y].Explored ? world[x][y].ImageID : UNEXPLORED_ID],
+                            (zoomTileSize * x) - (bbMin.X * camera.ZoomLevel),
+                            (zoomTileSize * y) - (bbMin.Y * camera.ZoomLevel),
                             zoomTileSize, zoomTileSize);
                         ct++;
+
+                        if (world[x][y].SpriteID > -1) {
+                            ctx.drawImage(images[world[x][y].SpriteID],
+                                (zoomTileSize * x) - (bbMin.X * camera.ZoomLevel),
+                                (zoomTileSize * y) - (bbMin.Y * camera.ZoomLevel),
+                                zoomTileSize, zoomTileSize);
+                            ct++;
+                        }
+
+                        
                     }
                 }
             }

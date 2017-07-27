@@ -14,7 +14,7 @@ var imageList = [
     'img/ug-empty.gif',
     'img/ug-tile1.gif',
     'img/ug-tile2.gif',
-    '',
+    'img/fog.gif',
     '',
     '',
     '',
@@ -41,6 +41,20 @@ var imageList = [
     '',
     '',
     '',
-    ''
+    '',
+    '',
+    //40-49: masks
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+
+
 
 ];
