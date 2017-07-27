@@ -110,6 +110,9 @@
             <p>Center: <label id="lblOrigin"></label></p>
             <p>Bounding box: <label id="lblBoundingBox"></label></p>
             <p>Mouse: <label id="lblMouse"></label></p>
+            <p>Tile bounds: <label id="lblTileBounds"></label>  </p>
+            <p>World size: <label id="lblWorldSize"></label>
+            </p>
         </div>
     </div>
 
@@ -145,7 +148,9 @@
 
             worldPixelSize = new Point(worldSize.X * tileSize, worldSize.Y * tileSize);
 
-            camera = new Camera(viewportSize);
+            $('#lblWorldSize').html('{0}, {1}'.format(worldPixelSize.X, worldPixelSize.Y));
+
+            camera = new Camera(viewportSize, worldSize, tileSize);
             camera.MouseLabel = document.getElementById('lblMouse');
             camera.CenterLabel = document.getElementById('lblOrigin');
             camera.BoundingLabel = document.getElementById('lblBoundingBox');
@@ -216,6 +221,10 @@
             $('#cv').on('mousewheel', function (e) {
                 camera.OnZoom(e);
                 $('#lblZoom').html(camera.ZoomLevel);
+                if (gameState == GAMESTATE.PAUSED) {
+                    DrawTerrain();
+                }
+
                 return false;
             });
 
@@ -335,20 +344,42 @@
 
             ctx.clearRect(0, 0, viewportSize.X, viewportSize.Y);
 
-            var zoomTileSize = tileSize * zoomLevel;
+
+            ctx.strokeStyle='rgb(200,200,200)';
+
+            ctx.beginPath();
+            ctx.moveTo(0, cv.height / 2);
+            ctx.lineTo(cv.width, cv.height / 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cv.width / 2, 0);
+            ctx.lineTo(cv.width / 2, cv.height);
+            ctx.stroke();
+
+            var zoomTileSize = tileSize * camera.ZoomLevel;
+
             var bbMin = camera.BoundingBoxMin(),
                 bbMax = camera.BoundingBoxMax();
 
-            var minX = Math.max(Math.floor(bbMin.X / tileSize), 0),
-                maxX = Math.min(Math.ceil(bbMax.X / tileSize), worldSize.X - 1),
-                minY = Math.max(Math.floor(bbMin.Y / tileSize), 0),
-                maxY = Math.min(Math.ceil(bbMax.Y / tileSize), worldSize.Y - 1); 
+            var minX = Math.floor(bbMin.X / tileSize),
+                maxX = minX + Math.ceil(cv.width / zoomTileSize),
+                minY = Math.floor(bbMin.Y / tileSize),
+                maxY = minY + Math.ceil(cv.height / zoomTileSize); 
+
+
+
+            $('#lblTileBounds').html('[{0}, {1}], [{2}, {3}]'.format(minX, minY, maxX, maxY));
 
             for (x = minX; x <= maxX; x++) {
                 for (y = minY; y <= maxY; y++) {
-
-                    ctx.drawImage(images[world[x][y]], bbMin.X + (zoomTileSize * x), bbMin.Y + (zoomTileSize * y), zoomTileSize, zoomTileSize);
-                    ct++;
+                    if (x >= 0 && x < worldSize.X && y >= 0 && y < worldSize.Y) {
+                        ctx.drawImage(images[world[x][y]],
+                            (zoomTileSize * x) - (bbMin.X*camera.ZoomLevel),
+                            (zoomTileSize * y) - (bbMin.Y*camera.ZoomLevel),
+                            zoomTileSize, zoomTileSize);
+                        ct++;
+                    }
                 }
             }
 
@@ -367,7 +398,7 @@
 
             inc = (window.performance.now() - dt);
 
-            $('#lblTimeToDraw').html(inc.toFixed(2) + 'ms');
+            $('#lblTimeToDraw').html(inc.toFixed(2) + ' ms');
 
             $('#lblDraws').html(ct);
         }
