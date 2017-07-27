@@ -150,7 +150,7 @@
             ;
 
         var diggers = [
-            new Digger(300, 304)
+            new Digger(304, 304)
         ];
 
 
@@ -172,6 +172,16 @@
 
 
             GenerateTerrain();
+            var lastY = 0;
+            for (i = 0; i < worldSize.Y; i++) {
+                if (world[9][i].ImageID == 0) {
+                    lastY = i;
+                }
+                else {
+                    break;
+                }
+            }
+            diggers[0].Y = (lastY * tileSize) + (tileSize / 2);
 
             InitUI();
 
@@ -502,23 +512,13 @@
             for (i = 0; i < diggers.length; i++) {
                 
                 ctx.drawImage(images[diggers[i].ImageID()],
-                    (camera.ZoomLevel * diggers[i].X) - (bbMin.X * camera.ZoomLevel) - diggers[i].DrawSizeHalf.X,
-                    (camera.ZoomLevel * diggers[i].Y) - (bbMin.Y * camera.ZoomLevel) - diggers[i].DrawSizeHalf.Y,
-                    zoomTileSize, zoomTileSize);
+                    (camera.ZoomLevel * (diggers[i].X - diggers[i].DrawSizeHalf.X)) - (bbMin.X * camera.ZoomLevel) ,
+                    (camera.ZoomLevel * (diggers[i].Y - diggers[i].DrawSizeHalf.Y)) - (bbMin.Y * camera.ZoomLevel),
+                    diggers[i].DrawSize.X * camera.ZoomLevel, diggers[i].DrawSize.Y * camera.ZoomLevel);
                 ct++;
 
             }
 
-            //for (i = 0; i < sprites.length; i++) {
-            //    if (sprites[i].CellX >= minX
-            //        && sprites[i].CellX <= (maxX + 1)
-            //        && sprites[i].CellY >= minY
-            //        && sprites[i].CellY <= (maxY + 1)) {
-
-            //        ctx.drawImage(images[sprites[i].ImageID], origin.X + (sprites[i].DrawX * zoomLevel), origin.Y + (sprites[i].DrawY * zoomLevel), images[sprites[i].ImageID].width * zoomLevel, images[sprites[i].ImageID].height * zoomLevel);
-            //        ct++;
-            //    }
-            //}
 
 
 
