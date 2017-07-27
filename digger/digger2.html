@@ -97,10 +97,6 @@
     </div>
 
     <div id="controls">
-        <div class="minimap" style="float:right;">
-            <canvas id="minimap"></canvas>
-            <div id="minimap_overlay"></div>
-        </div>
         <div class="panel" style="float:left;">
             <p>Time to draw: <label id="lblTimeToDraw"></label></p>
             <p>FPS: <label id="lblFPS"></label></p>
@@ -122,7 +118,7 @@
     <script src="js/objects.js"></script>
     <script src="js/images.js"></script>
     <script src="js/camera.js"></script>
-
+    <script src="js/digger.js"></script>
     <script>
 
         var
@@ -140,9 +136,22 @@
             , lastMousePos
             , dragging = false
             , keyboardState = []
+            , controlledDiggerId = -1
+
+
             ;
 
-        var UNEXPLORED_ID = 13;
+
+        var
+            UNEXPLORED_ID = 13
+            , CAMERA_WASD_SPEED = 16.0
+            , FRICTION = 0.2
+            , GRAVITY = 0.5
+            ;
+
+        var diggers = [
+            new Digger(300, 304)
+        ];
 
 
         $(function() {
@@ -188,7 +197,7 @@
             images = imageList.map(function (i) {
                 var img = new Image();
                 img.onload = function () {
-
+                    
                     if (++loadedCt == images.length) {
                         OnLoad();
                     }
@@ -234,7 +243,8 @@
             });
 
             $('#cv').on('mousemove', function (e) {
-                camera.OnMouseMove(e);
+                if (controlledDiggerId == -1)
+                    camera.OnMouseMove(e);
                 if (gameState == GAMESTATE.PAUSED) {
                     DrawTerrain();
                 }
@@ -254,28 +264,6 @@
             $(window).on('keydown', function (e) {
                 if (keyboardState.indexOf(e.key.toLowerCase()) == -1)
                     keyboardState.push(e.key.toLowerCase());
-                
-                /*
-                switch (e.keyCode) {
-                    case 87: // W
-                        sprites[0].CellY--;
-                        sprites[0].SetDrawPos();
-                        break;
-                    case 65: // A
-                        sprites[0].CellX--;
-                        sprites[0].SetDrawPos();
-                        break;
-                    case 83: // S
-                        sprites[0].CellY++;
-                        sprites[0].SetDrawPos();
-                        break;
-                    case 68: // D
-                        sprites[0].CellX++;
-                        sprites[0].SetDrawPos();
-                        break;
-                }
-                
-                */
             });
 
             $(window).on('keyup', function (e) {
@@ -291,13 +279,27 @@
 
         function GenerateTerrain() {
             world = Create2DArray(worldSize.X);
+
+            var slope = 0.0,
+                lastY = 10,
+                slopeDistanceRemaining = 0;
+
             for (x = 0; x < worldSize.X; x++) {
+
+                if (slopeDistanceRemaining == 0) {
+                    slopeDistanceRemaining = getRandomInt(3, 7);
+                    slope = Math.random() * 2.0;
+                }
+
+                lastY += (Math.random() * slope * 2.0) - slope;
+
+
                 for (y = 0; y < worldSize.Y; y++) {
 
-                    if (y < 10) { //sky
+                    if (y < Math.round(lastY)) { //sky
                         world[x][y] = new Tile(0, true);
                     }
-                    else if (y == 10) { //surface
+                    else if (y == Math.round(lastY)) { //surface
                         world[x][y] = new Tile(1, true);
                     }
                     else { //underground
@@ -317,15 +319,6 @@
                         else
                             world[x][y] = new Tile(10, true);
                     }
-
-                    //ct2.fillStyle =
-                    //    tileMap[x][y] == 0 ? 'lightgreen' :
-                    //        tileMap[x][y] == 1 ? 'blue' :
-                    //            tileMap[x][y] == 2 ? '#a06416' :
-                    //                tileMap[x][y] == 4 ? '#5b390c' :
-                    //                    'fail';
-
-                    //ct2.fillRect(x * 4, y * 4, 4, 4);
                 }
             }
         }
@@ -353,7 +346,8 @@
 
 
                 $('#lblFPS').html((1000.0 / diff).toFixed(2));
-                setTimeout(GameLoop, 1);
+                //setTimeout(GameLoop, 1);
+                requestAnimationFrame(GameLoop);
             }
             tickCount = window.performance.now();
         }
@@ -361,8 +355,86 @@
 
         function Update() {
 
+            if (controlledDiggerId == -1 || gameState==GAMESTATE.PAUSED) {
+                //move camera
+                if (keyboardState.indexOf('a') > -1) {
+                    if (keyboardState.indexOf('d') == -1) {
+                        //left
+                        camera.SetPosition(camera.Center.X - CAMERA_WASD_SPEED, camera.Center.Y);
+                    }
+                }
+                else if (keyboardState.indexOf('d') > -1) {
+                    //right
+                    camera.SetPosition(camera.Center.X + CAMERA_WASD_SPEED, camera.Center.Y);
+                }
+
+                if (keyboardState.indexOf('w') > -1) {
+                    if (keyboardState.indexOf('s') == -1) {
+                        //up
+                        camera.SetPosition(camera.Center.X, camera.Center.Y - CAMERA_WASD_SPEED);
+                    }
+                }
+                else if (keyboardState.indexOf('s') > -1) {
+                    //down
+                    camera.SetPosition(camera.Center.X, camera.Center.Y + CAMERA_WASD_SPEED);
+
+                }
+            }
+            else {
+                //move digger
+
+                if (!diggers[controlledDiggerId].Digging) {
+                    if (keyboardState.indexOf('a') > -1 && keyboardState.indexOf('d') == -1) {
+                        //move left
+                        diggers[controlledDiggerId].Velocity.X -= diggers[controlledDiggerId].Acceleration.X;
+                    }
+                    else if (keyboardState.indexOf('d') > -1 && keyboardState.indexOf('a') == -1) {
+                        //move right
+                        diggers[controlledDiggerId].Velocity.X += diggers[controlledDiggerId].Acceleration.X;
+                    }
+                    else if ((keyboardState.indexOf('a') == -1 && keyboardState.indexOf('d') == -1) ||
+                        (keyboardState.indexOf('a') == -1 > keyboardState.indexOf('d') > -1)) {
+                        //neither, if on ground, apply friction
+                        if (Math.abs(diggers[controlledDiggerId].Velocity.X) <= FRICTION)
+                            diggers[controlledDiggerId].Velocity.X = 0;
+                        else {
+                            diggers[controlledDiggerId].Velocity.X -= Math.sign(diggers[controlledDiggerId].Velocity.X) * diggers[controlledDiggerId].BrakingPower;
+                        }
+                    }
 
 
+                    if (keyboardState.indexOf('w') > -1 && keyboardState.indexOf('s') == -1) {
+                        //move up
+                        diggers[controlledDiggerId].Velocity.Y += diggers[controlledDiggerId].Acceleration.Y;
+                    }
+                    else if (keyboardState.indexOf('s') > -1 && keyboardState.indexOf('w') == -1) {
+                        //move down
+                        
+                    }
+                    else if (keyboardState.indexOf('s') == -1 && keyboardState.indexOf('w') == -1) {
+                        //neither, if in air, fall
+                        diggers[controlledDiggerId].Falling = true;
+
+                    }
+                }
+
+            }
+
+
+
+
+            for (i = 0; i < diggers.length; i++) {
+                diggers[i].Update();
+
+
+
+
+
+
+                if (controlledDiggerId == i) {
+                    camera.SetPosition(diggers[i].X, diggers[i].Y);
+                }
+            }
         }
 
         function DrawTerrain() {
@@ -377,7 +449,7 @@
 
             ctx.clearRect(0, 0, viewportSize.X, viewportSize.Y);
 
-
+            /*
             ctx.strokeStyle='rgb(200,200,200)';
 
             ctx.beginPath();
@@ -389,6 +461,7 @@
             ctx.moveTo(cv.width / 2, 0);
             ctx.lineTo(cv.width / 2, cv.height);
             ctx.stroke();
+            */
 
             var zoomTileSize = tileSize * camera.ZoomLevel;
 
@@ -424,6 +497,16 @@
                         
                     }
                 }
+            }
+
+            for (i = 0; i < diggers.length; i++) {
+                
+                ctx.drawImage(images[diggers[i].ImageID()],
+                    (camera.ZoomLevel * diggers[i].X) - (bbMin.X * camera.ZoomLevel) - diggers[i].DrawSizeHalf.X,
+                    (camera.ZoomLevel * diggers[i].Y) - (bbMin.Y * camera.ZoomLevel) - diggers[i].DrawSizeHalf.Y,
+                    zoomTileSize, zoomTileSize);
+                ct++;
+
             }
 
             //for (i = 0; i < sprites.length; i++) {

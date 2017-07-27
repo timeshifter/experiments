@@ -67,7 +67,11 @@ function Camera(viewport, worldSize, tileSize) {
 
 
     };
-    
+
+    this.SetPosition = function (x, y) {
+        this.Center = new Point(x, y);
+        this.ConstrainCamera();
+    }
 
     this.ConstrainCamera = function () {
 

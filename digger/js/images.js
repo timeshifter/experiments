@@ -33,8 +33,8 @@ var imageList = [
     '',
     '',
     //30-39: sprites
-    'img/drill.gif',
-    '',
+    'img/digger-left.gif',
+    'img/digger-right.gif',
     '',
     '',
     '',
