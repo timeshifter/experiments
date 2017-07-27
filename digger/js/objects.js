@@ -19,6 +19,8 @@ function Tile(imageId, explored, spriteId) {
     this.Mask = -1;
     this.Explored = true;
 
+    this.Solid = [11, 12].indexOf(imageId) != -1;
+
 
     if (spriteId)
         this.SpriteID = spriteId;

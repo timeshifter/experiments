@@ -20,9 +20,9 @@ function Digger(x, y) {
     this.Falling = false;
 
     this.TopSpeed = {
-        Lateral: 8.0,
-        Up: 4.0,
-        Down: -64
+        Lateral: 3.0,
+        Up: -2.0,
+        Down: 32
     };
     this.DigSpeed = 16.0;
 
@@ -36,10 +36,11 @@ function Digger(x, y) {
             if (Math.abs(this.Velocity.X) > Math.abs(this.TopSpeed.Lateral))
                 this.TopSpeed.X = Math.sign(this.Velocity.X) * this.TopSpeed.X;
 
-            if (this.Velocity.Y > this.TopSpeed.Up)
-                this.Velocity.Y = this.TopSpeed.Y;
-            else if (this.Velocity.Y < this.TopSpeed.Down)
+            if (this.Velocity.Y > this.TopSpeed.Down)
                 this.Velocity.Y = this.TopSpeed.Down;
+
+            else if (this.Velocity.Y < this.TopSpeed.Up)
+                this.Velocity.Y = this.TopSpeed.Up;
 
 
             this.X += this.Velocity.X;

@@ -53,24 +53,6 @@
             padding: 10px;
         }
 
-        .minimap {
-            margin: 10px;
-            border: ridge 2px #ccc;
-            position: relative;
-        }
-
-        #minimap {
-            width: 100%;
-        }
-
-        #minimap_overlay {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            top: 0;
-            background-color: rgba(255,255,255,0.3);
-            border: solid 1px yellow;
-        }
 
         #loader {
             background-color: #f0f0f0;
@@ -102,14 +84,14 @@
             <p>FPS: <label id="lblFPS"></label></p>
             <p>Draws: <label id="lblDraws"></label></p>
             <p>Zoom: <label id="lblZoom"></label></p>
-            <p>Game loop: <button id="btnPlay">Start</button></p>
+            <p>Game loop: <button id="btnPlay">Stop</button></p>
             <p>Center: <label id="lblOrigin"></label></p>
             <p>Bounding box: <label id="lblBoundingBox"></label></p>
             <p>Mouse: <label id="lblMouse"></label></p>
             <p>Tile bounds: <label id="lblTileBounds"></label>  </p>
             <p>World size: <label id="lblWorldSize"></label>
             </p>
-            <p>Keyboard: <label id="lblKeyboard"></label></p>
+            <p>Velocity: <label id="lblVelocity"></label></p>
         </div>
     </div>
 
@@ -132,11 +114,11 @@
             , images
             , loadedCt = 0
             , origin = new Point(0, 0)
-            , gameState = GAMESTATE.PAUSED
+            , gameState = GAMESTATE.RUNNING
             , lastMousePos
             , dragging = false
             , keyboardState = []
-            , controlledDiggerId = -1
+            , controlledDiggerId = 0
 
 
             ;
@@ -146,7 +128,7 @@
             UNEXPLORED_ID = 13
             , CAMERA_WASD_SPEED = 16.0
             , FRICTION = 0.2
-            , GRAVITY = 0.5
+            , GRAVITY = 0.1
             ;
 
         var diggers = [
@@ -246,6 +228,7 @@
                 camera.OnZoom(e);
                 $('#lblZoom').html(camera.ZoomLevel);
                 if (gameState == GAMESTATE.PAUSED) {
+                    Update();
                     DrawTerrain();
                 }
 
@@ -256,6 +239,7 @@
                 if (controlledDiggerId == -1)
                     camera.OnMouseMove(e);
                 if (gameState == GAMESTATE.PAUSED) {
+                    Update();
                     DrawTerrain();
                 }
             });
@@ -272,15 +256,11 @@
             
             
             $(window).on('keydown', function (e) {
-                if (keyboardState.indexOf(e.key.toLowerCase()) == -1)
-                    keyboardState.push(e.key.toLowerCase());
+                keyboardState[e.key.toLowerCase()] = true;
             });
 
             $(window).on('keyup', function (e) {
-                var i = keyboardState.indexOf(e.key.toLowerCase());
-                if (i > -1)
-                    keyboardState.splice(i, 1);
-                
+                keyboardState[e.key.toLowerCase()] = false;
             });
             
         }
@@ -297,7 +277,7 @@
             for (x = 0; x < worldSize.X; x++) {
 
                 if (slopeDistanceRemaining == 0) {
-                    slopeDistanceRemaining = getRandomInt(3, 7);
+                    slopeDistanceRemaining = getRandomInt(5, 7);
                     slope = Math.random() * 2.0;
                 }
 
@@ -330,6 +310,7 @@
                             world[x][y] = new Tile(10, true);
                     }
                 }
+                slopeDistanceRemaining--;
             }
         }
 
@@ -339,9 +320,9 @@
 
         function OnLoad() {
 
-            DrawTerrain();
+            //DrawTerrain();
             $('#loader').hide();
-            //GameLoop();
+            GameLoop();
         }
 
         var tickCount = 0;
@@ -365,26 +346,26 @@
 
         function Update() {
 
-            if (controlledDiggerId == -1 || gameState==GAMESTATE.PAUSED) {
+            if (controlledDiggerId == -1 || gameState == GAMESTATE.PAUSED) {
                 //move camera
-                if (keyboardState.indexOf('a') > -1) {
-                    if (keyboardState.indexOf('d') == -1) {
+                if (keyboardState['a']) {
+                    if (!keyboardState['d']) {
                         //left
                         camera.SetPosition(camera.Center.X - CAMERA_WASD_SPEED, camera.Center.Y);
                     }
                 }
-                else if (keyboardState.indexOf('d') > -1) {
+                else if (keyboardState['d']) {
                     //right
                     camera.SetPosition(camera.Center.X + CAMERA_WASD_SPEED, camera.Center.Y);
                 }
 
-                if (keyboardState.indexOf('w') > -1) {
-                    if (keyboardState.indexOf('s') == -1) {
+                if (keyboardState['w']) {
+                    if (!keyboardState['s']) {
                         //up
                         camera.SetPosition(camera.Center.X, camera.Center.Y - CAMERA_WASD_SPEED);
                     }
                 }
-                else if (keyboardState.indexOf('s') > -1) {
+                else if (keyboardState['s']) {
                     //down
                     camera.SetPosition(camera.Center.X, camera.Center.Y + CAMERA_WASD_SPEED);
 
@@ -392,51 +373,92 @@
             }
             else {
                 //move digger
+                var digger = diggers[controlledDiggerId];
 
-                if (!diggers[controlledDiggerId].Digging) {
-                    if (keyboardState.indexOf('a') > -1 && keyboardState.indexOf('d') == -1) {
+                if (!digger.Digging) {
+                    if (keyboardState['a'] && !keyboardState['d']) {
                         //move left
-                        diggers[controlledDiggerId].Velocity.X -= diggers[controlledDiggerId].Acceleration.X;
+                        digger.Velocity.X -= digger.Acceleration.X;
                     }
-                    else if (keyboardState.indexOf('d') > -1 && keyboardState.indexOf('a') == -1) {
+                    else if (keyboardState['d'] && !keyboardState['a']) {
                         //move right
-                        diggers[controlledDiggerId].Velocity.X += diggers[controlledDiggerId].Acceleration.X;
+                        digger.Velocity.X += digger.Acceleration.X;
                     }
-                    else if ((keyboardState.indexOf('a') == -1 && keyboardState.indexOf('d') == -1) ||
-                        (keyboardState.indexOf('a') == -1 > keyboardState.indexOf('d') > -1)) {
+                    else if (!keyboardState['a'] && !keyboardState['d']) {
                         //neither, if on ground, apply friction
-                        if (Math.abs(diggers[controlledDiggerId].Velocity.X) <= FRICTION)
-                            diggers[controlledDiggerId].Velocity.X = 0;
+                        if (Math.abs(digger.Velocity.X) <= digger.BrakingPower)
+                            digger.Velocity.X = 0;
                         else {
-                            diggers[controlledDiggerId].Velocity.X -= Math.sign(diggers[controlledDiggerId].Velocity.X) * diggers[controlledDiggerId].BrakingPower;
+                            digger.Velocity.X -= Math.sign(digger.Velocity.X) * digger.BrakingPower;
                         }
                     }
 
 
-                    if (keyboardState.indexOf('w') > -1 && keyboardState.indexOf('s') == -1) {
+
+                    if (keyboardState['w'] && !keyboardState['s']) {
                         //move up
-                        diggers[controlledDiggerId].Velocity.Y += diggers[controlledDiggerId].Acceleration.Y;
+                        digger.Velocity.Y -= digger.Acceleration.Y;
                     }
-                    else if (keyboardState.indexOf('s') > -1 && keyboardState.indexOf('w') == -1) {
+                    else if (keyboardState['s'] && !keyboardState['w']) {
                         //move down
-                        
+                        digger.Velocity.Y += digger.Acceleration.Y;
                     }
-                    else if (keyboardState.indexOf('s') == -1 && keyboardState.indexOf('w') == -1) {
+                    else if (!keyboardState['s'] && !keyboardState['w']) {
                         //neither, if in air, fall
-                        diggers[controlledDiggerId].Falling = true;
+                        digger.Falling = true;
+                        //digger.Velocity.Y += GRAVITY;
 
                     }
                 }
 
+                $('#lblVelocity').html('{0}, {1}'.format(digger.Velocity.X, digger.Velocity.Y));
+
             }
 
 
-
+            
 
             for (i = 0; i < diggers.length; i++) {
                 diggers[i].Update();
+                var edge = 0;
 
+                var currCenterTile = new Point(
+                    Math.floor(diggers[i].X / tileSize) + 1,
+                    Math.floor(diggers[i].Y / tileSize) + 1
+                );
 
+                if (diggers[i].Velocity.X > 0) {
+                    edge = diggers[i].X + diggers[i].SizeHalf.X;
+
+                    if (edge >= worldPixelSize.X) {
+                        diggers[i].X = worldPixelSize.X - diggers[i].SizeHalf.X;
+                        diggers[i].Velocity.X = 0;
+                    }
+                    else {
+                        var edgeTile = Math.ceil(edge / tileSize);
+                        if (world[edgeTile][currCenterTile.Y].Solid) {
+                            diggers[i].X = ((edgeTile) * tileSize) - diggers[i].SizeHalf.X;
+                            diggers[i].Velocity.X = 0;
+                        }
+                    }
+
+                }
+                else if (diggers[i].Velocity.X < 0) {
+                    edge = diggers[i].X - diggers[i].SizeHalf.X;
+
+                    if (edge <= 0) {
+                        diggers[i].X = diggers[i].SizeHalf.X;
+                        diggers[i].Velocity.X = 0;
+                    }
+                    else {
+                        var edgeTile = Math.floor(edge / tileSize);
+                        if (world[edgeTile][currCenterTile.Y].Solid) {
+                            diggers[i].X = ((edgeTile + 1) * tileSize) + diggers[i].SizeHalf.X;
+                            diggers[i].Velocity.X = 0;
+                        }
+                    }
+
+                }
 
 
 
@@ -452,7 +474,6 @@
             dt = window.performance.now();
             ct = 0;
 
-            $('#lblKeyboard').html(keyboardState.join(', '));
 
             //ctx.fillStyle = '#000000';
             //ctx.fillRect(0, 0, windowSize.X, windowSize.Y);
