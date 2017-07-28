@@ -119,7 +119,16 @@
             , dragging = false
             , keyboardState = []
             , controlledDiggerId = 0
-
+            , highlightTiles = [
+                {
+                    Coord: new Point(0, 0),
+                    Color: '#00ff00'
+                },
+                {
+                    Coord: new Point(2, 4),
+                    Color: '#888888'
+                }
+            ]
 
             ;
 
@@ -128,7 +137,7 @@
             UNEXPLORED_ID = 13
             , CAMERA_WASD_SPEED = 16.0
             , FRICTION = 0.2
-            , GRAVITY = 0.1
+            , GRAVITY = 0.3
             ;
 
         var diggers = [
@@ -343,6 +352,7 @@
             tickCount = window.performance.now();
         }
 
+        
 
         function Update() {
 
@@ -406,7 +416,7 @@
                     else if (!keyboardState['s'] && !keyboardState['w']) {
                         //neither, if in air, fall
                         digger.Falling = true;
-                        //digger.Velocity.Y += GRAVITY;
+                        digger.Velocity.Y += GRAVITY;
 
                     }
                 }
@@ -420,22 +430,28 @@
 
             for (i = 0; i < diggers.length; i++) {
                 diggers[i].Update();
-                var edge = 0;
+                var edge = 0, edgeTile=0;
 
                 var currCenterTile = new Point(
-                    Math.floor(diggers[i].X / tileSize) + 1,
-                    Math.floor(diggers[i].Y / tileSize) + 1
+                    Math.floor(diggers[i].X / tileSize),
+                    Math.floor(diggers[i].Y / tileSize) 
                 );
 
+                highlightTiles[0].Coord.Y = currCenterTile.Y;
+                //horizontal check
                 if (diggers[i].Velocity.X > 0) {
+                    //moving right
                     edge = diggers[i].X + diggers[i].SizeHalf.X;
+                    
 
                     if (edge >= worldPixelSize.X) {
                         diggers[i].X = worldPixelSize.X - diggers[i].SizeHalf.X;
                         diggers[i].Velocity.X = 0;
                     }
                     else {
-                        var edgeTile = Math.ceil(edge / tileSize);
+                         edgeTile = Math.floor(edge / tileSize);
+                        highlightTiles[0].Coord.X = edgeTile;
+
                         if (world[edgeTile][currCenterTile.Y].Solid) {
                             diggers[i].X = ((edgeTile) * tileSize) - diggers[i].SizeHalf.X;
                             diggers[i].Velocity.X = 0;
@@ -444,6 +460,7 @@
 
                 }
                 else if (diggers[i].Velocity.X < 0) {
+                    //moving left
                     edge = diggers[i].X - diggers[i].SizeHalf.X;
 
                     if (edge <= 0) {
@@ -451,7 +468,8 @@
                         diggers[i].Velocity.X = 0;
                     }
                     else {
-                        var edgeTile = Math.floor(edge / tileSize);
+                         edgeTile = Math.floor(edge / tileSize);
+                        highlightTiles[0].Coord.X = edgeTile;
                         if (world[edgeTile][currCenterTile.Y].Solid) {
                             diggers[i].X = ((edgeTile + 1) * tileSize) + diggers[i].SizeHalf.X;
                             diggers[i].Velocity.X = 0;
@@ -461,6 +479,50 @@
                 }
 
 
+                //vertical check
+                highlightTiles[1].Coord.X = currCenterTile.X;
+                if (diggers[i].Velocity.Y > 0) {
+                    //moving down
+                    edge = diggers[i].Y + diggers[i].SizeHalf.Y;
+
+
+                    if (edge >= worldPixelSize.Y) {
+                        diggers[i].Y = worldPixelSize.Y - diggers[i].SizeHalf.Y;
+                        diggers[i].Velocity.Y = 0;
+                    }
+                    else {
+                        edgeTile = Math.floor(edge / tileSize);
+                        highlightTiles[1].Coord.Y = edgeTile;
+
+                        if (world[currCenterTile.X][edgeTile].Solid) {
+                            diggers[i].Y = ((edgeTile) * tileSize) - diggers[i].SizeHalf.Y;
+                            diggers[i].Velocity.Y = 0;
+                        }
+                    }
+
+                }
+                else if (diggers[i].Velocity.Y < 0) {
+                    //moving up
+                    edge = diggers[i].Y - diggers[i].SizeHalf.Y;
+
+                    if (edge <= 0) {
+                        diggers[i].Y = diggers[i].SizeHalf.Y;
+                        diggers[i].Velocity.Y = 0;
+                    }
+                    else {
+                        edgeTile = Math.floor(edge / tileSize);
+                        highlightTiles[1].Coord.Y = edgeTile;
+                        if (world[currCenterTile.X][edgeTile].Solid) {
+                            diggers[i].Y = ((edgeTile + 1) * tileSize) + diggers[i].SizeHalf.Y;
+                            diggers[i].Velocity.Y = 0;
+                        }
+                    }
+
+                }
+
+
+
+                //console.log(world[edgeTile][currCenterTile.Y]);
 
 
                 if (controlledDiggerId == i) {
@@ -539,7 +601,26 @@
                 ct++;
 
             }
-
+            /*
+            ctx.lineWidth = 4;
+            for (i = 0; i < 2; i++) {
+                if (highlightTiles[i].Coord.X != -1) {
+                    ctx.strokeStyle = highlightTiles[i].Color;
+                    ctx.beginPath();
+                    var pt = GetDrawCoord(highlightTiles[i].Coord.X * tileSize, highlightTiles[i].Coord.Y * tileSize);
+                    ctx.moveTo(pt.X, pt.Y);
+                    pt = GetDrawCoord((highlightTiles[i].Coord.X + 1) * tileSize, highlightTiles[i].Coord.Y * tileSize);
+                    ctx.lineTo(pt.X, pt.Y);
+                    pt = GetDrawCoord((highlightTiles[i].Coord.X + 1) * tileSize, (highlightTiles[i].Coord.Y + 1) * tileSize);
+                    ctx.lineTo(pt.X, pt.Y);
+                    pt = GetDrawCoord(highlightTiles[i].Coord.X * tileSize, (highlightTiles[i].Coord.Y + 1) * tileSize);
+                    ctx.lineTo(pt.X, pt.Y);
+                    pt = GetDrawCoord(highlightTiles[i].Coord.X * tileSize, highlightTiles[i].Coord.Y * tileSize);
+                    ctx.lineTo(pt.X, pt.Y);
+                    ctx.stroke();
+                }
+            }
+            */
 
 
 
@@ -548,6 +629,18 @@
             $('#lblTimeToDraw').html(inc.toFixed(2) + ' ms');
 
             $('#lblDraws').html(ct);
+        }
+
+        function GetDrawCoord(pt) {
+            return GetDrawCoord(pt.X, pt.Y);
+        }
+
+        function GetDrawCoord(x, y) {
+            var bbMin = camera.BoundingBoxMin();
+            return new Point(
+                (camera.ZoomLevel * x) - (bbMin.X * camera.ZoomLevel),
+                (camera.ZoomLevel * y) - (bbMin.Y * camera.ZoomLevel)
+            );
         }
 
     </script>
