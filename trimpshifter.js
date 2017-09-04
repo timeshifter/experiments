@@ -2,7 +2,8 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.7'
+    _ts_version = '1.0.8',
+    _ts_lastGathered = 'food'
     ;
 
 
@@ -164,7 +165,14 @@ function MainLoop() {
         }
     }
 
+    if (game.global.buildingsQueue.length > 0 && game.global.playerGathering != 'buildings') {
+        _ts_lastGathered = game.global.playerGathering;
 
+        setGather('buildings');
+    }
+    else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
+        setGather(_ts_lastGathered);
+    }
 
 }
 
