@@ -1,8 +1,8 @@
 var _ts_enabled = true,
     _ts_gameLoopId,
-    _ts_gameLoopInterval = 1000,
+    _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.4'
+    _ts_version = '1.0.5'
     ;
 
 
@@ -55,6 +55,9 @@ function MainLoop() {
         }
     }
 
+    if (hasPriority)
+        return;
+
 
     if (game.workspaces > 0) {
 
@@ -76,13 +79,13 @@ function MainLoop() {
         var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
 
         if (sciRatio > 25) {
-            buyJob('Scientist');
+            _ts_BuyJob('Scientist');
             
         }
 
         if (game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
             _ts_BuyJob('Miner');
-        else if (game.jobs.Lumberjack < game.jobs.Farmer.owned)
+        else if (game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
             _ts_BuyJob('Lumberjack');
         else
             _ts_BuyJob('Farmer');
