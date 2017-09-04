@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 1000,
     _ts_i = 0,
-    _ts_version = '1.0.2'
+    _ts_version = '1.0.3'
     ;
 
 
@@ -25,7 +25,7 @@ function MainLoop() {
 
 
     if ((game.resources.food.owned / game.resources.food.max) > 0.75) {
-        buyBuilding('Farm');
+        buyBuilding('Barn');
     }
 
     if ((game.resources.wood.owned / game.resources.wood.max) > 0.75) {
