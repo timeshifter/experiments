@@ -33,11 +33,11 @@ function MainLoop() {
         _ts_BuyBuilding('Barn');
     }
 
-    if ((game.resources.wood.owned / game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
+    if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
         _ts_BuyBuilding('Shed');
     }
 
-    if ((game.resources.metal.owned / game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
+    if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
         _ts_BuyBuilding('Forge');
     }
 
