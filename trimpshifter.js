@@ -128,26 +128,22 @@ function MainLoop() {
 
     for (var i = 0; i < weapons.length; i++) {
 
-        if (game.equipment[weapons[i]].locked == 0) {
-            result = true;
-            while (result && game.equipment[weapons[i]].level < 9)
-                result = _ts_BuyEquipment(weapons[i]);
+        if (game.equipment[weapons[i]].locked == 0 && game.equipment[weapons[i]].level ) {
+            
+             _ts_BuyEquipment(weapons[i]);
         }
     }
 
     for (var i = 0; i < armor.length; i++) {
 
-        if (game.equipment[armor[i]].locked == 0) {
-            result = true;
-            while (result && game.equipment[armor[i]].level < 11)
-                result = _ts_BuyEquipment(armor[i]);
+        if (game.equipment[armor[i]].locked == 0 && game.equipment[armor[i]].level < 11) {
+            
+                 _ts_BuyEquipment(armor[i]);
         }
     }
 
-    if (game.equipment.Shield.locked == 0) {
-        result = true;
-        while (result && game.equipment.Shield.level < 5)
-            result = _ts_BuyEquipment('Shield');
+    if (game.equipment.Shield.locked == 0 && game.equipment.Shield.level<5) {
+         _ts_BuyEquipment('Shield');
     }
 
 
@@ -170,14 +166,14 @@ function MainLoop() {
 
 
 
-function _ts_BuyJob(what, howMany) {
+function _ts_BuyJob(what) {
     var result = buyJob(what);
     if (result)
         console.log('TrimpShifter - buying job ' + what);
     return result;
 }
 
-function _ts_BuyBuilding(what, howMany) {
+function _ts_BuyBuilding(what) {
     var result = buyBuilding(what);
     if (result)
         console.log('TrimpShifter - buying building ' + what);
@@ -191,7 +187,7 @@ function _ts_BuyUpgrade(what) {
     return result;
 }
 
-function _ts_BuyEquipment(what, upTo) {
+function _ts_BuyEquipment(what) {
     var result = buyEquipment(what);
     if (result)
         console.log('TrimpShifter - buying equipment ' + what);
