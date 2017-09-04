@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.8',
+    _ts_version = '1.0.9',
     _ts_lastGathered = 'food'
     ;
 
@@ -40,6 +40,9 @@ function MainLoop() {
         _ts_BuyBuilding('Forge');
     }
 
+
+
+
     //high priority upgrades, will wait to upupgrade these first
     var priorityUpgrades = ['Anger', 'Battle', 'Blockmaster', 'Bloodlust', 'Bounty', 'Coordination', 'Efficiency', 'Egg', 'Explorers', 'Gymystic', 'Miners', 'Potency', 'Scientists', 'Speedfarming', 'Speedlumber', 'Speedminer', 'Speedscience', 'TrainTacular', 'Trainers', 'Trapstorm', 'UberHotel', 'UberHouse', 'UberHut', 'UberMansion', 'UberResort'],
         hasPriority = false;
@@ -58,43 +61,6 @@ function MainLoop() {
         }
     }
 
-    //if (hasPriority)
-    //    return;
-
-
-    //buy jobs
-    if (game.workspaces > 0) {
-
-        if (game.jobs.Trainer.locked == 0) {
-            result = true;
-            while (result) {
-                result = _ts_BuyJob('Trainer');
-            }
-        }
-
-
-        if (game.jobs.Explorer.locked == 0) {
-            result = true;
-            while (result && game.jobs.Explorer.owned < 50) {
-                result = _ts_BuyJob('Explorer');
-            }
-        }
-        
-        var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
-
-        if (sciRatio > 25) {
-            _ts_BuyJob('Scientist');
-            
-        }
-
-        if (game.jobs.Miner.locked==0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
-            _ts_BuyJob('Miner');
-        else if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
-            _ts_BuyJob('Lumberjack');
-        else if(game.jobs.Farmer.locked==0)
-            _ts_BuyJob('Farmer');
-
-    }
 
 
     //buy non-priority upgrades
@@ -150,6 +116,48 @@ function MainLoop() {
         while (result && game.equipment.Shield.level < 5)
             result = _ts_BuyEquipment('Shield');
     }
+
+
+    //if (hasPriority)
+    //    return;
+
+
+    //buy jobs
+    if (game.workspaces > 0) {
+
+        if (game.jobs.Trainer.locked == 0) {
+            result = true;
+            while (result) {
+                result = _ts_BuyJob('Trainer');
+            }
+        }
+
+
+        if (game.jobs.Explorer.locked == 0) {
+            result = true;
+            while (result && game.jobs.Explorer.owned < 50) {
+                result = _ts_BuyJob('Explorer');
+            }
+        }
+        
+        var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
+
+        if (sciRatio > 20) {
+            _ts_BuyJob('Scientist');
+            
+        }
+
+        if (game.jobs.Miner.locked==0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
+            _ts_BuyJob('Miner');
+        if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
+            _ts_BuyJob('Lumberjack');
+        if(game.jobs.Farmer.locked==0)
+            _ts_BuyJob('Farmer');
+
+    }
+
+
+
 
 
 
