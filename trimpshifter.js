@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.9',
+    _ts_version = '1.0.10',
     _ts_lastGathered = 'food'
     ;
 

@@ -121,12 +121,20 @@
             , controlledDiggerId = 0
             , highlightTiles = [
                 {
-                    Coord: new Point(0, 0),
+                    Coord: new Point(-1,-1),
+                    Color: '#ff0000'
+                },
+                {
+                    Coord: new Point(-1, -1),
+                    Color: '#0000ff'
+                },
+                {
+                    Coord: new Point(-1, -1),
                     Color: '#00ff00'
                 },
                 {
-                    Coord: new Point(2, 4),
-                    Color: '#888888'
+                    Coord: new Point(-1, -1),
+                    Color: '#88ff00'
                 }
             ]
 
@@ -415,8 +423,10 @@
                     }
                     else if (!keyboardState['s'] && !keyboardState['w']) {
                         //neither, if in air, fall
-                        digger.Falling = true;
+                        //digger.Falling = true;
                         digger.Velocity.Y += GRAVITY;
+
+                        //digger.Velocity.Y *= 0.1;
 
                     }
                 }
@@ -430,14 +440,171 @@
 
             for (i = 0; i < diggers.length; i++) {
                 diggers[i].Update();
+                var digger = diggers[i];
                 var edge = 0, edgeTile=0;
 
                 var currCenterTile = new Point(
-                    Math.floor(diggers[i].X / tileSize),
-                    Math.floor(diggers[i].Y / tileSize) 
+                    Math.floor(digger.X / tileSize),
+                    Math.floor(digger.Y / tileSize) 
                 );
 
-                highlightTiles[0].Coord.Y = currCenterTile.Y;
+                var bbMin = digger.BoundingBoxMin(),
+                    bbMax = digger.BoundingBoxMax();
+
+                var cornerTiles = [
+                    new Point(
+                        Math.floor(bbMin.X / tileSize),
+                        Math.floor(bbMin.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMax.X / tileSize),
+                        Math.floor(bbMin.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMax.X / tileSize),
+                        Math.floor(bbMax.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMin.X / tileSize),
+                        Math.floor(bbMax.Y / tileSize)
+                    )
+                ];
+                //console.log(cornerTiles);
+                /*if (i == 0) {
+                    highlightTiles[0].Coord = new Point(cornerTiles[0].X, cornerTiles[0].Y);
+                    highlightTiles[1].Coord = new Point(cornerTiles[1].X, cornerTiles[1].Y);
+                    highlightTiles[2].Coord = new Point(cornerTiles[2].X, cornerTiles[2].Y);
+                    highlightTiles[3].Coord = new Point(cornerTiles[3].X, cornerTiles[3].Y);
+                }
+                */
+
+                var fillState = // TL, TR, BR, BL
+                    world[cornerTiles[0].X][cornerTiles[0].Y].Solid ? '1' : '0' +
+                    world[cornerTiles[1].X][cornerTiles[1].Y].Solid ? '1' : '0' +
+                    world[cornerTiles[2].X][cornerTiles[2].Y].Solid ? '1' : '0' +
+                    world[cornerTiles[3].X][cornerTiles[3].Y].Solid ? '1' : '0';
+
+                var recoil = 0.1;
+
+                if (digger.Velocity.Y > 0) { //moving down
+                    if (world[cornerTiles[2].X][cornerTiles[2].Y].Solid || world[cornerTiles[3].X][cornerTiles[3].Y].Solid) {
+                        //either tile below is solid
+                        if (digger.Velocity.Y <= recoil) {
+                            digger.Velocity.Y = 0;
+                            
+                        }
+                        else {
+                            digger.Velocity.Y *= -recoil;
+
+                        }
+                        digger.Y = (cornerTiles[2].Y * tileSize) - digger.SizeHalf.Y;
+                    }
+                   
+                }
+
+                if (digger.Velocity.Y < 0) { //moving up
+
+                    if (world[cornerTiles[0].X][cornerTiles[0].Y].Solid || world[cornerTiles[1].X][cornerTiles[1].Y].Solid) {
+                        //either tile above is solid
+                        if (digger.Velocity.Y >= -recoil) {
+                            digger.Velocity.Y = 0;
+
+                        }
+                        else {
+                            digger.Velocity.Y *= -recoil;
+
+                        }
+                        digger.Y = (cornerTiles[2].Y * tileSize) + digger.SizeHalf.Y;
+                    }
+
+                }
+
+                if (digger.Velocity.X < 0) { //moving left
+                    if (world[cornerTiles[0].X][cornerTiles[0].Y].Solid || world[cornerTiles[3].X][cornerTiles[3].Y].Solid) {
+                        //either tile above is solid
+                        if (digger.Velocity.X >= -recoil) {
+                            digger.Velocity.X = 0;
+
+                        }
+                        else {
+                            digger.Velocity.X *= -recoil;
+
+                        }
+                        digger.X = (cornerTiles[2].X * tileSize) + digger.SizeHalf.X;
+                    }
+
+
+                }
+                else if (digger.Velocity.X > 0) { //moving right
+                    if (world[cornerTiles[1].X][cornerTiles[1].Y].Solid || world[cornerTiles[2].X][cornerTiles[2].Y].Solid) {
+                        //either tile above is solid
+                        if (digger.Velocity.X <= recoil) {
+                            digger.Velocity.X = 0;
+
+                        }
+                        else {
+                            digger.Velocity.X *= -recoil;
+
+                        }
+                        digger.X = (cornerTiles[1].X * tileSize) - digger.SizeHalf.X;
+                    }
+
+                }
+
+
+                cornerTiles = [
+                    new Point(
+                        Math.floor(bbMin.X / tileSize),
+                        Math.floor(bbMin.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMax.X / tileSize),
+                        Math.floor(bbMin.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMax.X / tileSize),
+                        Math.floor(bbMax.Y / tileSize)
+                    ),
+                    new Point(
+                        Math.floor(bbMin.X / tileSize),
+                        Math.floor(bbMax.Y / tileSize)
+                    )
+                ];
+                //console.log(cornerTiles);
+                if (i == 0) {
+                    highlightTiles[0].Coord = new Point(cornerTiles[0].X, cornerTiles[0].Y);
+                    highlightTiles[1].Coord = new Point(cornerTiles[1].X, cornerTiles[1].Y);
+                    highlightTiles[2].Coord = new Point(cornerTiles[2].X, cornerTiles[2].Y);
+                    highlightTiles[3].Coord = new Point(cornerTiles[3].X, cornerTiles[3].Y);
+                }
+
+
+                /*
+                if (digger.Velocity.X > 0) {
+                    switch (fillState) {
+                        case '0110': //right side wall
+                            if (digger.Velocity.X < recoil)
+                                digger.Velocity.X = 0;
+                            else
+                                digger.Velocity.X *= -recoil;
+                            digger.X = bbMax.X - digger.SizeHalf;
+                            
+                            break;
+                        case '0111': //lower right corner
+
+
+
+                            break;
+
+
+                    }
+
+                }
+
+
+
+                /*
+                //highlightTiles[0].Coord.Y = currCenterTile.Y;
                 //horizontal check
                 if (diggers[i].Velocity.X > 0) {
                     //moving right
@@ -450,7 +617,7 @@
                     }
                     else {
                          edgeTile = Math.floor(edge / tileSize);
-                        highlightTiles[0].Coord.X = edgeTile;
+                        //highlightTiles[0].Coord.X = edgeTile;
 
                         if (world[edgeTile][currCenterTile.Y].Solid) {
                             diggers[i].X = ((edgeTile) * tileSize) - diggers[i].SizeHalf.X;
@@ -469,7 +636,7 @@
                     }
                     else {
                          edgeTile = Math.floor(edge / tileSize);
-                        highlightTiles[0].Coord.X = edgeTile;
+                        //highlightTiles[0].Coord.X = edgeTile;
                         if (world[edgeTile][currCenterTile.Y].Solid) {
                             diggers[i].X = ((edgeTile + 1) * tileSize) + diggers[i].SizeHalf.X;
                             diggers[i].Velocity.X = 0;
@@ -480,7 +647,7 @@
 
 
                 //vertical check
-                highlightTiles[1].Coord.X = currCenterTile.X;
+                //highlightTiles[1].Coord.X = currCenterTile.X;
                 if (diggers[i].Velocity.Y > 0) {
                     //moving down
                     edge = diggers[i].Y + diggers[i].SizeHalf.Y;
@@ -492,7 +659,7 @@
                     }
                     else {
                         edgeTile = Math.floor(edge / tileSize);
-                        highlightTiles[1].Coord.Y = edgeTile;
+                        //highlightTiles[1].Coord.Y = edgeTile;
 
                         if (world[currCenterTile.X][edgeTile].Solid) {
                             diggers[i].Y = ((edgeTile) * tileSize) - diggers[i].SizeHalf.Y;
@@ -511,7 +678,7 @@
                     }
                     else {
                         edgeTile = Math.floor(edge / tileSize);
-                        highlightTiles[1].Coord.Y = edgeTile;
+                        //highlightTiles[1].Coord.Y = edgeTile;
                         if (world[currCenterTile.X][edgeTile].Solid) {
                             diggers[i].Y = ((edgeTile + 1) * tileSize) + diggers[i].SizeHalf.Y;
                             diggers[i].Velocity.Y = 0;
@@ -519,7 +686,7 @@
                     }
 
                 }
-
+                //*/
 
 
                 //console.log(world[edgeTile][currCenterTile.Y]);
@@ -601,9 +768,9 @@
                 ct++;
 
             }
-            /*
+            
             ctx.lineWidth = 4;
-            for (i = 0; i < 2; i++) {
+            for (i = 0; i < highlightTiles.length; i++) {
                 if (highlightTiles[i].Coord.X != -1) {
                     ctx.strokeStyle = highlightTiles[i].Color;
                     ctx.beginPath();
@@ -620,7 +787,7 @@
                     ctx.stroke();
                 }
             }
-            */
+            
 
 
 
