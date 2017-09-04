@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.6'
+    _ts_version = '1.0.7'
     ;
 
 
@@ -57,8 +57,8 @@ function MainLoop() {
         }
     }
 
-    if (hasPriority)
-        return;
+    //if (hasPriority)
+    //    return;
 
 
     //buy jobs
