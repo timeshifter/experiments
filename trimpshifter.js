@@ -2,8 +2,9 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.10',
-    _ts_lastGathered = 'food'
+    _ts_version = '1.0.11',
+    _ts_lastGathered = 'food',
+    _ts_logEnabled=true,
     ;
 
 
@@ -25,19 +26,54 @@ function MainLoop() {
 
     //set buys to 1
     numTab(1);
-
+    //game.resources.food.max*(1+(game.portal.Packrat.modifier*game.portal.Packrat.level))
 
     //check storage
-    if ((game.resources.food.owned / game.resources.food.max) > 0.75) {
+    if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
         _ts_BuyBuilding('Barn');
     }
 
-    if ((game.resources.wood.owned / game.resources.wood.max) > 0.75) {
+    if ((game.resources.wood.owned / game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
         _ts_BuyBuilding('Shed');
     }
 
-    if ((game.resources.metal.owned / game.resources.metal.max) > 0.75) {
+    if ((game.resources.metal.owned / game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
         _ts_BuyBuilding('Forge');
+    }
+
+
+    //buy jobs
+    if (game.workspaces > 0) {
+
+        if (game.jobs.Trainer.locked == 0) {
+            result = true;
+            while (result) {
+                result = _ts_BuyJob('Trainer');
+            }
+        }
+
+
+        if (game.jobs.Explorer.locked == 0) {
+            result = true;
+            while (result && game.jobs.Explorer.owned < 50) {
+                result = _ts_BuyJob('Explorer');
+            }
+        }
+
+        var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
+
+        if (sciRatio > 20) {
+            _ts_BuyJob('Scientist');
+
+        }
+
+        if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
+            _ts_BuyJob('Miner');
+        if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
+            _ts_BuyJob('Lumberjack');
+        if (game.jobs.Farmer.locked == 0)
+            _ts_BuyJob('Farmer');
+
     }
 
 
@@ -62,6 +98,8 @@ function MainLoop() {
     }
 
 
+    if (hasPriority)
+        return;
 
     //buy non-priority upgrades
     var upgrades = [
@@ -84,6 +122,7 @@ function MainLoop() {
         if (game.upgrades[upgrades[i]].locked == 0)
             _ts_BuyUpgrade(upgrades[i]);
     }
+
 
 
 
@@ -118,43 +157,8 @@ function MainLoop() {
     }
 
 
-    //if (hasPriority)
-    //    return;
 
 
-    //buy jobs
-    if (game.workspaces > 0) {
-
-        if (game.jobs.Trainer.locked == 0) {
-            result = true;
-            while (result) {
-                result = _ts_BuyJob('Trainer');
-            }
-        }
-
-
-        if (game.jobs.Explorer.locked == 0) {
-            result = true;
-            while (result && game.jobs.Explorer.owned < 50) {
-                result = _ts_BuyJob('Explorer');
-            }
-        }
-        
-        var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
-
-        if (sciRatio > 20) {
-            _ts_BuyJob('Scientist');
-            
-        }
-
-        if (game.jobs.Miner.locked==0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
-            _ts_BuyJob('Miner');
-        if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
-            _ts_BuyJob('Lumberjack');
-        if(game.jobs.Farmer.locked==0)
-            _ts_BuyJob('Farmer');
-
-    }
 
 
 
@@ -186,30 +190,36 @@ function MainLoop() {
 
 
 
+
+
+
+
+
+
 function _ts_BuyJob(what) {
     var result = buyJob(what);
-    if (result)
+    if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying job ' + what);
     return result;
 }
 
 function _ts_BuyBuilding(what) {
     var result = buyBuilding(what);
-    if (result)
+    if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying building ' + what);
     return result;
 }
 
 function _ts_BuyUpgrade(what) {
     var result = buyUpgrade(what);
-    if (result)
+    if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying upgrade ' + what);
     return result;
 }
 
 function _ts_BuyEquipment(what) {
     var result = buyEquipment(what);
-    if (result)
+    if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying equipment ' + what);
     return result;
 }
