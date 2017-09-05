@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.13',
+    _ts_version = '1.0.14',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -43,7 +43,7 @@ function MainLoop() {
 
 
     //buy jobs
-    if (game.workspaces > 0) {
+    if (game.workspaces > 0 && false) {
 
         if (game.jobs.Trainer.locked == 0) {
             result = true;
@@ -217,9 +217,36 @@ function _ts_BuyUpgrade(what) {
     return result;
 }
 
+
 function _ts_BuyEquipment(what) {
-    var result = buyEquipment(what);
-    if (result && _ts_logEnabled)
-        console.log('TrimpShifter - buying equipment ' + what);
-    return result;
+    //game.equipment["Breastplate"].cost.metal[0]*Math.pow(game.equipment["Breastplate"].cost.metal[1],game.equipment["Breastplate"].level)
+    var canBuy = false;
+
+    if (what == 'Shield') {
+        if (_ts_GetEquipmentCost('Shield') > game.resources.wood.owned)
+            canBuy = true;
+    }
+    else {
+        if (_ts_GetEquipmentCost(what) > game.resources.metal.owned)
+            canbuy = true;
+    }
+
+
+    if (canBuy) {
+        buyEquipment(what);
+
+        if (_ts_logEnabled)
+            console.log('TrimpShifter - buying equipment ' + what);
+    }
+    return canBuy;
+}
+
+
+function _ts_GetEquipmentCost(what) {
+    if (what == 'Shield') {
+        return (game.equipment["Shield"].cost.wood[0] * Math.pow(game.equipment["Shield"].cost.wood[1], game.equipment["Shield"].level)) * Math.pow(0.95, game.portal.Artisanistry.level);
+    }
+    else {
+        return (game.equipment[what].cost.metal[0] * Math.pow(game.equipment[what].cost.metal[1], game.equipment[what].level)) * Math.pow(0.95, game.portal.Artisanistry.level);
+    }
 }
