@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.15',
+    _ts_version = '1.0.16',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -226,11 +226,11 @@ function _ts_BuyEquipment(what) {
     var canBuy = false;
 
     if (what == 'Shield') {
-        if (_ts_GetEquipmentCost('Shield') > game.resources.wood.owned)
+        if (_ts_GetEquipmentCost('Shield') <= game.resources.wood.owned)
             canBuy = true;
     }
     else {
-        if (_ts_GetEquipmentCost(what) > game.resources.metal.owned)
+        if (_ts_GetEquipmentCost(what) <= game.resources.metal.owned)
             canbuy = true;
     }
 
