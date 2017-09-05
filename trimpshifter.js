@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.18',
+    _ts_version = '1.0.19',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -55,7 +55,7 @@ function MainLoop() {
 
         if (game.jobs.Explorer.locked == 0) {
             result = true;
-            while (result && game.jobs.Explorer.owned < 50) {
+            while (result && game.jobs.Explorer.owned < (game.global.world*2)) {
                 result = _ts_BuyJob('Explorer');
             }
         }
