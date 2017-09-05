@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.14',
+    _ts_version = '1.0.15',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -200,6 +200,7 @@ function _ts_BuyJob(what) {
     var result = buyJob(what);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying job ' + what);
+    tooltip('hide');
     return result;
 }
 
@@ -207,6 +208,7 @@ function _ts_BuyBuilding(what) {
     var result = buyBuilding(what);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying building ' + what);
+    tooltip('hide');
     return result;
 }
 
@@ -214,6 +216,7 @@ function _ts_BuyUpgrade(what) {
     var result = buyUpgrade(what);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying upgrade ' + what);
+    tooltip('hide');
     return result;
 }
 
@@ -238,6 +241,7 @@ function _ts_BuyEquipment(what) {
         if (_ts_logEnabled)
             console.log('TrimpShifter - buying equipment ' + what);
     }
+    tooltip('hide');
     return canBuy;
 }
 
