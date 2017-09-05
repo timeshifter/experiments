@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.17',
+    _ts_version = '1.0.18',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -43,7 +43,7 @@ function MainLoop() {
 
 
     //buy jobs
-    if (game.workspaces > 0 && false) {
+    if (game.workspaces > 0) {
 
         if (game.jobs.Trainer.locked == 0) {
             result = true;
