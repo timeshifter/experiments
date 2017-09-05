@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.16',
+    _ts_version = '1.0.17',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -197,32 +197,29 @@ function MainLoop() {
 
 
 function _ts_BuyJob(what) {
-    var result = buyJob(what);
+    var result = buyJob(what, true, true);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying job ' + what);
-    tooltip('hide');
     return result;
 }
 
 function _ts_BuyBuilding(what) {
-    var result = buyBuilding(what);
+    var result = buyBuilding(what, true, true);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying building ' + what);
-    tooltip('hide');
     return result;
 }
 
 function _ts_BuyUpgrade(what) {
-    var result = buyUpgrade(what);
+    var result = buyUpgrade(what, true, true);
     if (result && _ts_logEnabled)
         console.log('TrimpShifter - buying upgrade ' + what);
-    tooltip('hide');
+
     return result;
 }
 
 
 function _ts_BuyEquipment(what) {
-    //game.equipment["Breastplate"].cost.metal[0]*Math.pow(game.equipment["Breastplate"].cost.metal[1],game.equipment["Breastplate"].level)
     var canBuy = false;
 
     if (what == 'Shield') {
@@ -236,12 +233,11 @@ function _ts_BuyEquipment(what) {
 
 
     if (canBuy) {
-        buyEquipment(what);
+        buyEquipment(what, null, true);
 
         if (_ts_logEnabled)
             console.log('TrimpShifter - buying equipment ' + what);
     }
-    tooltip('hide');
     return canBuy;
 }
 
