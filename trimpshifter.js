@@ -2,11 +2,16 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.20',
+    _ts_version = '1.0.21',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
 
+// game.global.soldierHealth
+// game.global.soldierCurrentBlock
+// ourBaseDamage = (baseDamage * (1-getPlayerCritChance()) + (baseDamage * getPlayerCritChance() * getPlayerCritDamageMult()));
+
+// enemyHealth = getEnemyMaxHealth(game.global.world + 1,50);
 
 
 setTimeout(Startup, 2000);
@@ -62,10 +67,13 @@ function MainLoop() {
 
         var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
 
-        if (sciRatio > 20) {
+        if (sciRatio > 25) {
             _ts_BuyJob('Scientist');
 
         }
+
+        if (game.workspaces > 310)
+            numTab(4);
 
         if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
             _ts_BuyJob('Miner');
@@ -73,6 +81,8 @@ function MainLoop() {
             _ts_BuyJob('Lumberjack');
         if (game.jobs.Farmer.locked == 0)
             _ts_BuyJob('Farmer');
+
+        numTab(1);
 
     }
 
@@ -166,13 +176,33 @@ function MainLoop() {
 
 
     //level up buildings
-    var buildings = ['Gym', 'Nursery', 'Tribute', 'Wormhole', 'Gateway', 'Resort', 'Hotel', 'Mansion', 'House', 'Hut'];
+    var buildings = [
+        'Gym',
+        'Nursery',
+        'Tribute',
+        'Wormhole',
+        'Gateway',
+        'Resort',
+        'Hotel',
+        'Mansion',
+        'House',
+        'Hut'
+    ];
 
     for (var i = 0; i < buildings.length; i++) {
         if (game.buildings[buildings[i]].locked == 0) {
             result = true;
             while (result) {
-                result = _ts_BuyBuilding(buildings[i]);
+                var build = true;
+                if (buildings[i] == 'Wormhole') {
+                    var h = Math.floor(10 * Math.pow(game.buildings.Wormhole));
+                    if (game.resources.helium.owned * 0.1 > h)
+                        build = true;
+
+                }
+
+                if (build)
+                    result = _ts_BuyBuilding(buildings[i]);
             }
         }
     }
