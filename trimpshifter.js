@@ -52,17 +52,17 @@ function MainLoop() {
 
         if (game.jobs.Trainer.locked == 0) {
             result = true;
-            while (result) {
+           // while (result) {
                 result = _ts_BuyJob('Trainer');
-            }
+            //}
         }
 
 
         if (game.jobs.Explorer.locked == 0) {
             result = true;
-            while (result && game.jobs.Explorer.owned < (game.global.world*3)) {
+            //while (result && game.jobs.Explorer.owned < (game.global.world*3)) {
                 result = _ts_BuyJob('Explorer');
-            }
+            //}
         }
 
         var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
@@ -146,7 +146,7 @@ function MainLoop() {
 
         if (game.equipment[weapons[i]].locked == 0) {
             result = true;
-            while (result && game.equipment[weapons[i]].level < 9)
+           // while (result && game.equipment[weapons[i]].level < 9)
                 result = _ts_BuyEquipment(weapons[i]);
         }
     }
@@ -155,7 +155,7 @@ function MainLoop() {
 
         if (game.equipment[armor[i]].locked == 0) {
             result = true;
-            while (result && game.equipment[armor[i]].level < 11)
+            //while (result && game.equipment[armor[i]].level < 11)
                 result = _ts_BuyEquipment(armor[i]);
         }
     }
@@ -163,7 +163,7 @@ function MainLoop() {
     if (game.equipment.Shield.locked == 0) {
         result = true;
         while (result && game.equipment.Shield.level < 5)
-            result = _ts_BuyEquipment('Shield');
+            //result = _ts_BuyEquipment('Shield');
     }
 
 
@@ -192,7 +192,7 @@ function MainLoop() {
     for (var i = 0; i < buildings.length; i++) {
         if (game.buildings[buildings[i]].locked == 0) {
             result = true;
-            while (result) {
+           // while (result) {
                 var build = true;
                 if (buildings[i] == 'Wormhole') {
                     var h = Math.floor(10 * Math.pow(1.075, game.buildings.Wormhole.owned));
@@ -209,7 +209,7 @@ function MainLoop() {
                     result = _ts_BuyBuilding(buildings[i]);
                 else
                     result = false;
-            }
+            //}
         }
     }
 
