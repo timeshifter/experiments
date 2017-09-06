@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.26',
+    _ts_version = '1.0.27',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -162,8 +162,8 @@ function MainLoop() {
 
     if (game.equipment.Shield.locked == 0) {
         result = true;
-        while (result && game.equipment.Shield.level < 5)
-            //result = _ts_BuyEquipment('Shield');
+        //while (result && game.equipment.Shield.level < 5)
+            result = _ts_BuyEquipment('Shield');
     }
 
 
