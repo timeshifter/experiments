@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.27',
+    _ts_version = '1.0.28',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -58,7 +58,7 @@ function MainLoop() {
         }
 
 
-        if (game.jobs.Explorer.locked == 0) {
+        if (game.jobs.Explorer.locked == 0 && game.jobs.Explorer.owned < (game.global.world * 3)) {
             result = true;
             //while (result && game.jobs.Explorer.owned < (game.global.world*3)) {
                 result = _ts_BuyJob('Explorer');
@@ -144,7 +144,7 @@ function MainLoop() {
 
     for (var i = 0; i < weapons.length; i++) {
 
-        if (game.equipment[weapons[i]].locked == 0) {
+        if (game.equipment[weapons[i]].locked == 0 && game.equipment[weapons[i]].level<9) {
             result = true;
            // while (result && game.equipment[weapons[i]].level < 9)
                 result = _ts_BuyEquipment(weapons[i]);
@@ -153,14 +153,14 @@ function MainLoop() {
 
     for (var i = 0; i < armor.length; i++) {
 
-        if (game.equipment[armor[i]].locked == 0) {
+        if (game.equipment[armor[i]].locked == 0 && game.equipment[armor[i]].level < 11) {
             result = true;
             //while (result && game.equipment[armor[i]].level < 11)
                 result = _ts_BuyEquipment(armor[i]);
         }
     }
 
-    if (game.equipment.Shield.locked == 0) {
+    if (game.equipment.Shield.locked == 0 && game.equipment.Shield.level < 5) {
         result = true;
         //while (result && game.equipment.Shield.level < 5)
             result = _ts_BuyEquipment('Shield');
