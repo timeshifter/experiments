@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.23',
+    _ts_version = '1.0.24',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -196,17 +196,19 @@ function MainLoop() {
                 var build = true;
                 if (buildings[i] == 'Wormhole') {
                     var h = Math.floor(10 * Math.pow(1.075, game.buildings.Wormhole.owned));
-                    if (game.resources.helium.owned * 0.1 > h)
-                        build = true;
+                    if (game.resources.helium.owned * 0.1 < h)
+                        build = false;
                 }
                 else if (buildings[i] == 'Gateway') {
                     var f = game.buildings.Gateway.cost.fragments[0] * Math.pow(game.buildings.Gateway.cost.fragments[1], game.buildings.Gateway.purchased);
-                    if (game.resources.fragments.owned *0.1 > h)
-                        build = true;
+                    if (game.resources.fragments.owned * 0.1 < h)
+                        build = false;
                 }
 
                 if (build)
                     result = _ts_BuyBuilding(buildings[i]);
+                else
+                    result = false;
             }
         }
     }
