@@ -2,7 +2,7 @@ var _ts_enabled = true,
     _ts_gameLoopId,
     _ts_gameLoopInterval = 250,
     _ts_i = 0,
-    _ts_version = '1.0.24',
+    _ts_version = '1.0.25',
     _ts_lastGathered = 'food',
     _ts_logEnabled=true
     ;
@@ -201,7 +201,7 @@ function MainLoop() {
                 }
                 else if (buildings[i] == 'Gateway') {
                     var f = game.buildings.Gateway.cost.fragments[0] * Math.pow(game.buildings.Gateway.cost.fragments[1], game.buildings.Gateway.purchased);
-                    if (game.resources.fragments.owned * 0.1 < h)
+                    if (game.resources.fragments.owned * 0.1 < f)
                         build = false;
                 }
 
