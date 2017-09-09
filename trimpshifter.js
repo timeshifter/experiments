@@ -1,11 +1,3 @@
-var _ts_enabled = true,
-    _ts_gameLoopId,
-    _ts_gameLoopInterval = 250,
-    _ts_i = 0,
-    _ts_version = '1.0.28',
-    _ts_lastGathered = 'food',
-    _ts_logEnabled=true
-    ;
 
 // game.global.soldierHealth
 // game.global.soldierCurrentBlock
@@ -14,213 +6,345 @@ var _ts_enabled = true,
 // enemyHealth = getEnemyMaxHealth(game.global.world + 1,50);
 
 
-setTimeout(Startup, 2000);
-
-function Startup() {
-    gameLoopId = setInterval(MainLoop, _ts_gameLoopInterval);
-    console.log('TrimpShifter v.' + _ts_version);
-}
-
-function MainLoop() {
-    if (!_ts_enabled) {
-        clearInterval(_ts_gameLoopId);
-        return;
-    }
-
-    var result = false;
-
-    //set buys to 1
-    numTab(1);
-    //game.resources.food.max*(1+(game.portal.Packrat.modifier*game.portal.Packrat.level))
-
-    //check storage
-    if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
-        _ts_BuyBuilding('Barn');
-    }
-
-    if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
-        _ts_BuyBuilding('Shed');
-    }
-
-    if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > 0.5) {
-        _ts_BuyBuilding('Forge');
-    }
+setTimeout(TrimpShifter.Init, 2000);
 
 
-    //buy jobs
-    if (game.workspaces > 0) {
+/*
+special maps
+11 - the block (Shieldblock)
+15 - the wall (Bounty)
+21 - dimension of anger (portal)
+33 - trimple of doom
 
-        if (game.jobs.Trainer.locked == 0) {
-            result = true;
-           // while (result) {
-                result = _ts_BuyJob('Trainer');
-            //}
+*/
+
+
+
+var TrimpShifter = {
+    STATE_ENUM: {
+
+    },
+
+    Config: {
+        Version: '1.0.29',
+        LoopInterval: 250,
+        Enabled: true,
+        LogEnabled: true,
+    },
+
+    Settings: {
+        AutoBuyStorage: false,
+        AutoBuyJobs: false,
+        AutoBuyBuildings: false,
+        AutoBuyUpgrades: false,
+        AutoBuyEquipment: false,
+        AutoPrestige: false,
+        GatewayFragmentRatio: 0.1,
+        WormholeHeliumRatio: 0.05,
+        StorageRatio: 0.5,
+        MaxScientists: function () {
+            return (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / 24;
+        },
+        MaxExplorers: function () {
+            return game.global.world * 3;
+        }
+
+    },
+
+    Variables: {
+        LastGathered: 'food',
+        TimerID: -1
+    },
+
+    Init: function () {
+        console.log('TrimpShifter v.' + this.Config.Version);
+        this.Start();
+    },
+
+    MainLoop: function () {
+        //game is paused, do nothing
+        if (game.options.menu.pauseGame.enabled)
+            return;
+
+
+        //TrimpShifter is disabled, kick out of loop
+        if (!this.Config.Enabled) {
+            clearInterval(this.Variables.TimerID);
+            console.log('TrimpShifter stopping');
         }
 
 
-        if (game.jobs.Explorer.locked == 0 && game.jobs.Explorer.owned < (game.global.world * 3)) {
-            result = true;
-            //while (result && game.jobs.Explorer.owned < (game.global.world*3)) {
-                result = _ts_BuyJob('Explorer');
-            //}
-        }
+        //game.resources.trimps.owned==0
+        //new game, do stuff
 
-        var sciRatio = (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / game.jobs.Scientist.owned;
+        // if(game.resources.trimps.owned/game.resources.trimps.realMax())<0.5
+        // below breeding threshhold, check traps
+        // setGather('trimps')
 
-        if (sciRatio > 25) {
-            _ts_BuyJob('Scientist');
 
-        }
+        // game.global.trapBuildAllowed
+        // check if autotrap is available
 
-        if (game.workspaces > 310)
-            numTab(4);
-
-        if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
-            _ts_BuyJob('Miner');
-        if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
-            _ts_BuyJob('Lumberjack');
-        if (game.jobs.Farmer.locked == 0)
-            _ts_BuyJob('Farmer');
-
-        numTab(1);
-
-    }
+        // game.global.trapBuildToggled
 
 
 
+        //storage always has priority
+        if (this.Settings.AutoBuyStorage)
+            this.CheckStorage();
 
-    //high priority upgrades, will wait to upupgrade these first
-    var priorityUpgrades = ['Anger', 'Battle', 'Blockmaster', 'Bloodlust', 'Bounty', 'Coordination', 'Efficiency', 'Egg', 'Explorers', 'Gymystic', 'Miners', 'Potency', 'Scientists', 'Speedfarming', 'Speedlumber', 'Speedminer', 'Speedscience', 'TrainTacular', 'Trainers', 'Trapstorm', 'UberHotel', 'UberHouse', 'UberHut', 'UberMansion', 'UberResort'],
-        hasPriority = false;
+        if (this.Settings.AutoBuyJobs)
+            this.CheckJobs();
 
 
-    for (var i = 0; i < priorityUpgrades.length; i++) {
-        if (game.upgrades[priorityUpgrades[i]].locked == 0) {
 
-            result = _ts_BuyUpgrade(priorityUpgrades[i]);
+        if (this.Settings.AutoBuyUpgrades) {
+            var priorityUpgrades = ['Anger', 'Battle', 'Blockmaster', 'Bloodlust', 'Bounty', 'Coordination', 'Efficiency', 'Egg', 'Explorers', 'Gymystic', 'Miners', 'Potency', 'Scientists', 'Speedfarming', 'Speedlumber', 'Speedminer', 'Speedscience', 'TrainTacular', 'Trainers', 'Trapstorm', 'UberHotel', 'UberHouse', 'UberHut', 'UberMansion', 'UberResort'];
 
-            if (!result) {
 
-                hasPriority = true;
+            for (var i = 0; i < priorityUpgrades.length; i++) {
+                if (game.upgrades[priorityUpgrades[i]].locked == 0) {
+
+                    this.BuyUpgrade(priorityUpgrades[i]);
+
+                }
             }
 
+
         }
-    }
 
+        if (this.Settings.AutoPrestige) {
 
-    //if (hasPriority)
-     //   return;
+            var upgrades = [
+                'Dagadder',
+                'Megamace',
+                'Axeidic',
+                'Polierarm',
+                'Greatersword',
 
-    //buy non-priority upgrades
-    var upgrades = [
-        'Dagadder',
-        'Megamace',
-        'Axeidic',
-        'Polierarm',
-        'Greatersword',
+                'Bootboost',
+                'Hellishmet',
+                'Pantastic',
+                'Bestplate',
+                'Smoldershoulder',
 
-        'Bootboost',
-        'Hellishmet',
-        'Pantastic',
-        'Bestplate',
-        'Smoldershoulder',
+                'Supershield',
+            ];
 
-        'Supershield',
-    ];
-
-    for (var i = 0; i < upgrades.length; i++) {
-        if (game.upgrades[upgrades[i]].locked == 0)
-            _ts_BuyUpgrade(upgrades[i]);
-    }
-
-
-
-
-    //level up equipment
-    var weapons = ['Dagger', 'Mace', 'Battleaxe', 'Polearm', 'Greatsword'],
-        armor = ['Boots', 'Helmet', 'Pants', 'Breastplate', 'Shoulderguards'];
-
-
-
-    for (var i = 0; i < weapons.length; i++) {
-
-        if (game.equipment[weapons[i]].locked == 0 && game.equipment[weapons[i]].level<9) {
-            result = true;
-           // while (result && game.equipment[weapons[i]].level < 9)
-                result = _ts_BuyEquipment(weapons[i]);
+            for (var i = 0; i < upgrades.length; i++) {
+                if (game.upgrades[upgrades[i]].locked == 0)
+                    this.BuyUpgrade(upgrades[i]);
+            }
         }
-    }
-
-    for (var i = 0; i < armor.length; i++) {
-
-        if (game.equipment[armor[i]].locked == 0 && game.equipment[armor[i]].level < 11) {
-            result = true;
-            //while (result && game.equipment[armor[i]].level < 11)
-                result = _ts_BuyEquipment(armor[i]);
-        }
-    }
-
-    if (game.equipment.Shield.locked == 0 && game.equipment.Shield.level < 5) {
-        result = true;
-        //while (result && game.equipment.Shield.level < 5)
-            result = _ts_BuyEquipment('Shield');
-    }
 
 
 
+        
+
+        if (this.Settings.AutoBuyEquipment) {
+
+
+            //level up equipment
+            var weapons = ['Dagger', 'Mace', 'Battleaxe', 'Polearm', 'Greatsword'],
+                armor = ['Boots', 'Helmet', 'Pants', 'Breastplate', 'Shoulderguards'];
 
 
 
+            for (var i = 0; i < weapons.length; i++) {
 
-
-
-
-    //level up buildings
-    var buildings = [
-        'Gym',
-        'Nursery',
-        'Tribute',
-        'Wormhole',
-        'Gateway',
-        'Resort',
-        'Hotel',
-        'Mansion',
-        'House',
-        'Hut'
-    ];
-
-    for (var i = 0; i < buildings.length; i++) {
-        if (game.buildings[buildings[i]].locked == 0) {
-            result = true;
-           // while (result) {
-                var build = true;
-                if (buildings[i] == 'Wormhole') {
-                    var h = Math.floor(10 * Math.pow(1.075, game.buildings.Wormhole.owned));
-                    if (game.resources.helium.owned * 0.1 < h)
-                        build = false;
+                if (game.equipment[weapons[i]].locked == 0 && game.equipment[weapons[i]].level < 9) {
+                    this.BuyEquipment(weapons[i]);
                 }
-                else if (buildings[i] == 'Gateway') {
-                    var f = game.buildings.Gateway.cost.fragments[0] * Math.pow(game.buildings.Gateway.cost.fragments[1], game.buildings.Gateway.purchased);
-                    if (game.resources.fragments.owned * 0.1 < f)
-                        build = false;
+            }
+
+            for (var i = 0; i < armor.length; i++) {
+
+                if (game.equipment[armor[i]].locked == 0 && game.equipment[armor[i]].level < 11) {
+                    this.BuyEquipment(armor[i]);
                 }
+            }
 
-                if (build)
-                    result = _ts_BuyBuilding(buildings[i]);
-                else
-                    result = false;
-            //}
+            if (game.equipment.Shield.locked == 0 && game.equipment.Shield.level < 5) {
+                this.BuyEquipment('Shield');
+            }
+
+
         }
+
+
+
+
+
+        if (this.Settings.AutoBuyBuildings) {
+
+            //level up buildings
+            var buildings = [
+                'Gym',
+                'Nursery',
+                'Tribute',
+                'Wormhole',
+                'Gateway',
+                'Resort',
+                'Hotel',
+                'Mansion',
+                'House',
+                'Hut'
+            ];
+
+            for (var i = 0; i < buildings.length; i++) {
+                if (game.buildings[buildings[i]].locked == 0) {
+                    var build = true;
+                    if (buildings[i] == 'Wormhole') {
+                        var h = Math.floor(10 * Math.pow(1.075, game.buildings.Wormhole.owned));
+                        if (game.resources.helium.owned * this.Settings.WormholeHeliumRatio < h)
+                            build = false;
+                    }
+                    else if (buildings[i] == 'Gateway') {
+                        var f = game.buildings.Gateway.cost.fragments[0] * Math.pow(game.buildings.Gateway.cost.fragments[1], game.buildings.Gateway.purchased);
+                        if (game.resources.fragments.owned * this.Settings.GatewayFragmentRatio < f)
+                            build = false;
+                    }
+
+                    if (build)
+                        this.BuyBuilding(buildings[i]);
+                }
+            }
+
+
+        }
+
+
+
+
+
+
+
+
+
+        if (game.global.buildingsQueue.length > 0 && game.global.playerGathering != 'buildings') {
+            this.Variables.LastGathered = game.global.playerGathering;
+
+            setGather('buildings');
+        }
+        else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
+            setGather(this.Variables.LastGathered);
+        }
+
+    },
+
+    CheckStorage: function () {
+        numTab(1);
+
+        if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
+            this.BuyBuilding('Barn');
+        }
+
+        if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
+            this.BuyBuilding('Shed');
+        }
+
+        if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
+            this.BuyBuilding('Forge');
+        }
+    },
+
+    CheckJobs: function () {
+        if (game.workspaces > 0) {
+            numTab(1);
+
+            if (game.jobs.Trainer.locked == 0) {
+                
+                var trainer_cost = game.jobs.Trainer.cost.food[0] * Math.pow(game.jobs.Trainer.cost.food[1], game.jobs.Trainer.owned);
+                if (trainer_cost <= game.resources.food.owned)
+                    this.BuyJob('Trainer');
+                
+            }
+
+
+            if (game.jobs.Explorer.locked == 0) {
+                var explorer_cost = game.jobs.Explorer.cost.food[0] * Math.pow(game.jobs.Explorer.cost.food[1], game.jobs.Explorer.owned);
+
+                if (game.jobs.Explorer.owned < this.Settings.MaxExplorers() && explorer_cost <= game.resources.food.owned) {
+
+                    this.BuyJob('Explorer');
+                }
+            }
+
+            
+
+            if (this.Settings.MaxScientists() > this.Settings.ScientistRatio) {
+                this.BuyJob('Scientist');
+
+            }
+
+            if (game.workspaces > 300)
+                numTab(4);
+
+            if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
+                this.BuyJob('Miner');
+
+            if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
+                this.BuyJob('Lumberjack');
+
+            if (game.jobs.Farmer.locked == 0)
+                this.BuyJob('Farmer');
+
+            numTab(1);
+
+        }
+    },
+
+
+
+    Stop: function () {
+        this.Config.Enabled = false;
+    },
+    Start: function () {
+        console.log('TrimpShifter starting');
+        this.Config.Enabled = true;
+        this.Variables.TimerID = setInterval(this.MainLoop, this.Config.LoopInterval);
+    },
+
+    BuyJob: function (what) {
+        buyJob(what, true, true);
+    },
+    BuyBuilding: function (what) {
+        var result = buyBuilding(what, true, true);
+        if (result && this.config.LogEnabled)
+            console.log('TrimpShifter - buying building ' + what);
+        return result;
+    },
+    BuyUpgrade: function (what) {
+        var result = buyUpgrade(what, true, true);
+        if (result && this.config.LogEnabled)
+            console.log('TrimpShifter - buying upgrade ' + what);
+
+        return result;
+    },
+    BuyEquipment: function (what) {
+        var canBuy = false;
+        if (what == 'Shield') {
+            if (game.resources.wood.owned >= (game.equipment["Shield"].cost.wood[0] * Math.pow(game.equipment["Shield"].cost.wood[1], game.equipment["Shield"].level)) * Math.pow(0.95, game.portal.Artisanistry.level))
+                canBuy = true;
+        }
+        else {
+            if (game.resources.metal.owned >= (game.equipment[what].cost.metal[0] * Math.pow(game.equipment[what].cost.metal[1], game.equipment[what].level)) * Math.pow(0.95, game.portal.Artisanistry.level))
+                canBuy = true;
+        }
+        if (canBuy) {
+            buyEquipment(what, null, true);
+
+            if (this.config.LogEnabled)
+                console.log('TrimpShifter - buying equipment ' + what);
+        }
+    },
+    Debug: function (msg) {
+
+    },
+    Message: function (msg) {
+       
     }
 
-    if (game.global.buildingsQueue.length > 0 && game.global.playerGathering != 'buildings') {
-        _ts_lastGathered = game.global.playerGathering;
-
-        setGather('buildings');
-    }
-    else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
-        setGather(_ts_lastGathered);
-    }
 
 }
 
@@ -228,61 +352,3 @@ function MainLoop() {
 
 
 
-
-
-
-
-function _ts_BuyJob(what) {
-    var result = buyJob(what, true, true);
-    if (result && _ts_logEnabled)
-        console.log('TrimpShifter - buying job ' + what);
-    return result;
-}
-
-function _ts_BuyBuilding(what) {
-    var result = buyBuilding(what, true, true);
-    if (result && _ts_logEnabled)
-        console.log('TrimpShifter - buying building ' + what);
-    return result;
-}
-
-function _ts_BuyUpgrade(what) {
-    var result = buyUpgrade(what, true, true);
-    if (result && _ts_logEnabled)
-        console.log('TrimpShifter - buying upgrade ' + what);
-
-    return result;
-}
-
-
-function _ts_BuyEquipment(what) {
-    var canBuy = false;
-
-    if (what == 'Shield') {
-        if (_ts_GetEquipmentCost('Shield') <= game.resources.wood.owned)
-            canBuy = true;
-    }
-    else {
-        if (_ts_GetEquipmentCost(what) <= game.resources.metal.owned)
-            canBuy = true;
-    }
-
-
-    if (canBuy) {
-        buyEquipment(what, null, true);
-
-        if (_ts_logEnabled)
-            console.log('TrimpShifter - buying equipment ' + what);
-    }
-    return canBuy;
-}
-
-
-function _ts_GetEquipmentCost(what) {
-    if (what == 'Shield') {
-        return (game.equipment["Shield"].cost.wood[0] * Math.pow(game.equipment["Shield"].cost.wood[1], game.equipment["Shield"].level)) * Math.pow(0.95, game.portal.Artisanistry.level);
-    }
-    else {
-        return (game.equipment[what].cost.metal[0] * Math.pow(game.equipment[what].cost.metal[1], game.equipment[what].level)) * Math.pow(0.95, game.portal.Artisanistry.level);
-    }
-}
