@@ -25,19 +25,19 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '1.0.30',
+        Version: '0.1.2',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
     },
 
     Settings: {
-        AutoBuyStorage: false,
-        AutoBuyJobs: false,
-        AutoBuyBuildings: false,
-        AutoBuyUpgrades: false,
-        AutoBuyEquipment: false,
-        AutoPrestige: false,
+        AutoBuyStorage: true,
+        AutoBuyJobs: true,
+        AutoBuyBuildings: true,
+        AutoBuyUpgrades: true,
+        AutoBuyEquipment: true,
+        AutoPrestige: true,
         GatewayFragmentRatio: 0.1,
         WormholeHeliumRatio: 0.05,
         StorageRatio: 0.5,
@@ -309,13 +309,13 @@ var TrimpShifter = {
     },
     BuyBuilding: function (what) {
         var result = buyBuilding(what, true, true);
-        if (result && TrimpShifter.config.LogEnabled)
+        if (result && TrimpShifter.Config.LogEnabled)
             console.log('TrimpShifter - buying building ' + what);
         return result;
     },
     BuyUpgrade: function (what) {
         var result = buyUpgrade(what, true, true);
-        if (result && TrimpShifter.config.LogEnabled)
+        if (result && TrimpShifter.Config.LogEnabled)
             console.log('TrimpShifter - buying upgrade ' + what);
 
         return result;
@@ -333,7 +333,7 @@ var TrimpShifter = {
         if (canBuy) {
             buyEquipment(what, null, true);
 
-            if (TrimpShifter.config.LogEnabled)
+            if (TrimpShifter.Config.LogEnabled)
                 console.log('TrimpShifter - buying equipment ' + what);
         }
     },
