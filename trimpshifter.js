@@ -56,6 +56,7 @@ var TrimpShifter = {
     },
 
     Init: function () {
+        console.log(this);
         console.log('TrimpShifter v.' + this.Config.Version);
         this.Start();
     },
