@@ -6,7 +6,6 @@
 // enemyHealth = getEnemyMaxHealth(game.global.world + 1,50);
 
 
-setTimeout(TrimpShifter.Init, 2000);
 
 
 /*
@@ -352,3 +351,4 @@ var TrimpShifter = {
 
 
 
+setTimeout(TrimpShifter.Init, 2000);
