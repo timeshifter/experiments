@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.1.2',
+        Version: '0.2.3',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -251,6 +251,11 @@ var TrimpShifter = {
         if (game.workspaces > 0) {
             numTab(1);
 
+            if (game.jobs.Scientist.owned < TrimpShifter.Settings.MaxScientists()) {
+                TrimpShifter.BuyJob('Scientist');
+
+            }
+
             if (game.jobs.Trainer.locked == 0) {
                 
                 var trainer_cost = game.jobs.Trainer.cost.food[0] * Math.pow(game.jobs.Trainer.cost.food[1], game.jobs.Trainer.owned);
@@ -271,10 +276,6 @@ var TrimpShifter = {
 
             
 
-            if (TrimpShifter.Settings.MaxScientists() > TrimpShifter.Settings.ScientistRatio) {
-                TrimpShifter.BuyJob('Scientist');
-
-            }
 
             if (game.workspaces > 300)
                 numTab(4);
