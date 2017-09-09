@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '1.0.29',
+        Version: '1.0.30',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -56,9 +56,8 @@ var TrimpShifter = {
     },
 
     Init: function () {
-        console.log(this);
         console.log('TrimpShifter v.' + TrimpShifter.Config.Version);
-        this.Start();
+        TrimpShifter.Start();
     },
 
     MainLoop: function () {
@@ -68,8 +67,8 @@ var TrimpShifter = {
 
 
         //TrimpShifter is disabled, kick out of loop
-        if (!this.Config.Enabled) {
-            clearInterval(this.Variables.TimerID);
+        if (!TrimpShifter.Config.Enabled) {
+            clearInterval(TrimpShifter.Variables.TimerID);
             console.log('TrimpShifter stopping');
         }
 
@@ -90,22 +89,22 @@ var TrimpShifter = {
 
 
         //storage always has priority
-        if (this.Settings.AutoBuyStorage)
-            this.CheckStorage();
+        if (TrimpShifter.Settings.AutoBuyStorage)
+            TrimpShifter.CheckStorage();
 
-        if (this.Settings.AutoBuyJobs)
-            this.CheckJobs();
+        if (TrimpShifter.Settings.AutoBuyJobs)
+            TrimpShifter.CheckJobs();
 
 
 
-        if (this.Settings.AutoBuyUpgrades) {
+        if (TrimpShifter.Settings.AutoBuyUpgrades) {
             var priorityUpgrades = ['Anger', 'Battle', 'Blockmaster', 'Bloodlust', 'Bounty', 'Coordination', 'Efficiency', 'Egg', 'Explorers', 'Gymystic', 'Miners', 'Potency', 'Scientists', 'Speedfarming', 'Speedlumber', 'Speedminer', 'Speedscience', 'TrainTacular', 'Trainers', 'Trapstorm', 'UberHotel', 'UberHouse', 'UberHut', 'UberMansion', 'UberResort'];
 
 
             for (var i = 0; i < priorityUpgrades.length; i++) {
                 if (game.upgrades[priorityUpgrades[i]].locked == 0) {
 
-                    this.BuyUpgrade(priorityUpgrades[i]);
+                    TrimpShifter.BuyUpgrade(priorityUpgrades[i]);
 
                 }
             }
@@ -113,7 +112,7 @@ var TrimpShifter = {
 
         }
 
-        if (this.Settings.AutoPrestige) {
+        if (TrimpShifter.Settings.AutoPrestige) {
 
             var upgrades = [
                 'Dagadder',
@@ -133,7 +132,7 @@ var TrimpShifter = {
 
             for (var i = 0; i < upgrades.length; i++) {
                 if (game.upgrades[upgrades[i]].locked == 0)
-                    this.BuyUpgrade(upgrades[i]);
+                    TrimpShifter.BuyUpgrade(upgrades[i]);
             }
         }
 
@@ -141,7 +140,7 @@ var TrimpShifter = {
 
         
 
-        if (this.Settings.AutoBuyEquipment) {
+        if (TrimpShifter.Settings.AutoBuyEquipment) {
 
 
             //level up equipment
@@ -153,19 +152,19 @@ var TrimpShifter = {
             for (var i = 0; i < weapons.length; i++) {
 
                 if (game.equipment[weapons[i]].locked == 0 && game.equipment[weapons[i]].level < 9) {
-                    this.BuyEquipment(weapons[i]);
+                    TrimpShifter.BuyEquipment(weapons[i]);
                 }
             }
 
             for (var i = 0; i < armor.length; i++) {
 
                 if (game.equipment[armor[i]].locked == 0 && game.equipment[armor[i]].level < 11) {
-                    this.BuyEquipment(armor[i]);
+                    TrimpShifter.BuyEquipment(armor[i]);
                 }
             }
 
             if (game.equipment.Shield.locked == 0 && game.equipment.Shield.level < 5) {
-                this.BuyEquipment('Shield');
+                TrimpShifter.BuyEquipment('Shield');
             }
 
 
@@ -175,7 +174,7 @@ var TrimpShifter = {
 
 
 
-        if (this.Settings.AutoBuyBuildings) {
+        if (TrimpShifter.Settings.AutoBuyBuildings) {
 
             //level up buildings
             var buildings = [
@@ -196,17 +195,17 @@ var TrimpShifter = {
                     var build = true;
                     if (buildings[i] == 'Wormhole') {
                         var h = Math.floor(10 * Math.pow(1.075, game.buildings.Wormhole.owned));
-                        if (game.resources.helium.owned * this.Settings.WormholeHeliumRatio < h)
+                        if (game.resources.helium.owned * TrimpShifter.Settings.WormholeHeliumRatio < h)
                             build = false;
                     }
                     else if (buildings[i] == 'Gateway') {
                         var f = game.buildings.Gateway.cost.fragments[0] * Math.pow(game.buildings.Gateway.cost.fragments[1], game.buildings.Gateway.purchased);
-                        if (game.resources.fragments.owned * this.Settings.GatewayFragmentRatio < f)
+                        if (game.resources.fragments.owned * TrimpShifter.Settings.GatewayFragmentRatio < f)
                             build = false;
                     }
 
                     if (build)
-                        this.BuyBuilding(buildings[i]);
+                        TrimpShifter.BuyBuilding(buildings[i]);
                 }
             }
 
@@ -222,12 +221,12 @@ var TrimpShifter = {
 
 
         if (game.global.buildingsQueue.length > 0 && game.global.playerGathering != 'buildings') {
-            this.Variables.LastGathered = game.global.playerGathering;
+            TrimpShifter.Variables.LastGathered = game.global.playerGathering;
 
             setGather('buildings');
         }
         else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
-            setGather(this.Variables.LastGathered);
+            setGather(TrimpShifter.Variables.LastGathered);
         }
 
     },
@@ -235,16 +234,16 @@ var TrimpShifter = {
     CheckStorage: function () {
         numTab(1);
 
-        if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
-            this.BuyBuilding('Barn');
+        if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            TrimpShifter.BuyBuilding('Barn');
         }
 
-        if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
-            this.BuyBuilding('Shed');
+        if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            TrimpShifter.BuyBuilding('Shed');
         }
 
-        if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > this.Settings.StorageRatio) {
-            this.BuyBuilding('Forge');
+        if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            TrimpShifter.BuyBuilding('Forge');
         }
     },
 
@@ -256,7 +255,7 @@ var TrimpShifter = {
                 
                 var trainer_cost = game.jobs.Trainer.cost.food[0] * Math.pow(game.jobs.Trainer.cost.food[1], game.jobs.Trainer.owned);
                 if (trainer_cost <= game.resources.food.owned)
-                    this.BuyJob('Trainer');
+                    TrimpShifter.BuyJob('Trainer');
                 
             }
 
@@ -264,16 +263,16 @@ var TrimpShifter = {
             if (game.jobs.Explorer.locked == 0) {
                 var explorer_cost = game.jobs.Explorer.cost.food[0] * Math.pow(game.jobs.Explorer.cost.food[1], game.jobs.Explorer.owned);
 
-                if (game.jobs.Explorer.owned < this.Settings.MaxExplorers() && explorer_cost <= game.resources.food.owned) {
+                if (game.jobs.Explorer.owned < TrimpShifter.Settings.MaxExplorers() && explorer_cost <= game.resources.food.owned) {
 
-                    this.BuyJob('Explorer');
+                    TrimpShifter.BuyJob('Explorer');
                 }
             }
 
             
 
-            if (this.Settings.MaxScientists() > this.Settings.ScientistRatio) {
-                this.BuyJob('Scientist');
+            if (TrimpShifter.Settings.MaxScientists() > TrimpShifter.Settings.ScientistRatio) {
+                TrimpShifter.BuyJob('Scientist');
 
             }
 
@@ -281,13 +280,13 @@ var TrimpShifter = {
                 numTab(4);
 
             if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
-                this.BuyJob('Miner');
+                TrimpShifter.BuyJob('Miner');
 
             if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
-                this.BuyJob('Lumberjack');
+                TrimpShifter.BuyJob('Lumberjack');
 
             if (game.jobs.Farmer.locked == 0)
-                this.BuyJob('Farmer');
+                TrimpShifter.BuyJob('Farmer');
 
             numTab(1);
 
@@ -297,12 +296,12 @@ var TrimpShifter = {
 
 
     Stop: function () {
-        this.Config.Enabled = false;
+        TrimpShifter.Config.Enabled = false;
     },
     Start: function () {
         console.log('TrimpShifter starting');
-        this.Config.Enabled = true;
-        this.Variables.TimerID = setInterval(this.MainLoop, this.Config.LoopInterval);
+        TrimpShifter.Config.Enabled = true;
+        TrimpShifter.Variables.TimerID = setInterval(TrimpShifter.MainLoop, TrimpShifter.Config.LoopInterval);
     },
 
     BuyJob: function (what) {
@@ -310,13 +309,13 @@ var TrimpShifter = {
     },
     BuyBuilding: function (what) {
         var result = buyBuilding(what, true, true);
-        if (result && this.config.LogEnabled)
+        if (result && TrimpShifter.config.LogEnabled)
             console.log('TrimpShifter - buying building ' + what);
         return result;
     },
     BuyUpgrade: function (what) {
         var result = buyUpgrade(what, true, true);
-        if (result && this.config.LogEnabled)
+        if (result && TrimpShifter.config.LogEnabled)
             console.log('TrimpShifter - buying upgrade ' + what);
 
         return result;
@@ -334,7 +333,7 @@ var TrimpShifter = {
         if (canBuy) {
             buyEquipment(what, null, true);
 
-            if (this.config.LogEnabled)
+            if (TrimpShifter.config.LogEnabled)
                 console.log('TrimpShifter - buying equipment ' + what);
         }
     },
