@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.4',
+        Version: '0.2.5',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -220,7 +220,7 @@ var TrimpShifter = {
 
         if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.5) {
 
-            if (game.building.Trap.owned > 0) {
+            if (game.buildings.Trap.owned > 0) {
                 setGather('trimps');
             }
             else {
