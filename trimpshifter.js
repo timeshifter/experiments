@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.5',
+        Version: '0.2.6',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -218,7 +218,7 @@ var TrimpShifter = {
 
 
 
-        if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.5) {
+        if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.6) {
 
             if (game.buildings.Trap.owned > 0) {
                 setGather('trimps');
@@ -257,6 +257,10 @@ var TrimpShifter = {
         }
         else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
             setGather(TrimpShifter.Variables.LastGathered);
+        }
+
+        if (!game.global.fighting) {
+            fightManual();
         }
 
     },
