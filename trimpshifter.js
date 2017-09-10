@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.3',
+        Version: '0.2.4',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -39,13 +39,13 @@ var TrimpShifter = {
         AutoBuyEquipment: true,
         AutoPrestige: true,
         GatewayFragmentRatio: 0.1,
-        WormholeHeliumRatio: 0.05,
+        WormholeHeliumRatio: 0.025,
         StorageRatio: 0.5,
         MaxScientists: function () {
-            return (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / 24;
+            return (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / 22;
         },
         MaxExplorers: function () {
-            return game.global.world * 3;
+            return game.global.world * 4;
         }
 
     },
@@ -73,18 +73,6 @@ var TrimpShifter = {
         }
 
 
-        //game.resources.trimps.owned==0
-        //new game, do stuff
-
-        // if(game.resources.trimps.owned/game.resources.trimps.realMax())<0.5
-        // below breeding threshhold, check traps
-        // setGather('trimps')
-
-
-        // game.global.trapBuildAllowed
-        // check if autotrap is available
-
-        // game.global.trapBuildToggled
 
 
 
@@ -215,12 +203,54 @@ var TrimpShifter = {
 
 
 
+        //game.resources.trimps.owned==0
+        //new game, do stuff
+
+        // if(game.resources.trimps.owned/game.resources.trimps.realMax())<0.5
+        // below breeding threshhold, check traps
+        // setGather('trimps')
+
+
+        // game.global.trapBuildAllowed
+        // check if autotrap is available
+
+        // game.global.trapBuildToggled
+
+
+
+        if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.5) {
+
+            if (game.building.Trap.owned > 0) {
+                setGather('trimps');
+            }
+            else {
+
+                TrimpShifter.BuyBuilding('Trap');
+
+            }
+
+
+
+        }
+        else {
+            setGather('metal');
+        }
 
 
 
 
+        if (
+            game.global.buildingsQueue.length > 0
+            && game.global.playerGathering != 'buildings'
+            && !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
+        ) {
+            //building *something*
 
-        if (game.global.buildingsQueue.length > 0 && game.global.playerGathering != 'buildings') {
+            
+
+
+
+
             TrimpShifter.Variables.LastGathered = game.global.playerGathering;
 
             setGather('buildings');
