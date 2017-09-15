@@ -192,8 +192,11 @@ var TrimpShifter = {
                             build = false;
                     }
 
-                    if (build)
+                    if (build) {
+                        if (game.global.numTab != 1)
+                            numTab(1);
                         TrimpShifter.BuyBuilding(buildings[i]);
+                    }
                 }
             }
 
@@ -218,6 +221,9 @@ var TrimpShifter = {
 
 
 
+        /*
+
+
         if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.6) {
 
             if (game.buildings.Trap.owned > 0) {
@@ -225,7 +231,10 @@ var TrimpShifter = {
             }
             else {
 
-                TrimpShifter.BuyBuilding('Trap');
+                if (!game.global.trapBuildingToggled) {
+
+                    TrimpShifter.BuyBuilding('Trap');
+                }
 
             }
 
@@ -236,7 +245,7 @@ var TrimpShifter = {
             setGather('metal');
         }
 
-
+        */
 
 
         if (
@@ -266,26 +275,34 @@ var TrimpShifter = {
     },
 
     CheckStorage: function () {
-        numTab(1);
+        
 
         if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            if (game.global.numTab != 1)
+                numTab(1);
             TrimpShifter.BuyBuilding('Barn');
         }
 
         if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            if (game.global.numTab != 1)
+                numTab(1);
             TrimpShifter.BuyBuilding('Shed');
         }
 
         if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+            if (game.global.numTab != 1)
+                numTab(1);
             TrimpShifter.BuyBuilding('Forge');
         }
     },
 
     CheckJobs: function () {
         if (game.workspaces > 0) {
-            numTab(1);
+           // numTab(1);
 
             if (game.jobs.Scientist.owned < TrimpShifter.Settings.MaxScientists()) {
+                if (game.global.numTab != 1)
+                    numTab(1);
                 TrimpShifter.BuyJob('Scientist');
 
             }
@@ -293,8 +310,11 @@ var TrimpShifter = {
             if (game.jobs.Trainer.locked == 0) {
                 
                 var trainer_cost = game.jobs.Trainer.cost.food[0] * Math.pow(game.jobs.Trainer.cost.food[1], game.jobs.Trainer.owned);
-                if (trainer_cost <= game.resources.food.owned)
+                if (trainer_cost <= game.resources.food.owned) {
+                    if (game.global.numTab != 1)
+                        numTab(1);
                     TrimpShifter.BuyJob('Trainer');
+                }
                 
             }
 
@@ -303,16 +323,20 @@ var TrimpShifter = {
                 var explorer_cost = game.jobs.Explorer.cost.food[0] * Math.pow(game.jobs.Explorer.cost.food[1], game.jobs.Explorer.owned);
 
                 if (game.jobs.Explorer.owned < TrimpShifter.Settings.MaxExplorers() && explorer_cost <= game.resources.food.owned) {
-
+                    if (game.global.numTab != 1)
+                        numTab(1);
                     TrimpShifter.BuyJob('Explorer');
                 }
             }
 
             
 
-
-            if (game.workspaces > 300)
+            var isBig = false, currTab = game.global.numTab;
+            if (game.workspaces > 300 && game.global.numTab != 4) {
                 numTab(4);
+                isBig = true;
+                
+            }
 
             if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
                 TrimpShifter.BuyJob('Miner');
@@ -323,7 +347,10 @@ var TrimpShifter = {
             if (game.jobs.Farmer.locked == 0)
                 TrimpShifter.BuyJob('Farmer');
 
-            numTab(1);
+            if (isBig) {
+                numTab(currTab);
+            }
+            //numTab(1);
 
         }
     },
@@ -341,8 +368,10 @@ var TrimpShifter = {
 
     BuyJob: function (what) {
         buyJob(what, true, true);
+        //numTab(1);
     },
     BuyBuilding: function (what) {
+        //numTab(1);
         var result = buyBuilding(what, true, true);
         if (result && TrimpShifter.Config.LogEnabled)
             console.log('TrimpShifter - buying building ' + what);
@@ -366,6 +395,8 @@ var TrimpShifter = {
                 canBuy = true;
         }
         if (canBuy) {
+            if (game.global.numTab != 1)
+                numTab(1);
             buyEquipment(what, null, true);
 
             if (TrimpShifter.Config.LogEnabled)
