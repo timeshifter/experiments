@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.6',
+        Version: '0.2.7',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
