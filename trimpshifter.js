@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.7',
+        Version: '0.2.8',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -193,8 +193,6 @@ var TrimpShifter = {
                     }
 
                     if (build) {
-                        if (game.global.numTab != 1)
-                            numTab(1);
                         TrimpShifter.BuyBuilding(buildings[i]);
                     }
                 }
@@ -268,7 +266,7 @@ var TrimpShifter = {
             setGather(TrimpShifter.Variables.LastGathered);
         }
 
-        if (!game.global.fighting) {
+        if (!game.global.fighting && game.global.upgrades.Bloodlust.owned==0) {
             fightManual();
         }
 
@@ -372,9 +370,14 @@ var TrimpShifter = {
     },
     BuyBuilding: function (what) {
         //numTab(1);
-        var result = buyBuilding(what, true, true);
-        if (result && TrimpShifter.Config.LogEnabled)
+        if (canAffordBuilding(what, false, false, false, false, 1)) {
             console.log('TrimpShifter - buying building ' + what);
+            var currTab = game.global.numTab;
+            numTab(1);
+            buyBuilding(what, true, true);
+            numTab(currTab);
+            
+        }
         return result;
     },
     BuyUpgrade: function (what) {
