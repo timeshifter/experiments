@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.9',
+        Version: '0.2.10',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -266,7 +266,7 @@ var TrimpShifter = {
             setGather(TrimpShifter.Variables.LastGathered);
         }
 
-        if (!game.global.fighting && game.global.upgrades.Bloodlust.owned==0) {
+        if (!game.global.fighting && game.upgrades.Bloodlust.owned==0) {
             fightManual();
         }
 
