@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.8',
+        Version: '0.2.9',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -378,7 +378,7 @@ var TrimpShifter = {
             numTab(currTab);
             
         }
-        return result;
+        //return result;
     },
     BuyUpgrade: function (what) {
         var result = buyUpgrade(what, true, true);
