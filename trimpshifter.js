@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.10',
+        Version: '0.2.11',
         LoopInterval: 250,
         Enabled: true,
         LogEnabled: true,
@@ -38,8 +38,8 @@ var TrimpShifter = {
         AutoBuyUpgrades: true,
         AutoBuyEquipment: true,
         AutoPrestige: true,
-        GatewayFragmentRatio: 0.1,
-        WormholeHeliumRatio: 0.025,
+        GatewayFragmentRatio: 0.2,
+        WormholeHeliumRatio: 0.0,
         StorageRatio: 0.5,
         MaxScientists: function () {
             return (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / 22;
@@ -126,7 +126,7 @@ var TrimpShifter = {
 
 
 
-        
+
 
         if (TrimpShifter.Settings.AutoBuyEquipment) {
 
@@ -249,11 +249,11 @@ var TrimpShifter = {
         if (
             game.global.buildingsQueue.length > 0
             && game.global.playerGathering != 'buildings'
-            && !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
+            //&& !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
         ) {
             //building *something*
 
-            
+
 
 
 
@@ -262,11 +262,17 @@ var TrimpShifter = {
 
             setGather('buildings');
         }
+        else if (game.global.buildingsQueue.length == 0 && game.buildings.Trap.owned < 1000) {
+
+            TrimpShifter.BuyBuilding('Trap');
+        }
+
         else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
+
             setGather(TrimpShifter.Variables.LastGathered);
         }
 
-        if (!game.global.fighting && game.upgrades.Bloodlust.owned==0) {
+        if (!game.global.fighting && game.upgrades.Bloodlust.owned == 0) {
             fightManual();
         }
 
