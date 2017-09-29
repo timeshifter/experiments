@@ -1,0 +1,415 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Shifter's Factorio Bitmasker</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 1000px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+            padding-bottom: 100px;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        ul, li {
+            list-style: none;
+        }
+
+        p {
+            line-height: 24px;
+        }
+
+        #work {
+            padding: 40px;
+            min-height: 400px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #work table {
+            margin:0 auto;
+        
+        }
+
+        #work td {
+            overflow:visible;
+            position:relative;
+            width:36px;
+            height:36px;
+            padding:2px;
+        }
+
+        #work td div.lamp {
+            width: 67px;
+            height: 58px;
+            position: absolute;
+            background-image: url(light-off.png);
+            background-position: 0px 0px;
+            overflow: visible;
+            left: -16px;
+            top: -9px;
+            z-index:0;
+        }
+
+        #work td.on div.lamp {
+            background-image: url(light-on-patch.png), url(light-off.png);
+            background-position: center -8px, 0px 0px;
+        }
+
+        #work td div.click {
+            position: absolute;
+            width: 100%;
+            cursor: pointer;
+            height: 100%;
+            top: 2px;
+            left: 2px;
+            z-index:1;
+        }
+
+        #controls {
+            float: left;
+            width: 350px;
+            height: 300px;
+            padding: 10px;
+        }
+
+        #controls div {
+            width:49%;
+            display:inline-block;
+            vertical-align:top;
+        }
+
+        #controls label {
+            display:block;
+            margin-top:4px;
+            cursor:pointer;
+        }
+        
+
+
+        #code {
+            float: right;
+            width: 450px;
+            height: 300px;
+            padding: 10px;
+        }
+
+        #code table {
+            width:100%;
+            
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>
+        Shifter's Factorio Bitmasker
+    </h1>
+    <div id="work">
+        <table cellpadding="0" cellspacing="2">
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="controls">
+        <p>Dimensions: <input type="number" id="dimX" interval="1" min="1" max="31" value="5" /> x <input type="number" id="dimY" interval="1" min="1" max="31" value="5" /></p>
+        <div class="anchor">
+            <p>Anchor:</p>
+            <label><input type="radio" name="anchor" checked="checked" class="top left" /> top left</label>
+            <label><input type="radio" name="anchor" class="top right"/> top right</label>
+            <label><input type="radio" name="anchor" class="bottom left" /> bottom left</label>
+            <label><input type="radio" name="anchor" class="bottom right" /> bottom right</label>
+
+        </div>
+        <div class="direction">
+            <p>Directionality:</p>
+            <label><input type="radio" name="direction" checked="checked" class="right-bottom" /> right &gt; down</label>
+            <label><input type="radio" name="direction" class="right-top" /> right &gt; up</label>
+            <label><input type="radio" name="direction" class="left-bottom" /> left &gt; down</label>
+            <label><input type="radio" name="direction" class="left-top" /> left &gt; up</label>
+            <label><input type="radio" name="direction" class="top-right" /> up &gt; right</label>
+            <label><input type="radio" name="direction" class="top-left" /> up &gt; left</label>
+            <label><input type="radio" name="direction" class="bottom-right" /> down &gt; right</label>
+            <label><input type="radio" name="direction" class="bottom-left" /> down &gt; left</label>
+        </div>
+    </div>
+    <div id="code">
+        <table id="tblSignals">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Binary</th>
+                    <th>Decimal</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+    </div>
+    <div style="clear: both;">
+    </div>
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+    <script>
+
+        var isDragging = false, dragState = false,
+            signalList = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        $(function () {
+            $('#dimX, #dimY').change(UpdateDimension);
+
+            $(window).on('mouseup', function () {
+                isDragging = false;
+            })
+
+            $('#work')
+            .on('mousedown', 'div.click', function () {
+                isDragging = true;
+                $(this).parent().toggleClass('on');
+                CalculateBitmasks();
+                dragState = $(this).parent().hasClass('on');
+            })
+
+            .on('mouseenter', 'div.click', function () {
+                if (isDragging) {
+                    if ($(this).parent().hasClass('on') != dragState) {
+                        $(this).parent().toggleClass('on');
+                        CalculateBitmasks();
+                    }
+                }
+                });
+
+            $('.anchor input').change(function () {
+                var cls = $(this).attr('class').split(' ');
+
+                var $arr = $('.direction input[class*="' + cls[0] + '"]').add('.direction input[class*="' + cls[1] + '"]');
+
+                $arr.parent().hide();
+                $('.direction input').not($arr).parent().show();
+                $('.direction input:visible').eq(0).click();
+
+
+                UpdateSignalAssignments();
+            });
+            $('.anchor input:checked').change();
+
+            $('.direction input').change(function () {
+                UpdateSignalAssignments();
+            });
+
+            UpdateDimension();
+        });
+
+        function UpdateDimension() {
+            
+            var result = '<tr><td></td>' + Array(parseInt(dimX.value, 10) + 1).join('<td class="signal-top"></td>') + '<td></td></tr>';
+
+            var row = '<tr class="lamp"><td class="signal-left"></td>' + Array(parseInt(dimX.value, 10) + 1).join('<td class="lamp"><div class="lamp"></div><div class="click"></div></td>') + '<td class="signal-right"></td></tr>';
+
+            result += Array(parseInt(dimY.value, 10) + 1).join(row);
+            result += '<tr><td></td>' + Array(parseInt(dimX.value, 10) + 1).join('<td class="signal-bottom"></td>') + '<td></td></tr>';
+            
+            $('#work table tbody').html(result);
+
+            UpdateSignalAssignments();
+        }
+
+        function UpdateSignalAssignments() {
+            //clear out all signals
+            $('#work td[class^="signal-"').html('');
+
+
+            var cls = $('.direction input:checked').attr('class'), parts=cls.split('-');
+            var side = '', dir = 0;
+            var signalInc = 0, loopStart = 0, loopEnd = 0, signalIncCounter=0;
+            var setsPerSignal = 1;
+
+            var maxX = parseInt(dimX.value, 10), maxY = parseInt(dimY.value, 10);
+
+            //decide which side the signals go on
+            if (parts[0] == "left")
+                side = 'right';
+            else if (parts[0] == 'right')
+                side = 'left';
+            else if (parts[0] == 'top')
+                side = 'bottom';
+            else
+                side = 'top';
+
+            //decide which direction signals iterate on
+            if (parts[1] == 'right') {
+                dir = 1;
+                loopStart = 0;
+                loopEnd = maxX;
+            }
+            else if (parts[1] == 'bottom') {
+                dir = 1;
+                loopStart = 0;
+                loopEnd = maxY;
+            }
+            else if (parts[1] == 'left') {
+                dir = -1;
+                loopStart = maxX - 1;
+                loopEnd = -1;
+            }
+            else { //top
+                dir = -1;
+                loopStart = maxY-1;
+                loopEnd = -1;
+            }
+
+
+            //decide how many rows or columns a single signal can cover
+
+            if (parts[0] == 'left' || parts[0] == 'right') {
+                setsPerSignal = Math.floor(31.0 / maxX);
+
+            }
+            else {
+                setsPerSignal = Math.floor(31.0 / maxY);
+            }
+
+            //set signals
+            for (var i = loopStart; i != loopEnd; i += dir) {
+                $('#work td.signal-' + side).eq(i).html('<img src="signal_' + signalList[signalInc] + '.png" />');
+
+
+
+                if (++signalIncCounter == setsPerSignal)
+                {
+                    signalInc++;
+                    signalIncCounter = 0;
+                }
+
+
+
+            }
+
+
+            /*
+
+            if (parts[0] == 'left' || parts[0] == 'right') {
+
+                for (var i = loopStart; i != loopEnd; i += dir) {
+                    
+
+
+
+                    if (++signalIncCounter == setsPerSignal) {
+                        signalInc++;
+                        signalIncCounter = 0;
+                    }
+
+
+
+                }
+
+
+
+            }
+            else {
+
+
+
+
+            }
+            */
+
+            CalculateBitmasks();
+               
+        }
+
+        function CalculateBitmasks() {
+
+            var cls = $('.direction input:checked').attr('class'), parts = cls.split('-');
+            var dir = 0;
+            var signalInc = 0, loopStart = 0, loopEnd = 0, signalIncCounter = 0;
+            var innerLoopStart = 0, innerLoopEnd = 0, innerLoopDir=0, bitCounter = 0;
+            var setsPerSignal = 1;
+
+            var maxX = parseInt(dimX.value, 10), maxY = parseInt(dimY.value, 10);
+
+            var results = [];
+
+            var rMod = 0, cMod = 0;
+
+            var lim = 0;
+            if (parts[0] == 'left' || parts[0] == 'right') {
+                setsPerSignal = Math.floor(31.0 / maxX);
+                lim = setsPerSignal * maxX;
+
+                if (parts[1] == 'top') {
+                    rMod = maxY;
+                }
+
+            }
+            else {
+                setsPerSignal = Math.floor(31.0 / maxY);
+                lim = setsPerSignal * maxY;
+
+                if (parts[1] == 'left') {
+                    cMod = maxX;
+                }
+            }
+
+            for (var i = 0; i < Math.ceil($('#work td.lamp').length / lim); i++) {
+                var o = {
+                    signal: 'signal_' + signalList[i] + '.png',
+                    int: 0,
+                    binary: Array(33).join('0')
+                };
+                results.push(o);
+            }
+
+            var len = maxX * maxY;
+
+            
+
+
+            
+
+            var outStr = '';
+
+            for (var i = 0; i < results.length; i++) {
+                outStr +=
+                    '<tr>' +
+                    '<td><img src="' + results[i].signal + '" /></td>' +
+                    '<td>' + results[i].binary + '</td>' +
+                    '<td>' + results[i].int + '</td>' +
+                    '</tr>';
+            }
+            $("#tblSignals tbody").html(outStr);
+
+        }
+
+    </script>
+
+</body>
+</html>
