@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.13',
+        Version: '0.2.14',
         LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
@@ -284,19 +284,19 @@ var TrimpShifter = {
     CheckStorage: function () {
         
 
-        if ((game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+        if (game.buildings.Barn.locked==0 && (game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
             if (game.global.numTab != 1)
                 numTab(1);
             TrimpShifter.BuyBuilding('Barn');
         }
 
-        if ((game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+        if (game.buildings.Shed.locked == 0 && (game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
             if (game.global.numTab != 1)
                 numTab(1);
             TrimpShifter.BuyBuilding('Shed');
         }
 
-        if ((game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+        if (game.buildings.Forge.locked == 0 && (game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
             if (game.global.numTab != 1)
                 numTab(1);
             TrimpShifter.BuyBuilding('Forge');
