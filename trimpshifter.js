@@ -25,8 +25,8 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.11',
-        LoopInterval: 250,
+        Version: '0.2.12',
+        LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
     },
@@ -38,14 +38,17 @@ var TrimpShifter = {
         AutoBuyUpgrades: true,
         AutoBuyEquipment: true,
         AutoPrestige: true,
-        GatewayFragmentRatio: 0.2,
+        GatewayFragmentRatio: 0.5,
         WormholeHeliumRatio: 0.0,
         StorageRatio: 0.5,
-        MaxScientists: function () {
-            return (game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned) / 22;
-        },
         MaxExplorers: function () {
-            return game.global.world * 4;
+            return game.global.world * 5;
+        },
+        JobWeights: {
+            Farmer: 25,
+            Lumberjack: 25,
+            Miner: 45,
+            Scientist: 5
         }
 
     },
@@ -262,10 +265,10 @@ var TrimpShifter = {
 
             setGather('buildings');
         }
-        else if (game.global.buildingsQueue.length == 0 && game.buildings.Trap.owned < 1000) {
+        //else if (game.global.buildingsQueue.length == 0 && game.buildings.Trap.owned < 1000) {
 
-            TrimpShifter.BuyBuilding('Trap');
-        }
+        //    TrimpShifter.BuyBuilding('Trap');
+        //}
 
         else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
 
@@ -304,12 +307,7 @@ var TrimpShifter = {
         if (game.workspaces > 0) {
            // numTab(1);
 
-            if (game.jobs.Scientist.owned < TrimpShifter.Settings.MaxScientists()) {
-                if (game.global.numTab != 1)
-                    numTab(1);
-                TrimpShifter.BuyJob('Scientist');
 
-            }
 
             if (game.jobs.Trainer.locked == 0) {
                 
@@ -333,28 +331,31 @@ var TrimpShifter = {
                 }
             }
 
-            
+            var
+                weightTotal = TrimpShifter.Settings.JobWeights.Farmer + TrimpShifter.Settings.JobWeights.Lumberjack + TrimpShifter.Settings.JobWeights.Miner + TrimpShifter.Settings.JobWeights.Scientist,
+                farmerWeight = TrimpShifter.Settings.JobWeights.Farmer / weightTotal,
+                lumberjackWeight = TrimpShifter.Settings.JobWeights.Lumberjack / weightTotal,
+                minerWeight = TrimpShifter.Settings.JobWeights.Miner / weightTotal,
+                scientistWeight = TrimpShifter.Settings.JobWeights.Scientist / weightTotal;
 
-            var isBig = false, currTab = game.global.numTab;
-            if (game.workspaces > 300 && game.global.numTab != 4) {
-                numTab(4);
-                isBig = true;
+            var
+                totalWorkers = game.workspaces + game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned + game.jobs.Scientist.owned;
                 
-            }
 
-            if (game.jobs.Miner.locked == 0 && game.jobs.Miner.owned < game.jobs.Lumberjack.owned)
+
+            if (game.jobs.Scientist.locked == 0 && (game.jobs.Scientist.owned / totalWorkers) < scientistWeight)
+                TrimpShifter.BuyJob('Scientist');
+
+            if (game.jobs.Miner.locked == 0 && (game.jobs.Miner.owned / totalWorkers) < minerWeight)
                 TrimpShifter.BuyJob('Miner');
 
-            if (game.jobs.Lumberjack.locked == 0 && game.jobs.Lumberjack.owned < game.jobs.Farmer.owned)
+            if (game.jobs.Lumberjack.locked == 0 && (game.jobs.Lumberjack.owned/totalWorkers) < lumberjackWeight)
                 TrimpShifter.BuyJob('Lumberjack');
 
-            if (game.jobs.Farmer.locked == 0)
+            if (game.jobs.Farmer.locked == 0 && (game.jobs.Farmer.owned/totalWorkers)<farmerWeight)
                 TrimpShifter.BuyJob('Farmer');
 
-            if (isBig) {
-                numTab(currTab);
-            }
-            //numTab(1);
+
 
         }
     },
