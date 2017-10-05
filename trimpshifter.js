@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.14',
+        Version: '0.2.15',
         LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
@@ -85,6 +85,28 @@ var TrimpShifter = {
 
         if (TrimpShifter.Settings.AutoBuyJobs)
             TrimpShifter.CheckJobs();
+
+        var criticalNeeded = false;
+
+        if (TrimpShifter.Settings.AutoBuyUpgrades) {
+            var criticalUpgrades = [ 'Battle', 'Bloodlust',  'Egg', 'Explorers', 'Miners',  'Scientists',  'Trainers'];
+
+
+            for (var i = 0; i < criticalUpgrades.length; i++) {
+                if (game.upgrades[criticalUpgrades[i]].locked == 0) {
+
+                    if (!TrimpShifter.BuyUpgrade(criticalUpgrades[i])) {
+                        criticalNeeded = true;
+                    }
+
+                }
+            }
+
+
+        }
+
+        if (criticalNeeded)
+            return;
 
 
 
