@@ -304,7 +304,6 @@ var TrimpShifter = {
             if (
                 game.global.buildingsQueue.length > 0
                 && game.global.playerGathering != 'buildings'
-                //&& !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
             ) {
                 //building *something*
 
