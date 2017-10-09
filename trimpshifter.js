@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.15',
+        Version: '0.2.16',
         LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
@@ -49,13 +49,22 @@ var TrimpShifter = {
             Lumberjack: 30,
             Miner: 40,
             Scientist: 5
+        },
+        MaxTraps: function () {
+            if (game.global.world < 5)
+                return 10;
+            else if (game.global.world < 20)
+                return 100;
+            else
+                return 1000;
         }
 
     },
 
     Variables: {
         LastGathered: 'food',
-        TimerID: -1
+        TimerID: -1,
+        StockpilingTraps: false
     },
 
     Init: function () {
@@ -73,6 +82,7 @@ var TrimpShifter = {
         if (!TrimpShifter.Config.Enabled) {
             clearInterval(TrimpShifter.Variables.TimerID);
             console.log('TrimpShifter stopping');
+            return;
         }
 
 
@@ -86,11 +96,13 @@ var TrimpShifter = {
         if (TrimpShifter.Settings.AutoBuyJobs)
             TrimpShifter.CheckJobs();
 
+
+
+        //check for upgrades that we should wait to buy
         var criticalNeeded = false;
 
         if (TrimpShifter.Settings.AutoBuyUpgrades) {
-            var criticalUpgrades = [ 'Battle', 'Bloodlust',  'Egg', 'Explorers', 'Miners',  'Scientists',  'Trainers'];
-
+            var criticalUpgrades = ['Battle', 'Bloodlust', 'Egg', 'Explorers', 'Miners', 'Scientists', 'Trainers'];
 
             for (var i = 0; i < criticalUpgrades.length; i++) {
                 if (game.upgrades[criticalUpgrades[i]].locked == 0) {
@@ -98,13 +110,10 @@ var TrimpShifter = {
                     if (!TrimpShifter.BuyUpgrade(criticalUpgrades[i])) {
                         criticalNeeded = true;
                     }
-
                 }
             }
-
-
         }
-
+        //unable to buy something that's critical, kick out
         if (criticalNeeded)
             return;
 
@@ -121,8 +130,6 @@ var TrimpShifter = {
 
                 }
             }
-
-
         }
 
         if (TrimpShifter.Settings.AutoPrestige) {
@@ -227,163 +234,176 @@ var TrimpShifter = {
         }
 
 
-
-
-        //game.resources.trimps.owned==0
-        //new game, do stuff
-
-        // if(game.resources.trimps.owned/game.resources.trimps.realMax())<0.5
-        // below breeding threshhold, check traps
-        // setGather('trimps')
-
-
-        // game.global.trapBuildAllowed
-        // check if autotrap is available
-
-        // game.global.trapBuildToggled
-
-
-
-        /*
-
-
-        if ((game.resources.trimps.owned / game.resources.trimps.realMax()) < 0.6) {
-
-            if (game.buildings.Trap.owned > 0) {
-                setGather('trimps');
-            }
-            else {
-
-                if (!game.global.trapBuildingToggled) {
-
-                    TrimpShifter.BuyBuilding('Trap');
-                }
-
-            }
-
-
-
-        }
-        else {
-            setGather('metal');
-        }
-
-        */
-
-
-        if (
-            game.global.buildingsQueue.length > 0
-            && game.global.playerGathering != 'buildings'
-            //&& !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
-        ) {
-            //building *something*
-
-
-
-
-
-
-            TrimpShifter.Variables.LastGathered = game.global.playerGathering;
-
-            setGather('buildings');
-        }
-        //else if (game.global.buildingsQueue.length == 0 && game.buildings.Trap.owned < 1000) {
-
-        //    TrimpShifter.BuyBuilding('Trap');
-        //}
-
-        else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
-
-            setGather(TrimpShifter.Variables.LastGathered);
-        }
-
         if (!game.global.fighting && game.upgrades.Bloodlust.owned == 0) {
             fightManual();
         }
 
+
+
+            //no trimps owned at all
+        if (game.resources.trimps.owned == 0) {
+
+            //shed locked, we need food
+            if (game.buildings.Shed.locked == 1 && game.resources.food.owned < 15) {
+                setGather('food');
+                return;
+            }
+
+
+            //not enough wood to trap
+            if (game.resources.wood.owned < 10) {
+                setGather('wood');
+                return;
+            }
+
+            //got resources, build a trap
+            if (game.resources.food.owned >= 15 && game.resources.wood.owned >= 10 && game.buildings.Trap.purchased == 0) {
+                TrimpShifter.BuyBuilding('Trap');
+                setGather('buildings');
+                return;
+            }
+
+
+            //got a trap, use it
+            if (game.buildings.Trap.owned > 0) {
+                setGather('trimps');
+            }
+
+
+        }
+
+
+
+        else {
+
+
+
+            //game.resources.trimps.owned==0
+            //new game, do stuff
+
+            // if(game.resources.trimps.owned/game.resources.trimps.realMax())<0.5
+            // below breeding threshhold, check traps
+            // setGather('trimps')
+
+
+            // game.global.trapBuildAllowed
+            // check if autotrap is available
+
+            // game.global.trapBuildToggled
+
+
+
+            if (
+                game.global.buildingsQueue.length > 0
+                && game.global.playerGathering != 'buildings'
+                //&& !(game.global.buildingsQueue[0]=='Trap.1' && game.global.trapBuildToggled)
+            ) {
+                //building *something*
+
+
+                TrimpShifter.Variables.LastGathered = game.global.playerGathering;
+
+                setGather('buildings');
+            }
+
+            else if (game.global.buildingsQueue.length == 0 && game.global.playerGathering == 'buildings') {
+
+                setGather(TrimpShifter.Variables.LastGathered);
+            }
+
+
+        }
+
+
+
     },
 
     CheckStorage: function () {
-        
+        var  didBuy = true;
 
-        if (game.buildings.Barn.locked==0 && (game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
-            if (game.global.numTab != 1)
-                numTab(1);
-            TrimpShifter.BuyBuilding('Barn');
-        }
+        while (didBuy) {
+            didBuy = false;
+            if (game.buildings.Barn.locked == 0 && (game.resources.food.owned / (game.resources.food.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+                if (TrimpShifter.BuyBuilding('Barn'))
+                    didBuy = true;
+            }
 
-        if (game.buildings.Shed.locked == 0 && (game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
-            if (game.global.numTab != 1)
-                numTab(1);
-            TrimpShifter.BuyBuilding('Shed');
-        }
+            if (game.buildings.Shed.locked == 0 && (game.resources.wood.owned / (game.resources.wood.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+                if (TrimpShifter.BuyBuilding('Shed'))
+                    didBuy = true;
+            }
 
-        if (game.buildings.Forge.locked == 0 && (game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
-            if (game.global.numTab != 1)
-                numTab(1);
-            TrimpShifter.BuyBuilding('Forge');
+            if (game.buildings.Forge.locked == 0 && (game.resources.metal.owned / (game.resources.metal.max * (1 + (game.portal.Packrat.modifier * game.portal.Packrat.level)))) > TrimpShifter.Settings.StorageRatio) {
+                if (TrimpShifter.BuyBuilding('Forge'))
+                    didBuy = true;
+            }
         }
     },
 
     CheckJobs: function () {
-        if (game.workspaces > 0) {
-           // numTab(1);
 
+        var didBuy = true;
 
-
+        while (didBuy && game.workspaces > 0) {
+            didBuy = false;
             if (game.jobs.Trainer.locked == 0) {
-                
+
                 var trainer_cost = game.jobs.Trainer.cost.food[0] * Math.pow(game.jobs.Trainer.cost.food[1], game.jobs.Trainer.owned);
                 if (trainer_cost <= game.resources.food.owned) {
-                    if (game.global.numTab != 1)
-                        numTab(1);
                     TrimpShifter.BuyJob('Trainer');
+                    didBuy = true;
                 }
-                
-            }
 
+            }
+        }
+        didBuy = true;
+
+        while (didBuy && game.workspaces > 0) {
+            didBuy = false;
 
             if (game.jobs.Explorer.locked == 0) {
                 var explorer_cost = game.jobs.Explorer.cost.food[0] * Math.pow(game.jobs.Explorer.cost.food[1], game.jobs.Explorer.owned);
 
                 if (game.jobs.Explorer.owned < TrimpShifter.Settings.MaxExplorers() && explorer_cost <= game.resources.food.owned) {
-                    if (game.global.numTab != 1)
-                        numTab(1);
                     TrimpShifter.BuyJob('Explorer');
+                    didBuy = true;
                 }
             }
-
-            var lim = 50;
-
-            while (game.workspaces > 0 && lim > 0) {
-
-                var
-                    weightTotal = TrimpShifter.Settings.JobWeights.Farmer + TrimpShifter.Settings.JobWeights.Lumberjack + TrimpShifter.Settings.JobWeights.Miner + TrimpShifter.Settings.JobWeights.Scientist,
-                    farmerWeight = TrimpShifter.Settings.JobWeights.Farmer / weightTotal,
-                    lumberjackWeight = TrimpShifter.Settings.JobWeights.Lumberjack / weightTotal,
-                    minerWeight = TrimpShifter.Settings.JobWeights.Miner / weightTotal,
-                    scientistWeight = TrimpShifter.Settings.JobWeights.Scientist / weightTotal;
-
-                var
-                    totalWorkers = game.workspaces + game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned + game.jobs.Scientist.owned;
-
-
-
-                if (game.jobs.Scientist.locked == 0 && (game.jobs.Scientist.owned / totalWorkers) < scientistWeight)
-                    TrimpShifter.BuyJob('Scientist');
-
-                if (game.jobs.Miner.locked == 0 && (game.jobs.Miner.owned / totalWorkers) < minerWeight)
-                    TrimpShifter.BuyJob('Miner');
-
-                if (game.jobs.Lumberjack.locked == 0 && (game.jobs.Lumberjack.owned / totalWorkers) < lumberjackWeight)
-                    TrimpShifter.BuyJob('Lumberjack');
-
-                if (game.jobs.Farmer.locked == 0 && (game.jobs.Farmer.owned / totalWorkers) < farmerWeight)
-                    TrimpShifter.BuyJob('Farmer');
-                lim--;
-            }
-
         }
+
+
+        var lim = Math.ceil(game.workspaces / 4);
+
+
+        while (lim > 0) {
+
+            var
+                weightTotal = TrimpShifter.Settings.JobWeights.Farmer + TrimpShifter.Settings.JobWeights.Lumberjack + TrimpShifter.Settings.JobWeights.Miner + TrimpShifter.Settings.JobWeights.Scientist,
+                farmerWeight = TrimpShifter.Settings.JobWeights.Farmer / weightTotal,
+                lumberjackWeight = TrimpShifter.Settings.JobWeights.Lumberjack / weightTotal,
+                minerWeight = TrimpShifter.Settings.JobWeights.Miner / weightTotal,
+                scientistWeight = TrimpShifter.Settings.JobWeights.Scientist / weightTotal;
+
+            var
+                totalWorkers = game.workspaces + game.jobs.Farmer.owned + game.jobs.Lumberjack.owned + game.jobs.Miner.owned + game.jobs.Scientist.owned;
+
+
+
+            if (game.jobs.Scientist.locked == 0 && (game.jobs.Scientist.owned / totalWorkers) < scientistWeight)
+                TrimpShifter.BuyJob('Scientist');
+
+            if (game.jobs.Miner.locked == 0 && (game.jobs.Miner.owned / totalWorkers) < minerWeight)
+                TrimpShifter.BuyJob('Miner');
+
+            if (game.jobs.Lumberjack.locked == 0 && (game.jobs.Lumberjack.owned / totalWorkers) < lumberjackWeight)
+                TrimpShifter.BuyJob('Lumberjack');
+
+            if (game.jobs.Farmer.locked == 0 && (game.jobs.Farmer.owned / totalWorkers) < farmerWeight)
+                TrimpShifter.BuyJob('Farmer');
+            lim--;
+        }
+
+
     },
 
 
@@ -398,26 +418,35 @@ var TrimpShifter = {
     },
 
     BuyJob: function (what) {
-        buyJob(what, true, true);
-        //numTab(1);
+        var currTab = game.global.numTab, result = false;
+        numTab(1);
+        result = buyJob(what, true, true);
+        numTab(currTab);
+        return result;
     },
     BuyBuilding: function (what) {
-        //numTab(1);
+       
         if (canAffordBuilding(what, false, false, false, false, 1)) {
             console.log('TrimpShifter - buying building ' + what);
             var currTab = game.global.numTab;
             numTab(1);
             buyBuilding(what, true, true);
             numTab(currTab);
-            
+            return true;
         }
-        //return result;
+        else {
+            return false;
+        }
     },
     BuyUpgrade: function (what) {
+        var currTab = game.global.numTab;
+        numTab(1);
+
         var result = buyUpgrade(what, true, true);
         if (result && TrimpShifter.Config.LogEnabled)
             console.log('TrimpShifter - buying upgrade ' + what);
 
+        numTab(currTab);
         return result;
     },
     BuyEquipment: function (what) {
@@ -431,10 +460,10 @@ var TrimpShifter = {
                 canBuy = true;
         }
         if (canBuy) {
-            if (game.global.numTab != 1)
-                numTab(1);
+            var currTab = game.global.numTab;
+            numTab(1);
             buyEquipment(what, null, true);
-
+            numTab(currTab);
             if (TrimpShifter.Config.LogEnabled)
                 console.log('TrimpShifter - buying equipment ' + what);
         }
