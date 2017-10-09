@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.17',
+        Version: '0.2.18',
         LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
@@ -248,10 +248,16 @@ var TrimpShifter = {
                 return;
             }
 
-            //got resources, build a trap
-            if (game.resources.food.owned >= 15 && game.resources.wood.owned >= 10 && game.buildings.Trap.purchased == 0) {
-                TrimpShifter.BuyBuilding('Trap');
+
+            
+            if (game.global.buildingsQueue.length > 0) {
                 setGather('buildings');
+                return;
+            }
+
+            //got resources, build a trap
+            if (game.resources.food.owned >= 15 && game.resources.wood.owned >= 10) {
+                TrimpShifter.BuyBuilding('Trap');
                 return;
             }
 
