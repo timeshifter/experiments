@@ -25,7 +25,7 @@ var TrimpShifter = {
     },
 
     Config: {
-        Version: '0.2.16',
+        Version: '0.2.17',
         LoopInterval: 100,
         Enabled: true,
         LogEnabled: true,
@@ -242,17 +242,9 @@ var TrimpShifter = {
 
             //no trimps owned at all
         if (game.resources.trimps.owned == 0) {
-
-            //shed locked, we need food
-            if (game.buildings.Shed.locked == 1 && game.resources.food.owned < 15) {
-                setGather('food');
-                return;
-            }
-
-
-            //not enough wood to trap
-            if (game.resources.wood.owned < 10) {
-                setGather('wood');
+            //got a trap, use it
+            if (game.buildings.Trap.owned > 0) {
+                setGather('trimps');
                 return;
             }
 
@@ -264,10 +256,20 @@ var TrimpShifter = {
             }
 
 
-            //got a trap, use it
-            if (game.buildings.Trap.owned > 0) {
-                setGather('trimps');
+
+            //not enough wood to trap
+            if (game.resources.wood.owned < 10) {
+                setGather('wood');
+                return;
             }
+
+            //shed locked, we need food
+            if (game.buildings.Shed.locked == 1 && game.resources.food.owned < 15) {
+                setGather('food');
+                return;
+            }
+
+
 
 
         }
