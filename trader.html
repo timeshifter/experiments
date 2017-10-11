@@ -1,0 +1,45 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Trader Thing</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+
+</head>
+<body>
+
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+    <script type="text/javascript" src="hmac-sha512.js"></script>
+
+    <script>
+        //var hash = CryptoJS.HmacSHA512("Message", "Secret Passphrase");
+        
+        var key = '', secret = '';
+        function GetBalance() {
+            
+
+            var url = 'https://bittrex.com/api/v1.1/account/getbalance?currency=btc&apikey=' + key + '&nonce=12345';
+
+            var hash = CryptoJS.HmacSHA512(url, secret).toString;
+            
+            $.ajax({
+                url: url,
+                headers: {
+                    'apisign': hash
+                },
+                method: 'get',
+                //beforeSend: function (xhr) { xhr.setRequestHeader('apisign', hash) },
+
+                success: function (result) {
+                    console.log('success', result);
+                },
+                error: function (result) {
+                    console.log('error', result);
+                }
+
+            })
+        }
+
+    </script>
+
+
+</body>
+</html>
