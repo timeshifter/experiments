@@ -100,7 +100,7 @@
             Pixel scale: <input type="number" id="numScale" value="4" min="1" max="16" />
         </p>
         <p>
-            Pixel color: <input type="color" id="col" />
+            Pixel color: <input type="color" id="col" value="#ffc8c8" />
         </p>
     </div>
     <div id="code">
@@ -208,6 +208,13 @@
             $('#numScale').on('input', function () {
                 Reset();
             });
+
+            $('#col').on('input', function () {
+                drawCol = GetColorFromHex($(this).val());
+                Draw();
+            });
+
+            drawCol = GetColorFromHex($('#col').val());
 
             Reset();
         });
