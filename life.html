@@ -14,7 +14,7 @@
         html {
             background-color: #eee;
             width: 100%;
-            height: 100%;
+            min-height: 100%;
         }
 
         body {
@@ -54,14 +54,12 @@
         #controls {
             float: left;
             width: 250px;
-            height: 300px;
             padding: 10px;
         }
 
         #code {
             float: right;
             width: 550px;
-            height: 300px;
             padding: 10px;
         }
 
@@ -69,14 +67,30 @@
             display:inline-block;
             width:90px;
         }
+
         #code label:not(.title) {
             margin-right:7px;
         }
-        #txtRule {
-            width: 100%;
-            height: 250px;
-            font-size: 11px;
-            font-family: monospace;
+
+        #code input {
+            margin-left:0;
+        }
+
+        #code>div {
+            margin-top:20px;
+            width:49%;
+            display:inline-block;
+            vertical-align:top;
+        }
+
+        #code ul li {
+            list-style:none;
+            margin-top:5px;
+        }
+
+        #code a {
+            cursor:pointer;
+            color:rgb(35,121,226);
         }
     </style>
 </head>
@@ -90,12 +104,12 @@
             FPS: <label id="lblFPS"></label>
         </p>
         <hr />
-        <h2>Controls</h2>
         <p>
             <button id="btnPlay">Play</button>
             <button id="btnStep" onclick="Step();">Step</button>
             <button id="btnReset" onclick="Reset();">Reset</button>
         </p>
+        <p>Seed probability: <input type="number" id="numProbability" value="0.5" min="0.01" max="1" step="0.01" /></p>
         <p>
             Pixel scale: <input type="number" id="numScale" value="4" min="1" max="16" />
         </p>
@@ -105,18 +119,6 @@
     </div>
     <div id="code">
         <h2>Rules</h2>
-       <p>
-           <label class="title" title="A living cell will stay alive if this many neighbors are alive">Stay alive:</label>
-           <label><input type="checkbox" class="_stayalive" value="0" />0</label>
-           <label><input type="checkbox" class="_stayalive" value="1" />1</label>
-           <label><input type="checkbox" class="_stayalive" value="2" checked />2</label>
-           <label><input type="checkbox" class="_stayalive" value="3" checked />3</label>
-           <label><input type="checkbox" class="_stayalive" value="4" />4</label>
-           <label><input type="checkbox" class="_stayalive" value="5" />5</label>
-           <label><input type="checkbox" class="_stayalive" value="6" />6</label>
-           <label><input type="checkbox" class="_stayalive" value="7" />7</label>
-           <label><input type="checkbox" class="_stayalive" value="8" />8</label>
-       </p>
         <p>
             <label class="title" title="A dead cell will be born if this many neighbors are alive">Birth:</label>
             <label><input type="checkbox" class="_birth" value="0" />0</label>
@@ -129,7 +131,38 @@
             <label><input type="checkbox" class="_birth" value="7" />7</label>
             <label><input type="checkbox" class="_birth" value="8" />8</label>
         </p>
-
+        <p>
+            <label class="title" title="A living cell will stay alive if this many neighbors are alive">Survive:</label>
+            <label><input type="checkbox" class="_survive" value="0" />0</label>
+            <label><input type="checkbox" class="_survive" value="1" />1</label>
+            <label><input type="checkbox" class="_survive" value="2" checked />2</label>
+            <label><input type="checkbox" class="_survive" value="3" checked />3</label>
+            <label><input type="checkbox" class="_survive" value="4" />4</label>
+            <label><input type="checkbox" class="_survive" value="5" />5</label>
+            <label><input type="checkbox" class="_survive" value="6" />6</label>
+            <label><input type="checkbox" class="_survive" value="7" />7</label>
+            <label><input type="checkbox" class="_survive" value="8" />8</label>
+        </p>
+        <p><label class="title">Shorthand:</label><input type="text" id="txtRule" value="B3/S23" /></p>
+        <div>
+            <h3>Standard GoL patterns</h3>
+        </div>
+        <div>
+            <h3>Interesting rule sets</h3>
+            <ul>
+                <li><a onclick="SetRule('B3/S23')">Standard Life</a></li>
+                <li><a onclick="SetRule('B1357/S1357')">Replicator</a></li>
+                <li><a onclick="SetRule('B2/S')">Seeds</a></li>
+                <li><a onclick="SetRule('B3/S012345678')">Life Without Death</a></li>
+                <li><a onclick="SetRule('B34/S34')">34 Life</a></li>
+                <li><a onclick="SetRule('B35678/S5678')">Diamoeba</a></li>
+                <li><a onclick="SetRule('B36/S125')">2x2</a></li>
+                <li><a onclick="SetRule('B36/S23')">HighLife</a></li>
+                <li><a onclick="SetRule('B3678/S34678')">Day &amp; Night</a></li>
+                <li><a onclick="SetRule('B368/S245')">Morley</a></li>
+                <li><a onclick="SetRule('B4678/S35678')">Anneal</a></li>
+            </ul>
+        </div>
     </div>
     <div style="clear:both;"></div>
     <script type="text/javascript" src="jquery-1.7.2.js"></script>
@@ -182,7 +215,7 @@
             drawCol = new Color(255, 200, 200),
             emptyCol = new Color(0, 0, 0),
             tickCount = window.performance.now(),
-            stayAlive = [2, 3],
+            survive = [2, 3],
             birth = [3];
 
 
@@ -200,7 +233,7 @@
                 $(this).html(running ? 'Stop' : 'Play');
                 if (running) {
                     UpdateRules();
-                    $('._stayalive').add('._birth').attr('disabled', 'disabled');
+                    $('._survive, ._birth').attr('disabled', 'disabled');
                     GameLoop();
                 }
             });
@@ -212,6 +245,44 @@
             $('#col').on('input', function () {
                 drawCol = GetColorFromHex($(this).val());
                 Draw();
+            });
+
+            $('._survive, ._birth').on('change', function () {
+                var s = 'B';
+                $('._birth:checked').each(function () {
+                    s += $(this).val();
+                });
+                s += '/S';
+                $('._survive:checked').each(function () {
+                    s += $(this).val();
+                });
+                $('#txtRule').addClass('_hold').val(s).removeClass('_hold');
+            });
+
+            $('#txtRule').on('input change', function () {
+                if (!$(this).hasClass('_hold')) {
+                    var p = $(this).val().toLowerCase().split('/');
+                    if (p.length == 1)
+                        return;
+
+                    if (p[0].indexOf('b') > -1) {
+                        birth = p[0].replace('b', '').split('').map(function (t) { return parseInt(t, 10); });
+                        survive = p[1].replace('s', '').split('').map(function (t) { return parseInt(t, 10); });
+                    }
+                    else {
+                        birth = p[1].replace('b', '').split('').map(function (t) { return parseInt(t, 10); });
+                        survive = p[0].replace('s', '').split('').map(function (t) { return parseInt(t, 10); });
+                    }
+
+                    $('._birth,._survive').removeAttr('checked');
+                    birth.map(function (t) {
+                        $('._birth[value="' + t + '"').attr('checked', 'checked');
+                    });
+                    survive.map(function (t) {
+                        $('._survive[value="' + t + '"').attr('checked', 'checked');
+                    });
+
+                }
             });
 
             drawCol = GetColorFromHex($('#col').val());
@@ -232,26 +303,18 @@
             cellmap = Create2DArray(w + 2);
             swapmap = Create2DArray(w + 2);
 
+            var p = parseFloat(numProbability.value);
+
             for (x = 0; x <= w+1; x++) {
                 for (y = 0; y <= h+1; y++) {
 
                     if (x == 0 || y == 0 || x == w + 1 || y == h + 1)
                         cellmap[x][y] = 0;
                     else {
-
-                        cellmap[x][y] = Math.random() <= 0.5 ? 0 : 1;
-                       // cellmap[x][y] = 0;
+                        cellmap[x][y] = Math.random() <= p ? 1 : 0;
                     }
                 }
             }
-
-            /*
-            cellmap[2][2] = 1;
-            cellmap[3][3] = 1;
-            cellmap[3][4] = 1;
-            cellmap[2][4] = 1;
-            cellmap[1][4] = 1;
-            */
 
             Draw();
 
@@ -264,11 +327,18 @@
             
         }
 
+        function SetRule(rule) {
+            running = false;
+            $('#btnPlay').html('Play');
+            txtRule.value = rule;
+            txtRule.dispatchEvent(new Event('change'));
+        }
+
         function UpdateRules() {
-            stayalive = [];
+            survive = [];
             birth = [];
-            $('._stayalive:checked').each(function () {
-                stayalive.push(parseInt($(this).val(), 10));
+            $('._survive:checked').each(function () {
+                survive.push(parseInt($(this).val(), 10));
             });
             $('._birth:checked').each(function () {
                 birth.push(parseInt($(this).val(), 10));
@@ -279,7 +349,6 @@
             Update();
             Draw();
 
-
             if (running) {
                 var diff = window.performance.now() - tickCount;
                 $('#lblFPS').html((1000.0 / diff).toFixed(2));
@@ -287,19 +356,16 @@
                 tickCount = window.performance.now();
             }
             else {
-                $('._stayalive').add('._birth').removeAttr('disabled');
+                $('._survive, ._birth').removeAttr('disabled');
             }
         }
 
         function Update() {
             //copy into temp array
-            for (x = 0; x <= w+1; x++) {
-                for (y = 0; y <= h+1; y++) {
-                    var t = cellmap[x][y] == 1 ? 1 : 0;
-                    swapmap[x][y] = t;
-                }
+            for (x = 0; x <= w + 1; x++) {
+                swapmap[x] = cellmap[x].slice();
             }
-
+            
             for (x = 1; x <= w; x++) {
                 for (y = 1; y <= h; y++) {
 
@@ -309,23 +375,14 @@
                         swapmap[x - 1][y] +                         swapmap[x + 1][y] +
                         swapmap[x - 1][y + 1] + swapmap[x][y + 1] + swapmap[x + 1][y + 1];
 
-                    if (x == 3 && y == 3)
-                        console.log(n);
-
-                    if (
-                        (swapmap[x][y] == 1 && stayalive.indexOf(n)>-1)
-                        || (swapmap[x][y] == 0 && birth.indexOf(n)>-1)
-                    ) {
+                    if ((swapmap[x][y] == 1 && survive.indexOf(n) > -1) || (swapmap[x][y] == 0 && birth.indexOf(n) > -1)) {
                         cellmap[x][y] = 1;
                     }
                     else {
                         cellmap[x][y] = 0;
                     }
-
-
                 }
             }
-
         }
 
 
