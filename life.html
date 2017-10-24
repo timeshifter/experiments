@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shifter's Life Thing</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 800px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        #cv-container {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #cv {
+            width: 800px;
+            height: 600px;
+            background-color: #000;
+        }
+
+        #controls {
+            float: left;
+            width: 250px;
+            height: 300px;
+            padding: 10px;
+        }
+
+        #code {
+            float: right;
+            width: 550px;
+            height: 300px;
+            padding: 10px;
+        }
+
+        #txtRule {
+            width: 100%;
+            height: 250px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shifter's Life Thing</h1>
+    <div id="cv-container">
+        <canvas id="cv" width="800" height="600"></canvas>
+    </div>
+    <div id="controls">
+        <p>
+            FPS: <label id="lblFPS"></label>
+        </p>
+        <hr />
+        <h2>Controls</h2>
+        <p>
+            <button id="btnPlay">Play</button>
+            <button id="btnStep" onclick="Step();">Step</button>
+            <button id="btnReset" onclick="Reset();">Reset</button>
+        </p>
+        <p>
+            Pixel scale: <input type="number" id="numScale" value="4" min="1" max="16" />
+        </p>
+    </div>
+    <div id="code">
+       
+    </div>
+    <div style="clear:both;"></div>
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+    <script>
+        function Color(r, g, b) {
+            this.R = r;
+            this.G = g;
+            this.B = b;
+        }
+
+        function Point(x, y) {
+            this.X = x;
+            this.Y = y;
+        }
+
+        function GetColorFromHex(hex) {
+            hex = hex.replace('#', '');
+            return new Color(
+                parseInt(hex.substring(0, 2), 16),
+                parseInt(hex.substring(2, 4), 16),
+                parseInt(hex.substring(4, 6), 16)
+            );
+        }
+
+        function GetRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+
+        function Create2DArray(rows) {
+            var arr = [];
+            for (var i = 0; i < rows; i++)
+                arr[i] = [];
+            return arr;
+        }
+
+
+
+        /* GLOBALS */
+        var cellmap,
+            swapmap,
+            canvas,
+            ctx,
+            imageData,
+            w,
+            h,
+            scale = 1,
+            x, y,
+            running = false,
+            timerId = -1,
+            drawCol = new Color(255, 200, 200),
+            emptyCol = new Color(0, 0, 0),
+            tickCount = window.performance.now();
+
+
+
+
+
+        $(function () {
+
+            canvas = document.getElementById('cv');
+            ctx = canvas.getContext('2d');
+            imageData = ctx.createImageData(canvas.width, canvas.height);
+
+            $('#btnPlay').on('click', function () {
+                running = !running;
+                $(this).html(running ? 'Stop' : 'Play');
+                if (running)
+                    GameLoop();
+            });
+
+            $('#numScale').on('input', function () {
+                Reset();
+            });
+
+            Reset();
+        });
+
+
+
+
+        function Reset() {
+            running = false;
+            scale = parseInt(numScale.value, 10);
+            w = Math.floor(canvas.width / scale);
+            h = Math.floor(canvas.height / scale);
+
+            cellmap = Create2DArray(w + 2);
+            swapmap = Create2DArray(w + 2);
+
+            for (x = 0; x <= w+1; x++) {
+                for (y = 0; y <= h+1; y++) {
+
+                    if (x == 0 || y == 0 || x == w + 1 || y == h + 1)
+                        cellmap[x][y] = 0;
+                    else {
+
+                        cellmap[x][y] = Math.random() <= 0.5 ? 0 : 1;
+                       // cellmap[x][y] = 0;
+                    }
+                }
+            }
+
+            /*
+            cellmap[2][2] = 1;
+            cellmap[3][3] = 1;
+            cellmap[3][4] = 1;
+            cellmap[2][4] = 1;
+            cellmap[1][4] = 1;
+            */
+
+            Draw();
+
+        }
+
+        function Step() {
+            Update();
+            Draw();
+            
+        }
+
+        function GameLoop() {
+            Update();
+            Draw();
+
+
+            if (running) {
+                var diff = window.performance.now() - tickCount;
+                $('#lblFPS').html((1000.0 / diff).toFixed(2));
+                requestAnimationFrame(GameLoop);
+                tickCount = window.performance.now();
+            }
+
+        }
+
+        function Update() {
+            //copy into temp array
+            for (x = 0; x <= w+1; x++) {
+                for (y = 0; y <= h+1; y++) {
+                    var t = cellmap[x][y] == 1 ? 1 : 0;
+                    swapmap[x][y] = t;
+                }
+            }
+
+            for (x = 1; x <= w; x++) {
+                for (y = 1; y <= h; y++) {
+
+                    //count neighbors
+                    var n =
+                        swapmap[x - 1][y - 1] + swapmap[x][y - 1] + swapmap[x + 1][y - 1] +
+                        swapmap[x - 1][y] +                         swapmap[x + 1][y] +
+                        swapmap[x - 1][y + 1] + swapmap[x][y + 1] + swapmap[x + 1][y + 1];
+
+                    if (x == 3 && y == 3)
+                        console.log(n);
+
+                    if (
+                        (swapmap[x][y] == 1 && (n == 2 || n == 3))
+                        || (swapmap[x][y] == 0 && n == 3)
+                    ) {
+                        cellmap[x][y] = 1;
+                    }
+                    else {
+                        cellmap[x][y] = 0;
+                    }
+
+
+                }
+            }
+
+        }
+
+
+        function Draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (x = 1; x <= w; x++) {
+                for (y = 1; y <= h; y++) {
+                    DrawPoint(x-1, y-1, cellmap[x][y] == 1 ? drawCol : emptyCol);
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        //draw scaled "pixel"
+        function DrawPoint(x, y, c) {
+            for (var x2 = 0; x2 < scale; x2++) {
+                for (var y2 = 0; y2 < scale; y2++) {
+
+                    var index =
+                        (((x * scale) + x2) +
+                            ((y * scale) + y2) *
+                            canvas.width) * 4;
+                    imageData.data[index++] = c.R;
+                    imageData.data[index++] = c.G;
+                    imageData.data[index++] = c.B;
+                    imageData.data[index] = 255;
+                }
+            }
+        }
+
+
+    </script>
+</body>
+</html>
