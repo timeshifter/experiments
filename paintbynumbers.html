@@ -97,6 +97,8 @@
     </div>
     <div style="clear:both;"></div>
     <script>
+        //http://acbit.net/static/tas/picturesAll/
+
         function Color(r, g, b) {
             this.R = r;
             this.G = g;
@@ -110,11 +112,19 @@
 
         function GetColorFromHex(hex) {
             hex = hex.replace('#', '');
-            return new Color(
-                parseInt(hex.substring(0, 2), 16),
-                parseInt(hex.substring(2, 4), 16),
-                parseInt(hex.substring(4, 6), 16)
-            );
+            if (hex.length == 6)
+                return new Color(
+                    parseInt(hex.substring(0, 2), 16),
+                    parseInt(hex.substring(2, 4), 16),
+                    parseInt(hex.substring(4, 6), 16)
+                );
+            else if (hex.length == 3)
+                return new Color(
+                    parseInt(hex.substring(0, 1) + hex.substring(0, 1), 16),
+                    parseInt(hex.substring(1, 2) + hex.substring(1, 2), 16),
+                    parseInt(hex.substring(2, 3) + hex.substring(2, 3), 16)
+                );
+
         }
 
         function Create2DArray(rows) {
@@ -159,7 +169,9 @@
             baseImageData,
             regions,
             regionMap,
-            imageLoaded = false;
+            imageLoaded = false,
+            isGrid = false,
+            gridSize = new Point(-1, -1);
 
         canvas = document.getElementById('cv');
         ctx = canvas.getContext('2d');
@@ -203,35 +215,73 @@
                 if (parts.length != 2)
                     return;
 
-                //TODO: check for named color dictionary
+                
                 var c, colName = parts[0].toLowerCase();
-                if (colName.indexOf('#') == 0) {
-                    //hex
+
+                if (colName.indexOf('#') == 0) { //hex code
                     c = GetColorFromHex(colName);
                 }
-                else if (colName.indexOf('rgb(') == 0) {
+                else if (colName.indexOf('rgb(') == 0) { //rgb
                     colName = colName.replace('rgb(', '').replace(')', '');
                     var colParts = colName.split(',');
                     c = new Color(parseInt(colParts[0], 10), parseInt(colParts[1], 10), parseInt(colParts[2], 10));
                 }
-                else {
+                else { //named color (hopefully)
                     if (colors[colName] != undefined) {
                         c = GetColorFromHex(colors[colName]);
                     }
                 }
+
+
+
+
 
                 if (c != undefined) {
                     var txt = lblHistory.innerHTML || '';
                     lblHistory.innerHTML = txtChat.value + "<br />" + txt;
                     txtChat.value = '';
 
-                    FillRegion(c, parseInt(parts[1], 10));
+                    if (parts[1].indexOf('-') > -1) { //it's a range!
+                        var rangeParts = parts[1].split('-');
+                        var p1 = parseInt(rangeParts[0], 10),
+                            p2 = parseInt(rangeParts[1], 10);
+                        var min = Math.min(p1, p2),
+                            max = Math.max(p1, p2);
+
+                        if (isGrid) {
+                            var pt1 = new Point(Math.floor(min / gridSize.Y), min % gridSize.Y),
+                                pt2 = new Point(Math.floor(max / gridSize.Y), max % gridSize.Y);
+
+                            var slope = (pt2.Y - pt1.Y) / (pt2.X - pt1.X);
+
+                            for (var i = pt1.X; i <= pt2.X; i++) {
+                                var j = Math.floor(pt1.Y + (slope * (pt1.X - i)));
+                                FillRegion(c, (i * gridSize.Y) + j);
+                            }
+
+                            //TODO: calculate slope, draw line
+                            FillRegion(new Color(255, 0, 0), min);
+                            FillRegion(new Color(0, 255, 0), max);
+                        }
+                        else {
+
+                            for (var i = min; i <= max; i++) {
+                                FillRegion(c, i);
+                            }
+                        }
+
+
+
+                    }
+                    else {
+                        FillRegion(c, parseInt(parts[1], 10));
+                    }
                 }
             }
         }
 
         function FillRegion(color, regionId) {
-            if (regionId < regions.length) {
+            if (regionId >= 0 && regionId < regions.length) {
                 for (var i = 0; i < regions[regionId].length; i++) {
                     DrawPoint(regions[regionId][i].X, regions[regionId][i].Y, color);
                 }
@@ -319,6 +369,26 @@
             }
 
 
+
+            //see if it's a grid
+            var distinctIdx = [0];
+            for (var x = 1; x < regionMap.length; x++) {
+                var isUnique = true;
+
+                for (var i = 0; i < distinctIdx.length; i++) {
+                    if (ArraysEqual(regionMap[x], regionMap[distinctIdx[i]])) {
+                        isUnique = false;
+
+                    }
+                }
+
+                if (isUnique)
+                    distinctIdx.push(x);
+            }
+
+            isGrid = distinctIdx.length == 2;
+
+
             var regionIdx = 0;
             //third pass actually calculates and assigns all regions
             for (var x = 0; x < baseImageData.width; x++) {
@@ -370,6 +440,56 @@
                     }
                 }
             }
+
+            gridSize = new Point(-1, -1);
+            if (isGrid) {
+                for (var i = 0; i < regionMap.length; i++) {
+                    var zones = [];
+
+                    for (var j = 0; j < regionMap[i].length; j++) {
+                        if (regionMap[i][j] != -2 && zones.indexOf(regionMap[i][j]) == -1)
+                            zones.push(regionMap[i][j]);
+                    }
+
+                    if (zones.length > 0) {
+
+                        gridSize.Y = zones.length;
+
+                        break;
+                    }
+
+                }
+
+                if (gridSize.Y > -1) {
+
+                    for (var j = 0; j < regionMap[0].length; j++) {
+
+                        var zones = [];
+
+                        for (var i = 0; i < regionMap.length; i++) {
+                            if (regionMap[i][j] != -2 && zones.indexOf(regionMap[i][j]) == -1)
+                                zones.push(regionMap[i][j]);
+                        }
+
+                        if (zones.length > 0) {
+                            gridSize.X = zones.length;
+                            break;
+                        }
+                    }
+                }
+
+                console.log(gridSize);
+
+            }
+
+        }
+
+        function ArraysEqual(arr1, arr2) {
+            for (var i = 0; i < arr1.length; i++) {
+                if (arr1[i] != arr2[i])
+                    return false;
+            }
+            return true;
         }
 
         function GetPixel(data, x, y) {

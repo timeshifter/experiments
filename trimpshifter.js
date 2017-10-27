@@ -234,7 +234,7 @@ var TrimpShifter = {
         }
 
 
-        if (!game.global.fighting && game.upgrades.Bloodlust.owned == 0) {
+        if (!game.global.fighting && game.upgrades.Bloodlust.owned == 0 && game.upgrades.Battle.owned==1) {
             fightManual();
         }
 

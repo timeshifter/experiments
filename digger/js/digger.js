@@ -8,7 +8,7 @@ function Digger(x, y) {
     this.Y = y;
     this.Direction = DIRECTION.Right;
     this.Velocity = new Point(0, 0);
-    this.Size = new Point(28, 28);
+    this.Size = new Point(32, 32);
     this.SizeHalf = new Point(this.Size.X / 2, this.Size.Y / 2);
 
     this.DrawSize = new Point(32, 32);
