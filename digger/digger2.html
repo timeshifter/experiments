@@ -773,6 +773,7 @@
             for (i = 0; i < highlightTiles.length; i++) {
                 if (highlightTiles[i].Coord.X != -1) {
                     ctx.strokeStyle = highlightTiles[i].Color;
+                    ctx.lineWidth = 1;
                     ctx.beginPath();
                     var pt = GetDrawCoord(highlightTiles[i].Coord.X * tileSize, highlightTiles[i].Coord.Y * tileSize);
                     ctx.moveTo(pt.X, pt.Y);

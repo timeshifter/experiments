@@ -13,6 +13,18 @@
 
 		p {line-height:24px;}
 
+        p>label:first-child {
+            display:inline-block;
+            width:110px;
+        }
+
+        input[type="number"] {
+            width:90px;
+        }
+        input[type="text"] {
+            width:110px;
+        }
+
 		#cv {width:800px; height:550px; background-color:#000;}
 
 		#controls {float:left; width:350px; height:300px; padding:10px;}
@@ -20,10 +32,29 @@
 		#code {float:right; width:450px; height:300px; padding:10px;}
 		#txtCode {width:100%; height:250px; font-size:11px; font-family:monospace;}
 
-		#colors a {font-weight:bold; cursor:pointer;}
+        #colors li {
+            vertical-align:middle;
+            padding-top:3px;
+        }
+        #colors li:not(._add) a {
+            cursor: pointer;
+            background-color: #fff;
+            border: ridge 2px #ff0000;
+            border-radius: 3px;
+            display: inline-block;
+            padding:0px 4px 0px 3px;
+            text-align:center;
+            color:red;
+            box-sizing:border-box;
+            font-weight:bold;
+        }
+
+        #colors li._add {
+            padding-top:10px;
+        }
 
 		input.hex {width:80px;}
-		input.rgb {width:60px;}
+		input.rgb {width:60px; border-radius: 0;}
 	</style>
 </head>
 <body>
@@ -35,8 +66,9 @@
 		<p><button id="btnPlay" onclick="Play();">Render</button> curr: <label id="lblIts"></label></p>
 		<p>Render time: <label id="lblTime"></label></p>
 		<h2>Controls</h2>
-		<p>Iterations: <input type="number" id="txtIterations" value="50" /> </p>
-		<p>Color Interval: <input type="number" id="txtInterval" value="15" /></p>
+        <p>Left click to zoom in, right click to zoom out. New scene will be centered where you click.</p>
+		<p><label>Iterations:</label><input type="number" id="txtIterations" value="50" /> </p>
+		<p><label>Color Interval:</label><input type="number" id="txtInterval" value="15" /></p>
 		<p style="font-weight:bold;">Color cycle:</p>
 		<ul id="colors">
 			<li><input type="color" value="#ff00ff"> <a onclick="RemoveColor(this);">x</a></li>
@@ -49,14 +81,15 @@
 		</ul>
 	</div>
 	<div id="code">
-		<p>Mouse: <label id="lblMouse"></label></p>
-		<p>Zoom: <input type="number" id="txtZoom" value="1" /></p>
-		<p>Center: X <input type="text" id="txtCenterX" value="-0.75" /> Y 
+		<p><label>Mouse:</label><label id="lblMouse"></label></p>
+		<p><label>Zoom:</label><input type="number" id="txtZoom" value="1" /></p>
+		<p><label>Center:</label>X <input type="text" id="txtCenterX" value="-0.75" /> Y 
 			<input type="text" id="txtCenterY" value="0" /></p>
 		<hr />
 		<h3>Presets</h3>
 		<p><a href="javascript:void(0);" onclick="Preset(50, 15, 1, -0.75, 0);">Origin</a></p>
 		<p><a href="Javascript:void(0);" onclick="Preset(400, 25, 512, -0.758, 0.07);">Dragon's Flower</a></p>
+        <p><a href="javascript:void(0);" onclick="Preset(600, 100, 3500, -0.75757275, 0.06986755);">Spiral</a></p>
 	</div>
 	<div style="clear: both;">
 	</div>
@@ -171,7 +204,7 @@
 			$('#cv').mousemove(function (evt) {
 				var rect = cv.getBoundingClientRect();
 				mousePoint = new Point(Math.floor(evt.clientX - rect.left), Math.floor(evt.clientY - rect.top));
-				$('#lblMouse').html(((mousePoint.X * scale) + origin.X) + ', ' + (origin.Y - (mousePoint.Y * scale)));
+				$('#lblMouse').html(((mousePoint.X * scale) + origin.X).toFixed(10) + ', ' + (origin.Y - (mousePoint.Y * scale)).toFixed(10));
 			});
 
 			$('#cv').live('click', function () {
