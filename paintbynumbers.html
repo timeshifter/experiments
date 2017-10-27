@@ -89,11 +89,11 @@
         <p><label>Local image:</label><input type="file" id="localFile" /></p>
         <p><label>Mouse coords:</label><label id="lblCoords"></label></p>
         <p><label>Mouse region:</label><label id="lblRegion"></label></p>
-        
+        <p><input type="button" onclick="Reset();" value="Reset" /></p>
     </div>
     <div id="input">
         <p class="text"><label>Chat:</label><input type="text" id="txtChat" /></p>
-        <p><label id="history"></label></p>
+        <p><label id="lblHistory"></label></p>
     </div>
     <div style="clear:both;"></div>
     <script>
@@ -184,8 +184,8 @@
                     //hex
                     c = GetColorFromHex(parts[0]);
                 }
-                var txt = history.innerHTML || '';
-                history.innerHTML = txtChat.value + "<br />" + txt;
+                var txt = lblHistory.innerHTML || '';
+                lblHistory.innerHTML = txtChat.value + "<br />" + txt;
                 txtChat.value = '';
 
                 FillRegion(c, parseInt(parts[1], 10));
@@ -194,11 +194,12 @@
         }
 
         function FillRegion(color, regionId) {
-
-            for (var i = 0; i < regions[regionId].length; i++) {
-                DrawPoint(regions[regionId][i].X, regions[regionId][i].Y, color);
+            if (regionId < regions.length) {
+                for (var i = 0; i < regions[regionId].length; i++) {
+                    DrawPoint(regions[regionId][i].X, regions[regionId][i].Y, color);
+                }
+                ctx.putImageData(imageData, 0, 0);
             }
-            ctx.putImageData(imageData, 0, 0);
         }
 
         //document.onpaste = function (e) {
@@ -217,7 +218,8 @@
 
 
         function Reset() {
-
+            ctx.drawImage(baseImage, 0, 0);
+            lblHistory.innerHTML = '';
         }
 
         function UpdateScene() {
