@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shifter's Paint By Numbers Thing</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            width: 800px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        #cv-container {
+            width: 800px;
+            min-height:600px;
+            
+        }
+
+        #cv {
+            margin:0 auto;
+            display:block;
+            background-color: #000;
+        }
+
+        #controls {
+            padding: 10px;
+            display:inline-block;
+            width:50%;
+        }
+
+        #controls p label:first-child {
+            display:inline-block;
+            width:120px;
+        }
+
+        #input {
+            display:inline-block;
+            width:49%;
+            padding:10px;
+            vertical-align:top;
+        }
+
+        #input p.text label {
+            display:inline-block;
+            width:100px;
+        }
+
+        #history {
+            margin-top:10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shifter's Paint By Numbers Thing</h1>
+    <div id="cv-container">
+        <canvas id="cv" width="400" height="600"></canvas>
+    </div>
+    <div id="controls">
+        <p><label>Local image:</label><input type="file" id="localFile" /></p>
+        <p><label>Mouse coords:</label><label id="lblCoords"></label></p>
+        <p><label>Mouse region:</label><label id="lblRegion"></label></p>
+        
+    </div>
+    <div id="input">
+        <p class="text"><label>Chat:</label><input type="text" id="txtChat" /></p>
+        <p><label id="history"></label></p>
+    </div>
+    <div style="clear:both;"></div>
+    <script>
+        function Color(r, g, b) {
+            this.R = r;
+            this.G = g;
+            this.B = b;
+        }
+
+        function Point(x, y) {
+            this.X = x;
+            this.Y = y;
+        }
+
+        function GetColorFromHex(hex) {
+            hex = hex.replace('#', '');
+            return new Color(
+                parseInt(hex.substring(0, 2), 16),
+                parseInt(hex.substring(2, 4), 16),
+                parseInt(hex.substring(4, 6), 16)
+            );
+        }
+
+        function GetRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
+
+        function Create2DArray(rows) {
+            var arr = [];
+            for (var i = 0; i < rows; i++)
+                arr[i] = [];
+            return arr;
+        }
+
+
+
+        /* GLOBALS */
+        var
+            canvas,
+            ctx,
+            imageData,
+            baseImage = new Image(),
+            baseImageData,
+            regions,
+            regionMap,
+            imageLoaded = false;
+
+        canvas = document.getElementById('cv');
+        ctx = canvas.getContext('2d');
+        
+        baseImage.onload = function () {
+            UpdateScene();
+        }
+
+        localFile.onchange = function () {
+            imageLoaded = false;
+            if (localFile.value != '') {
+                var fr = new FileReader();
+                fr.onload = function () {
+                    baseImage.src = fr.result;
+                }
+                fr.readAsDataURL(localFile.files[0]);
+            }
+        }
+
+        canvas.onmousemove = function (e) {
+            lblCoords.innerHTML = e.offsetX + ', ' + e.offsetY;
+            if (regionMap != null) {
+                if (regionMap[e.offsetX] != null) {
+                    if (regionMap[e.offsetX][e.offsetY] != null) {
+                        lblRegion.innerHTML = regionMap[e.offsetX][e.offsetY];
+                    }
+
+                }
+
+            }
+        }
+
+        txtChat.onkeydown = function (e) {
+            if (e.keyCode == 13 && imageLoaded) {
+                var parts = txtChat.value.split(' ');
+                if (parts.length != 2)
+                    return;
+
+                //TODO: check for named color dictionary
+                var c;
+                if (parts[0].indexOf('#') == 0) {
+                    //hex
+                    c = GetColorFromHex(parts[0]);
+                }
+                var txt = history.innerHTML || '';
+                history.innerHTML = txtChat.value + "<br />" + txt;
+                txtChat.value = '';
+
+                FillRegion(c, parseInt(parts[1], 10));
+                
+            }
+        }
+
+        function FillRegion(color, regionId) {
+
+            for (var i = 0; i < regions[regionId].length; i++) {
+                DrawPoint(regions[regionId][i].X, regions[regionId][i].Y, color);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        //document.onpaste = function (e) {
+        //    var pastedText = undefined;
+        //    if (window.clipboardData && window.clipboardData.getData) { // IE
+        //        pastedText = window.clipboardData.getData('Text');
+        //    } else if (e.clipboardData && e.clipboardData.getData) {
+        //        pastedText = e.clipboardData.getData('text/plain');
+        //    }
+        //    if (pastedText.indexOf('http://') == 0 || pastedText.indexOf('https://') == 0) {
+        //        baseImage.src = pastedText;
+        //    }
+        //    return false; 
+        //}
+        
+
+
+        function Reset() {
+
+        }
+
+        function UpdateScene() {
+            var c = document.createElement('canvas');
+            var ct = c.getContext('2d');
+            c.width = baseImage.width;
+            c.height = baseImage.height;
+            ct.drawImage(baseImage, 0, 0);
+            baseImageData = ct.getImageData(0, 0, baseImage.width, baseImage.height);
+
+            canvas.width = baseImage.width;
+            canvas.height = baseImage.height;
+            ctx.drawImage(baseImage, 0, 0);
+
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            imageLoaded = true;
+
+
+            var l = baseImageData.data.length / 4, i = 0;
+
+            var lowVal = 256, highVal = -1;
+
+            while (i < l) {
+                var c = GetPixel(baseImageData, i % baseImageData.width, Math.floor(i / baseImageData.width));
+                if (c.R != c.G || c.G != c.B) {
+                    alert('Image is not grayscale!');
+                    return;
+                }
+                else {
+                    if (c.R > highVal)
+                        highVal = c.R;
+                    if (c.R < lowVal)
+                        lowVal = c.R;
+                }
+                i++;
+
+            }
+
+
+            var threshhold = Math.floor((lowVal + highVal) / 2);
+
+            regions = [];
+            regionMap = Create2DArray(baseImageData.width);
+
+            //find borders
+            for (var x = 0; x < baseImageData.width; x++) {
+                regionMap[x] = [];
+                for (var y = 0; y < baseImageData.height; y++) {
+                    var c = GetPixel(baseImageData, x, y),
+                        r = -1; //-1 for unidentified region, -2 for border
+
+                    if (c.R < threshhold) {
+                        //it's a border
+                        r = -2;
+                    }
+                    regionMap[x].push(r);
+                }
+            }
+
+
+            var regionIdx = 0;
+
+            for (var x = 0; x < baseImageData.width; x++) {
+                for (var y = 0; y < baseImageData.height; y++) {
+
+                    if (regionMap[x][y] == -1) {
+                        //found an unmarked region, let's do this!
+                        var list = [new Point(x, y)];
+                        regionMap[x][y] = regionIdx;
+
+                        while (list.length > 0) {
+                            var pt = list[0];
+
+                            if (pt.X > 0) {
+                                if (regionMap[pt.X - 1][pt.Y] == -1) {
+                                    list.push(new Point(pt.X - 1, pt.Y));
+                                    regionMap[pt.X - 1][pt.Y] = regionIdx;
+                                }
+                            }
+                            if (pt.Y > 0) {
+                                if (regionMap[pt.X][pt.Y - 1] == -1) {
+                                    list.push(new Point(pt.X, pt.Y - 1));
+                                    regionMap[pt.X][pt.Y - 1] = regionIdx;
+                                }
+                            }
+                            if (pt.X < (baseImageData.width - 1)) {
+                                if (regionMap[pt.X + 1][pt.Y] == -1) {
+                                    list.push(new Point(pt.X + 1, pt.Y));
+                                    regionMap[pt.X + 1][pt.Y] = regionIdx;
+                                }
+                            }
+                            if (pt.Y < (baseImageData.height - 1)) {
+                                if (regionMap[pt.X][pt.Y + 1] == -1) {
+
+                                    list.push(new Point(pt.X, pt.Y + 1));
+                                    regionMap[pt.X][pt.Y + 1] = regionIdx;
+                                }
+                            }
+
+                            if (regions.length == regionIdx) {
+                                regions.push([]);
+                            }
+                            regions[regionIdx].push(new Point(pt.X, pt.Y));
+                            list.shift();
+                        }
+                        regionIdx++;
+
+
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            //Reset();
+        }
+
+        function GetPixel(data, x, y) {
+            var index = (x + (y * data.width)) * 4;
+            return new Color(data.data[index], data.data[index + 1], data.data[index + 2]);
+        }
+
+        //function Draw() {
+        //    //ctx.clearRect(0, 0, canvas.width, canvas.height);
+        //    for (x = 1; x <= w; x++) {
+        //        for (y = 0; y <= h; y++) {
+                   
+        //        }
+        //    }
+        //    ctx.putImageData(imageData, 0, 0);
+        //}
+
+        //draw scaled "pixel"
+        function DrawPoint(x, y, c) {
+
+            var index = (x + (y * canvas.width)) * 4;
+            imageData.data[index++] = c.R;
+            imageData.data[index++] = c.G;
+            imageData.data[index++] = c.B;
+            imageData.data[index] = 255;
+
+
+        }
+
+
+    </script>
+</body>
+</html>
