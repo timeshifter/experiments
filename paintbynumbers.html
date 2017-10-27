@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shifter's Paint By Numbers Thing</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            width: 800px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        #cv-container {
+            width: 800px;
+            min-height:600px;
+            
+        }
+
+        #cv {
+            margin:0 auto;
+            display:block;
+            background-color: #000;
+        }
+
+        #controls {
+            padding: 10px;
+            display:inline-block;
+            width:50%;
+        }
+
+        #controls p label:first-child {
+            display:inline-block;
+            width:120px;
+        }
+
+        #input {
+            display:inline-block;
+            width:49%;
+            padding:10px;
+            vertical-align:top;
+        }
+
+        #input p.text label {
+            display:inline-block;
+            width:100px;
+        }
+
+        #history {
+            margin-top:10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shifter's Paint By Numbers Thing</h1>
+    <div id="cv-container">
+        <canvas id="cv" width="400" height="600"></canvas>
+    </div>
+    <div id="controls">
+        <p><label>Local image:</label><input type="file" id="localFile" /></p>
+        <p><label>Mouse coords:</label><label id="lblCoords"></label></p>
+        <p><label>Mouse region:</label><label id="lblRegion"></label></p>
+        <p><input type="button" onclick="Reset();" value="Reset" /></p>
+    </div>
+    <div id="input">
+        <p class="text"><label>Chat:</label><input type="text" id="txtChat" /></p>
+        <p><label id="lblHistory"></label></p>
+    </div>
+    <div style="clear:both;"></div>
+    <script>
+        //http://acbit.net/static/tas/picturesAll/
+
+        function Color(r, g, b) {
+            this.R = r;
+            this.G = g;
+            this.B = b;
+        }
+
+        function Point(x, y) {
+            this.X = x;
+            this.Y = y;
+        }
+
+        function GetColorFromHex(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length == 6)
+                return new Color(
+                    parseInt(hex.substring(0, 2), 16),
+                    parseInt(hex.substring(2, 4), 16),
+                    parseInt(hex.substring(4, 6), 16)
+                );
+            else if (hex.length == 3)
+                return new Color(
+                    parseInt(hex.substring(0, 1) + hex.substring(0, 1), 16),
+                    parseInt(hex.substring(1, 2) + hex.substring(1, 2), 16),
+                    parseInt(hex.substring(2, 3) + hex.substring(2, 3), 16)
+                );
+
+        }
+
+        function Create2DArray(rows) {
+            var arr = [];
+            for (var i = 0; i < rows; i++)
+                arr[i] = [];
+            return arr;
+        }
+
+        var colors = {
+            "aliceblue": "#f0f8ff", "antiquewhite": "#faebd7", "aqua": "#00ffff", "aquamarine": "#7fffd4", "azure": "#f0ffff",
+            "beige": "#f5f5dc", "bisque": "#ffe4c4", "black": "#000000", "blanchedalmond": "#ffebcd", "blue": "#0000ff", "blueviolet": "#8a2be2", "brown": "#a52a2a", "burlywood": "#deb887",
+            "cadetblue": "#5f9ea0", "chartreuse": "#7fff00", "chocolate": "#d2691e", "coral": "#ff7f50", "cornflowerblue": "#6495ed", "cornsilk": "#fff8dc", "crimson": "#dc143c", "cyan": "#00ffff",
+            "darkblue": "#00008b", "darkcyan": "#008b8b", "darkgoldenrod": "#b8860b", "darkgray": "#a9a9a9", "darkgreen": "#006400", "darkkhaki": "#bdb76b", "darkmagenta": "#8b008b", "darkolivegreen": "#556b2f",
+            "darkorange": "#ff8c00", "darkorchid": "#9932cc", "darkred": "#8b0000", "darksalmon": "#e9967a", "darkseagreen": "#8fbc8f", "darkslateblue": "#483d8b", "darkslategray": "#2f4f4f", "darkturquoise": "#00ced1",
+            "darkviolet": "#9400d3", "deeppink": "#ff1493", "deepskyblue": "#00bfff", "dimgray": "#696969", "dodgerblue": "#1e90ff",
+            "firebrick": "#b22222", "floralwhite": "#fffaf0", "forestgreen": "#228b22", "fuchsia": "#ff00ff",
+            "gainsboro": "#dcdcdc", "ghostwhite": "#f8f8ff", "gold": "#ffd700", "goldenrod": "#daa520", "gray": "#808080", "green": "#008000", "greenyellow": "#adff2f",
+            "honeydew": "#f0fff0", "hotpink": "#ff69b4",
+            "indianred ": "#cd5c5c", "indigo": "#4b0082", "ivory": "#fffff0", "khaki": "#f0e68c",
+            "lavender": "#e6e6fa", "lavenderblush": "#fff0f5", "lawngreen": "#7cfc00", "lemonchiffon": "#fffacd", "lightblue": "#add8e6", "lightcoral": "#f08080", "lightcyan": "#e0ffff", "lightgoldenrodyellow": "#fafad2",
+            "lightgrey": "#d3d3d3", "lightgreen": "#90ee90", "lightpink": "#ffb6c1", "lightsalmon": "#ffa07a", "lightseagreen": "#20b2aa", "lightskyblue": "#87cefa", "lightslategray": "#778899", "lightsteelblue": "#b0c4de",
+            "lightyellow": "#ffffe0", "lime": "#00ff00", "limegreen": "#32cd32", "linen": "#faf0e6",
+            "magenta": "#ff00ff", "maroon": "#800000", "mediumaquamarine": "#66cdaa", "mediumblue": "#0000cd", "mediumorchid": "#ba55d3", "mediumpurple": "#9370d8", "mediumseagreen": "#3cb371", "mediumslateblue": "#7b68ee",
+            "mediumspringgreen": "#00fa9a", "mediumturquoise": "#48d1cc", "mediumvioletred": "#c71585", "midnightblue": "#191970", "mintcream": "#f5fffa", "mistyrose": "#ffe4e1", "moccasin": "#ffe4b5",
+            "navajowhite": "#ffdead", "navy": "#000080",
+            "oldlace": "#fdf5e6", "olive": "#808000", "olivedrab": "#6b8e23", "orange": "#ffa500", "orangered": "#ff4500", "orchid": "#da70d6",
+            "palegoldenrod": "#eee8aa", "palegreen": "#98fb98", "paleturquoise": "#afeeee", "palevioletred": "#d87093", "papayawhip": "#ffefd5", "peachpuff": "#ffdab9", "peru": "#cd853f", "pink": "#ffc0cb", "plum": "#dda0dd", "powderblue": "#b0e0e6", "purple": "#800080",
+            "rebeccapurple": "#663399", "red": "#ff0000", "rosybrown": "#bc8f8f", "royalblue": "#4169e1",
+            "saddlebrown": "#8b4513", "salmon": "#fa8072", "sandybrown": "#f4a460", "seagreen": "#2e8b57", "seashell": "#fff5ee", "sienna": "#a0522d", "silver": "#c0c0c0", "skyblue": "#87ceeb", "slateblue": "#6a5acd", "slategray": "#708090", "snow": "#fffafa", "springgreen": "#00ff7f", "steelblue": "#4682b4",
+            "tan": "#d2b48c", "teal": "#008080", "thistle": "#d8bfd8", "tomato": "#ff6347", "turquoise": "#40e0d0",
+            "violet": "#ee82ee",
+            "wheat": "#f5deb3", "white": "#ffffff", "whitesmoke": "#f5f5f5",
+            "yellow": "#ffff00", "yellowgreen": "#9acd32"
+        };
+
+        var
+            canvas,
+            ctx,
+            imageData,
+            baseImage = new Image(),
+            baseImageData,
+            regions,
+            regionMap,
+            imageLoaded = false,
+            isGrid = false,
+            gridSize = new Point(-1, -1);
+
+        canvas = document.getElementById('cv');
+        ctx = canvas.getContext('2d');
+        
+        baseImage.onload = function () {
+            UpdateScene();
+        }
+
+        localFile.onchange = function () {
+            imageLoaded = false;
+            if (localFile.value != '') {
+                var fr = new FileReader();
+                fr.onload = function () {
+                    baseImage.src = fr.result;
+                }
+                fr.readAsDataURL(localFile.files[0]);
+            }
+        }
+
+        canvas.onmousemove = function (e) {
+            lblCoords.innerHTML = e.offsetX + ', ' + e.offsetY;
+            if (regionMap != null) {
+                if (regionMap[e.offsetX] != null) {
+                    if (regionMap[e.offsetX][e.offsetY] != null) {
+                        lblRegion.innerHTML = regionMap[e.offsetX][e.offsetY];
+                    }
+
+                }
+
+            }
+        }
+
+        txtChat.onkeydown = function (e) {
+            if (e.keyCode == 13 && imageLoaded) {
+                if (ParseInput(txtChat.value)) {
+                    var txt = lblHistory.innerHTML || '';
+                    lblHistory.innerHTML = text + "<br />" + txt;
+                    text = '';
+                }
+            }
+        }
+
+        function ParseInput(text) {
+            text = text.trim();
+            var parts;
+
+            if (!imageLoaded)
+                return false;
+
+            if (text.indexOf('rgb(') == 0)
+                parts = text.split(')');
+            else
+                parts = text.split(' ');
+
+            if (parts.length != 2)
+                return;
+
+
+            var c, colName = parts[0].toLowerCase();
+
+            if (colName.indexOf('#') == 0) { //hex code
+                c = GetColorFromHex(colName);
+            }
+            else if (colName.indexOf('rgb(') == 0) { //rgb
+                colName = colName.replace('rgb(', '').replace(')', '');
+                var colParts = colName.split(',');
+                c = new Color(parseInt(colParts[0], 10), parseInt(colParts[1], 10), parseInt(colParts[2], 10));
+            }
+            else { //named color (hopefully)
+                if (colors[colName] != undefined) {
+                    c = GetColorFromHex(colors[colName]);
+                }
+            }
+
+
+            if (c != undefined) {
+
+                if (parts[1].indexOf('-') > -1) { //it's a range!
+                    var rangeParts = parts[1].split('-');
+                    var p1 = parseInt(rangeParts[0], 10),
+                        p2 = parseInt(rangeParts[1], 10);
+                    var min = Math.min(p1, p2),
+                        max = Math.max(p1, p2);
+
+                    if (isGrid) {
+                        var pt1 = new Point(Math.floor(min / gridSize.Y), min % gridSize.Y),
+                            pt2 = new Point(Math.floor(max / gridSize.Y), max % gridSize.Y);
+
+                        var slope = (pt2.Y - pt1.Y) / (pt2.X - pt1.X);
+
+                        for (var i = pt1.X; i <= pt2.X; i++) {
+                            var j = Math.floor(pt1.Y + (slope * (pt1.X - i)));
+                            FillRegion(c, (i * gridSize.Y) + j);
+                        }
+
+                        //TODO: calculate slope, draw line
+                        FillRegion(new Color(255, 0, 0), min);
+                        FillRegion(new Color(0, 255, 0), max);
+
+                        
+                    }
+                    else {
+
+                        for (var i = min; i <= max; i++) {
+                            FillRegion(c, i);
+                        }
+
+                    }
+
+                   
+
+                }
+                else {
+                    FillRegion(c, parseInt(parts[1], 10));
+                }
+                return true;
+            }
+            return false;
+
+        }
+
+        function FillRegion(color, regionId) {
+            if (regionId >= 0 && regionId < regions.length) {
+                for (var i = 0; i < regions[regionId].length; i++) {
+                    DrawPoint(regions[regionId][i].X, regions[regionId][i].Y, color);
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+        }
+
+        //document.onpaste = function (e) {
+        //    var pastedText = undefined;
+        //    if (window.clipboardData && window.clipboardData.getData) { // IE
+        //        pastedText = window.clipboardData.getData('Text');
+        //    } else if (e.clipboardData && e.clipboardData.getData) {
+        //        pastedText = e.clipboardData.getData('text/plain');
+        //    }
+        //    if (pastedText.indexOf('http://') == 0 || pastedText.indexOf('https://') == 0) {
+        //        baseImage.src = pastedText;
+        //    }
+        //    return false; 
+        //}
+        
+
+
+        function Reset() {
+            ctx.drawImage(baseImage, 0, 0);
+            lblHistory.innerHTML = '';
+        }
+
+        function UpdateScene() {
+            var c = document.createElement('canvas');
+            var ct = c.getContext('2d');
+            c.width = baseImage.width;
+            c.height = baseImage.height;
+            ct.drawImage(baseImage, 0, 0);
+            baseImageData = ct.getImageData(0, 0, baseImage.width, baseImage.height);
+
+            canvas.width = baseImage.width;
+            canvas.height = baseImage.height;
+            ctx.drawImage(baseImage, 0, 0);
+
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            imageLoaded = true;
+
+
+            var l = baseImageData.data.length / 4, i = 0;
+
+            var lowVal = 256, highVal = -1;
+
+            //first pass finds high/low color values in the image, and ensures it's a grayscale image
+            while (i < l) {
+                var c = GetPixel(baseImageData, i % baseImageData.width, Math.floor(i / baseImageData.width));
+                if (c.R != c.G || c.G != c.B) {
+                    alert('Image is not grayscale!');
+                    return;
+                }
+                else {
+                    if (c.R > highVal)
+                        highVal = c.R;
+                    if (c.R < lowVal)
+                        lowVal = c.R;
+                }
+                i++;
+
+            }
+
+            //put determine threshhold in between high and low
+            var threshhold = Math.floor((lowVal + highVal) / 2);
+
+            regions = [];
+            regionMap = Create2DArray(baseImageData.width);
+
+            //second pass initializes the region map, setting -2 for border pixels and -1 for the rest
+            for (var x = 0; x < baseImageData.width; x++) {
+                regionMap[x] = [];
+                for (var y = 0; y < baseImageData.height; y++) {
+                    var c = GetPixel(baseImageData, x, y),
+                        r = -1; //-1 for unidentified region, -2 for border
+
+                    if (c.R < threshhold) {
+                        //it's a border
+                        r = -2;
+                    }
+                    regionMap[x].push(r);
+                }
+            }
+
+
+
+            //see if it's a grid
+            var distinctIdx = [0];
+            for (var x = 1; x < regionMap.length; x++) {
+                var isUnique = true;
+
+                for (var i = 0; i < distinctIdx.length; i++) {
+                    if (ArraysEqual(regionMap[x], regionMap[distinctIdx[i]])) {
+                        isUnique = false;
+
+                    }
+                }
+
+                if (isUnique)
+                    distinctIdx.push(x);
+            }
+
+            isGrid = distinctIdx.length == 2;
+
+
+            var regionIdx = 0;
+            //third pass actually calculates and assigns all regions
+            for (var x = 0; x < baseImageData.width; x++) {
+                for (var y = 0; y < baseImageData.height; y++) {
+
+                    if (regionMap[x][y] == -1) {
+                        //found an unmarked region, let's do this!
+                        var list = [new Point(x, y)];
+                        regionMap[x][y] = regionIdx;
+
+                        while (list.length > 0) {
+                            var pt = list[0];
+
+                            if (pt.X > 0) {
+                                if (regionMap[pt.X - 1][pt.Y] == -1) {
+                                    list.push(new Point(pt.X - 1, pt.Y));
+                                    regionMap[pt.X - 1][pt.Y] = regionIdx;
+                                }
+                            }
+                            if (pt.Y > 0) {
+                                if (regionMap[pt.X][pt.Y - 1] == -1) {
+                                    list.push(new Point(pt.X, pt.Y - 1));
+                                    regionMap[pt.X][pt.Y - 1] = regionIdx;
+                                }
+                            }
+                            if (pt.X < (baseImageData.width - 1)) {
+                                if (regionMap[pt.X + 1][pt.Y] == -1) {
+                                    list.push(new Point(pt.X + 1, pt.Y));
+                                    regionMap[pt.X + 1][pt.Y] = regionIdx;
+                                }
+                            }
+                            if (pt.Y < (baseImageData.height - 1)) {
+                                if (regionMap[pt.X][pt.Y + 1] == -1) {
+
+                                    list.push(new Point(pt.X, pt.Y + 1));
+                                    regionMap[pt.X][pt.Y + 1] = regionIdx;
+                                }
+                            }
+
+                            if (regions.length == regionIdx) {
+                                regions.push([]);
+                            }
+                            regions[regionIdx].push(new Point(pt.X, pt.Y));
+                            list.shift();
+                        }
+                        regionIdx++;
+
+
+                    }
+                }
+            }
+
+            gridSize = new Point(-1, -1);
+            if (isGrid) {
+                for (var i = 0; i < regionMap.length; i++) {
+                    var zones = [];
+
+                    for (var j = 0; j < regionMap[i].length; j++) {
+                        if (regionMap[i][j] != -2 && zones.indexOf(regionMap[i][j]) == -1)
+                            zones.push(regionMap[i][j]);
+                    }
+
+                    if (zones.length > 0) {
+
+                        gridSize.Y = zones.length;
+
+                        break;
+                    }
+
+                }
+
+                if (gridSize.Y > -1) {
+
+                    for (var j = 0; j < regionMap[0].length; j++) {
+
+                        var zones = [];
+
+                        for (var i = 0; i < regionMap.length; i++) {
+                            if (regionMap[i][j] != -2 && zones.indexOf(regionMap[i][j]) == -1)
+                                zones.push(regionMap[i][j]);
+                        }
+
+                        if (zones.length > 0) {
+                            gridSize.X = zones.length;
+                            break;
+                        }
+                    }
+                }
+
+                console.log(gridSize);
+
+            }
+
+        }
+
+        function ArraysEqual(arr1, arr2) {
+            for (var i = 0; i < arr1.length; i++) {
+                if (arr1[i] != arr2[i])
+                    return false;
+            }
+            return true;
+        }
+
+        function GetPixel(data, x, y) {
+            var index = (x + (y * data.width)) * 4;
+            return new Color(data.data[index], data.data[index + 1], data.data[index + 2]);
+        }
+
+        function DrawPoint(x, y, c) {
+            var index = (x + (y * canvas.width)) * 4;
+            imageData.data[index++] = c.R;
+            imageData.data[index++] = c.G;
+            imageData.data[index++] = c.B;
+            imageData.data[index] = 255;
+        }
+
+
+        //connect to twitch channel, if specified
+        if (window.location.hash) {
+            var hash = window.location.hash;
+            var hashParts = hash.substring(1).split('&');
+            var channel;
+            for (var i = 0; i < hashParts.length; i++) {
+                var tmp = hashParts[i].split('=');
+                if (tmp[0] == 'channel') {
+                    channel = tmp[1].trim();
+                }
+            }
+
+            if (channel) {
+
+                var ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
+
+                ws.onopen = function open() {
+                    //ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
+                    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+                    ws.send('NICK justinfan' + Math.floor(Math.random() * 999999));
+                    ws.send('JOIN #' + channel);
+                }
+
+                //show raw data
+                ws.onmessage = function (data) {
+                    var o = GetChatObject(data.data);
+
+                    var idx = o["user-type"].substring(1).indexOf(':');
+                    var ircUser = o["user-type"].substring(1, idx).split('!')[0];
+                    var ircMsg = o["user-type"].substring(idx + 2);
+
+                    ParseInput(ircMsg);
+
+                    console.log(ircUser, ircMsg);
+
+                }
+            }
+        }
+
+
+        function GetChatObject(str) {
+            var ret = {};
+
+            var parts = str.split(';');
+
+            for (var i = 0; i < parts.length; i++) {
+                var subparts = parts[i].split('=');
+                var k = subparts[0].trim();
+                subparts.shift();
+                ret[k] = subparts.join('=').trim();
+            }
+
+            return ret;
+        }
+
+    </script>
+</body>
+</html>
