@@ -416,7 +416,9 @@
             imageLoaded = false,
             isGrid = false,
             gridSize = new Point(-1, -1),
-            queryList = {};
+            queryList = {},
+            tempImage = new Image(),
+            firstLoad = true;
 
         canvas = document.getElementById('cv');
         ctx = canvas.getContext('2d');
@@ -447,24 +449,63 @@
             var url = window.location.href + '&mode=widget';
 
             console.log(url);
-            localStorage.setItem('widgetImage', baseImage.src);
+            
             window.open(url, 'Paint By Numbers', 'location=no,toolbar=no,status=no,menubar=no,resizable=no,scrollbars=no,width=' + baseImage.width + ',height=' + baseImage.height);
             return false;
         }
 
         if (queryList["mode"] == "widget") {
-            baseImage.src = localStorage.getItem('widgetImage');
             document.getElementsByTagName('body')[0].classList.add('widget');
 
 
         }
 
-        //if (queryList["file"]) {
-        //    baseImage.src = queryList["file"];
-        //}
+
+        if (localStorage.getItem('lastImage') != undefined) {
+            tempImage.src = localStorage.getItem('lastImage');
+            
+        }
+
+        if (localStorage.getItem('baseImage') != undefined) {
+            baseImage.src = localStorage.getItem('baseImage');
+        }
+
+        function DrawLastImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tempImage, 0, 0);
+        }
+
+        function DrawBaseImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(baseImage, 0, 0);
+        }
+
+        tempImage.onload = function (e) {
+            canvas.width = tempImage.width;
+            canvas.height = tempImage.height;
+            console.log('drawing last image');
+            ctx.drawImage(tempImage, 0, 0);
+        }
+
 
         baseImage.onload = function () {
-           UpdateScene();
+            //UpdateScene();
+            if (firstLoad) {
+                UpdateScene(false);
+                if (localStorage.getItem('lastImage') != undefined) {
+                    //console.log('drawing last image');
+                    ctx.drawImage(tempImage, 0, 0);
+                    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                }
+            }
+            else {
+                UpdateScene(false);
+                console.log('drawing base image');
+                ctx.drawImage(baseImage, 0, 0);
+                localStorage.setItem('baseImage', baseImage.src);
+                localStorage.setItem('lastImage', baseImage.src);
+            }
+            firstLoad = false;
         }
 
         localFile.onchange = function () {
@@ -581,14 +622,25 @@
                    
 
                 }
-                else if (parts[1].indexOf(',') > -1 && isGrid) {
-                    var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
+                else if (parts[1].indexOf(',') > -1) {
+                    if (isGrid) {
+                        var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
 
-                    FillRegion(c, (x * gridSize.Y) + y);
+                        FillRegion(c, (x * gridSize.Y) + y);
+                    }
+                    else {
+                        var nums = parts[1].split(',');
+                        for (var i = 0; i < nums.length; i++) {
+                            Fillregion(c, parseInt(nums[i], 10));
+                        }
+
+                    }
                 }
                 else {
                     FillRegion(c, parseInt(parts[1], 10));
                 }
+                console.log('drawing region');
+                localStorage.setItem('lastImage', canvas.toDataURL());
                 return true;
             }
             return false;
@@ -624,7 +676,10 @@
             lblHistory.innerHTML = '';
         }
 
-        function UpdateScene() {
+        function UpdateScene(overwriteCanvas) {
+
+            overwriteCanvas = overwriteCanvas || true;
+            console.log('UpdateScene');
             var c = document.createElement('canvas');
             var ct = c.getContext('2d');
             c.width = baseImage.width;
@@ -634,9 +689,10 @@
 
             canvas.width = baseImage.width;
             canvas.height = baseImage.height;
-            ctx.drawImage(baseImage, 0, 0);
+            if (overwriteCanvas)
+                ctx.drawImage(baseImage, 0, 0);
 
-            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            //imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
             imageLoaded = true;
 
