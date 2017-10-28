@@ -447,8 +447,6 @@
             }
 
             var url = window.location.href + '&mode=widget';
-
-            console.log(url);
             
             window.open(url, 'Paint By Numbers', 'location=no,toolbar=no,status=no,menubar=no,resizable=no,scrollbars=no,width=' + baseImage.width + ',height=' + baseImage.height);
             return false;
@@ -483,7 +481,7 @@
         tempImage.onload = function (e) {
             canvas.width = tempImage.width;
             canvas.height = tempImage.height;
-            console.log('drawing last image');
+           // console.log('drawing last image');
             ctx.drawImage(tempImage, 0, 0);
         }
 
@@ -500,7 +498,7 @@
             }
             else {
                 UpdateScene(false);
-                console.log('drawing base image');
+                //console.log('drawing base image');
                 ctx.drawImage(baseImage, 0, 0);
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 localStorage.setItem('baseImage', baseImage.src);
@@ -641,7 +639,7 @@
                 else {
                     FillRegion(c, parseInt(parts[1], 10));
                 }
-                console.log('drawing region');
+                //console.log('drawing region');
                 localStorage.setItem('lastImage', canvas.toDataURL());
                 return true;
             }
@@ -681,7 +679,7 @@
         function UpdateScene(overwriteCanvas) {
 
             overwriteCanvas = overwriteCanvas || true;
-            console.log('UpdateScene');
+           // console.log('UpdateScene');
             var c = document.createElement('canvas');
             var ct = c.getContext('2d');
             c.width = baseImage.width;
@@ -877,33 +875,42 @@
         }
 
 
+
         //connect to twitch channel, if specified
-            if (queryList["channel"]) {
+        if (queryList["channel"]) {
 
-                var ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
+            var ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
 
-                ws.onopen = function open() {
-                    //ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
-                    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-                    ws.send('NICK justinfan' + Math.floor(Math.random() * 999999));
-                    ws.send('JOIN #' + queryList["channel"]);
-                }
-
-                //show raw data
-                ws.onmessage = function (data) {
-                    var o = GetChatObject(data.data);
-
-                    var idx = o["user-type"].substring(1).indexOf(':');
-                    var ircUser = o["user-type"].substring(1, idx).split('!')[0];
-                    var ircMsg = o["user-type"].substring(idx + 2);
-
-                    ParseInput(ircMsg);
-
-                    //console.log(ircUser, ircMsg);
-
-                }
+            ws.onopen = function open() {
+                this.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+                this.send('NICK justinfan' + Math.floor(Math.random() * 999999));
+                this.send('JOIN #' + queryList["channel"]);
             }
-        
+
+            //show raw data
+            ws.onmessage = function (data) {
+                var o = GetChatObject(data.data);
+
+                var idx = o["user-type"].substring(1).indexOf(':');
+                var ircUser = o["user-type"].substring(1, idx).split('!')[0];
+                var ircMsg = o["user-type"].substring(idx + 2);
+
+                ParseInput(ircMsg);
+
+                //console.log(ircUser, ircMsg);
+
+            }
+
+            ws.onerror = function (e) {
+                console.log('Websocket error: ', e);
+                ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
+            }
+
+            ws.onclose = function (e) {
+                console.log('Websocket closed: ', e);
+            }
+        }
+
 
 
         function GetChatObject(str) {
