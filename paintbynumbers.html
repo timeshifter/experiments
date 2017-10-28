@@ -309,16 +309,25 @@
                         var pt1 = new Point(Math.floor(min / gridSize.Y), min % gridSize.Y),
                             pt2 = new Point(Math.floor(max / gridSize.Y), max % gridSize.Y);
 
-                        var slope = (pt2.Y - pt1.Y) / (pt2.X - pt1.X);
+                        var len = Math.sqrt(((pt2.X - pt1.X) * (pt2.X - pt1.X)) + ((pt2.Y - pt1.Y) * (pt2.Y - pt1.Y)));
 
-                        for (var i = pt1.X; i <= pt2.X; i++) {
-                            var j = Math.floor(pt1.Y + (slope * (pt1.X - i)));
-                            FillRegion(c, (i * gridSize.Y) + j);
+                        var deltaX = (pt2.X - pt1.X)/len,
+                            deltaY = (pt2.Y - pt1.Y) / len;
+
+                        FillRegion(c, min);
+                        FillRegion(c, max);
+
+                        for (var i = 0; i <= len; i += 1) {
+                            FillRegion(c,
+
+                                (Math.floor(pt1.X + (deltaX * i)) * gridSize.Y) +
+                                Math.floor(pt1.Y + (deltaY * i))
+
+                            );
                         }
 
-                        //TODO: calculate slope, draw line
-                        FillRegion(new Color(255, 0, 0), min);
-                        FillRegion(new Color(0, 255, 0), max);
+
+                        
 
                         
                     }
