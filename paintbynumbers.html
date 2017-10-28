@@ -189,6 +189,8 @@
         canvas = document.getElementById('cv');
         ctx = canvas.getContext('2d');
 
+        
+
         if (window.location.search) {
             var query = window.location.search;
             var queryParts = query.substring(1).split('&');
@@ -223,6 +225,10 @@
             document.getElementsByTagName('body')[0].classList.add('widget');
 
 
+        }
+
+        if (queryList["file"]) {
+            baseImage.src = queryList["file"];
         }
 
         baseImage.onload = function () {
@@ -302,6 +308,7 @@
                     var rangeParts = parts[1].split('-');
                     var p1 = parseInt(rangeParts[0], 10),
                         p2 = parseInt(rangeParts[1], 10);
+
                     var min = Math.min(p1, p2),
                         max = Math.max(p1, p2);
 
@@ -341,6 +348,11 @@
 
                    
 
+                }
+                else if (parts[1].indexOf(',') > -1 && isGrid) {
+                    var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
+
+                    FillRegion(c, (x * gridSize.Y) + y);
                 }
                 else {
                     FillRegion(c, parseInt(parts[1], 10));
