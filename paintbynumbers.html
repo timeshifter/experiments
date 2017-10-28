@@ -586,8 +586,8 @@
                         max = Math.max(p1, p2);
 
                     if (isGrid) {
-                        var pt1 = new Point(Math.floor(min / gridSize.Y), min % gridSize.Y),
-                            pt2 = new Point(Math.floor(max / gridSize.Y), max % gridSize.Y);
+                        var pt1 = new Point(Math.floor(min / gridSize.Y) + 0.5, min % gridSize.Y + 0.5),
+                            pt2 = new Point(Math.floor(max / gridSize.Y) + 0.5, max % gridSize.Y + 0.5);
 
                         var len = Math.sqrt(((pt2.X - pt1.X) * (pt2.X - pt1.X)) + ((pt2.Y - pt1.Y) * (pt2.Y - pt1.Y)));
 
@@ -897,6 +897,8 @@
 
                 ParseInput(ircMsg);
 
+                //console.log(o);
+
                 //console.log(ircUser, ircMsg);
 
             }
@@ -908,6 +910,7 @@
 
             ws.onclose = function (e) {
                 console.log('Websocket closed: ', e);
+                ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
             }
         }
 
