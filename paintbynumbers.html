@@ -78,6 +78,18 @@
         #history {
             margin-top:10px;
         }
+
+
+        body.widget{
+            width:auto;
+            min-height:auto;
+        }
+        body.widget h1 {display:none;}
+        body.widget #controls {
+            display: none;
+        }
+        body.widget #input {display:none;}
+        body.widget #cv-container {width:auto;height:auto;min-height:auto;}
     </style>
 </head>
 <body>
@@ -90,6 +102,7 @@
         <p><label>Mouse coords:</label><label id="lblCoords"></label></p>
         <p><label>Mouse region:</label><label id="lblRegion"></label></p>
         <p><input type="button" onclick="Reset();" value="Reset" /></p>
+        <p><a href="javascript:void(0);" onclick="Widget();">Launch widget</a></p>
     </div>
     <div id="input">
         <p class="text"><label>Chat:</label><input type="text" id="txtChat" /></p>
@@ -97,7 +110,6 @@
     </div>
     <div style="clear:both;"></div>
     <script>
-        //http://acbit.net/static/tas/picturesAll/
 
         function Color(r, g, b) {
             this.R = r;
@@ -171,11 +183,48 @@
             regionMap,
             imageLoaded = false,
             isGrid = false,
-            gridSize = new Point(-1, -1);
+            gridSize = new Point(-1, -1),
+            queryList = {};
 
         canvas = document.getElementById('cv');
         ctx = canvas.getContext('2d');
-        
+
+        if (window.location.search) {
+            var query = window.location.search;
+            var queryParts = query.substring(1).split('&');
+            for (var i = 0; i < queryParts.length; i++) {
+                var parts = queryParts[i].split('=');
+                queryList[parts[0].trim()] = parts[1].trim();
+                
+            }
+        }
+
+        function Widget() {
+            if (!imageLoaded) {
+                alert('No image loaded!');
+                return;
+            }
+
+            if (queryList["channel"] == undefined) {
+                alert('No channel specified!');
+                return;
+            }
+
+            var url = window.location.href + '&mode=widget';
+
+            console.log(url);
+            localStorage.setItem('widgetImage', baseImage.src);
+            window.open(url, 'Paint By Numbers', 'location=no,toolbar=no,status=no,menubar=no,resizable=no,scrollbars=no,width=' + baseImage.width + ',height=' + baseImage.height);
+            return false;
+        }
+
+        if (queryList["mode"] == "widget") {
+            baseImage.src = localStorage.getItem('widgetImage');
+            document.getElementsByTagName('body')[0].classList.add('widget');
+
+
+        }
+
         baseImage.onload = function () {
             UpdateScene();
         }
@@ -208,8 +257,8 @@
             if (e.keyCode == 13 && imageLoaded) {
                 if (ParseInput(txtChat.value)) {
                     var txt = lblHistory.innerHTML || '';
-                    lblHistory.innerHTML = text + "<br />" + txt;
-                    text = '';
+                    lblHistory.innerHTML = txtChat.value + "<br />" + txt;
+                    txtChat.value = '';
                 }
             }
         }
@@ -520,18 +569,7 @@
 
 
         //connect to twitch channel, if specified
-        if (window.location.hash) {
-            var hash = window.location.hash;
-            var hashParts = hash.substring(1).split('&');
-            var channel;
-            for (var i = 0; i < hashParts.length; i++) {
-                var tmp = hashParts[i].split('=');
-                if (tmp[0] == 'channel') {
-                    channel = tmp[1].trim();
-                }
-            }
-
-            if (channel) {
+            if (queryList["channel"]) {
 
                 var ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
 
@@ -539,7 +577,7 @@
                     //ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
                     ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
                     ws.send('NICK justinfan' + Math.floor(Math.random() * 999999));
-                    ws.send('JOIN #' + channel);
+                    ws.send('JOIN #' + queryList["channel"]);
                 }
 
                 //show raw data
@@ -556,7 +594,7 @@
 
                 }
             }
-        }
+        
 
 
         function GetChatObject(str) {
