@@ -502,6 +502,7 @@
                 UpdateScene(false);
                 console.log('drawing base image');
                 ctx.drawImage(baseImage, 0, 0);
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 localStorage.setItem('baseImage', baseImage.src);
                 localStorage.setItem('lastImage', baseImage.src);
             }
@@ -509,7 +510,8 @@
         }
 
         localFile.onchange = function () {
-            imageLoaded = false;
+            firstLoad = false;
+           imageLoaded = false;
             if (localFile.value != '') {
                 var fr = new FileReader();
                 fr.onload = function () {
