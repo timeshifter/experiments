@@ -478,6 +478,10 @@
             ctx.drawImage(baseImage, 0, 0);
         }
 
+        if (queryList["file"]) {
+            baseImage.src = queryList["file"];
+        }
+
         tempImage.onload = function (e) {
             canvas.width = tempImage.width;
             canvas.height = tempImage.height;
@@ -877,11 +881,13 @@
 
 
         //connect to twitch channel, if specified
-        if (queryList["channel"]) {
+
+        function Connect() {
 
             var ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
 
-            ws.onopen = function open() {
+            ws.onopen = function open(e) {
+                console.log('Websocket opening: ', e);
                 this.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
                 this.send('NICK justinfan' + Math.floor(Math.random() * 999999));
                 this.send('JOIN #' + queryList["channel"]);
@@ -905,14 +911,20 @@
 
             ws.onerror = function (e) {
                 console.log('Websocket error: ', e);
-                ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
+                setTimeout(function () {
+                    Connect();
+                }, 1000);
             }
 
             ws.onclose = function (e) {
                 console.log('Websocket closed: ', e);
-                ws = new WebSocket('wss://irc-ws.chat.twitch.tv');
+                setTimeout(function () {
+                    Connect();
+                }, 1000);
             }
         }
+            
+        
 
 
 
@@ -929,8 +941,12 @@
             }
 
             return ret;
-        }
+            }
 
+        if (queryList["channel"]) {
+
+            Connect();
+        }
     </script>
 </body>
 </html>
