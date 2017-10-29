@@ -458,15 +458,22 @@
 
         }
 
+        if (queryList["file"]) {
+            baseImage.crossOrigin = 'Anonymous';
+            baseImage.src = queryList["file"];
+        }
+        else {
 
-        if (localStorage.getItem('lastImage') != undefined) {
-            tempImage.src = localStorage.getItem('lastImage');
-            
+            if (localStorage.getItem('lastImage') != undefined) {
+                tempImage.src = localStorage.getItem('lastImage');
+
+            }
+
+            if (localStorage.getItem('baseImage') != undefined) {
+                baseImage.src = localStorage.getItem('baseImage');
+            }
         }
 
-        if (localStorage.getItem('baseImage') != undefined) {
-            baseImage.src = localStorage.getItem('baseImage');
-        }
 
         function DrawLastImage() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -476,11 +483,6 @@
         function DrawBaseImage() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(baseImage, 0, 0);
-        }
-
-        if (queryList["file"]) {
-            baseImage.crossOrigin = 'Anonymous';
-            baseImage.src = queryList["file"];
         }
 
         tempImage.onload = function (e) {
@@ -697,7 +699,7 @@
             if (overwriteCanvas)
                 ctx.drawImage(baseImage, 0, 0);
 
-            //imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
             imageLoaded = true;
 
@@ -882,6 +884,8 @@
 
 
         //connect to twitch channel, if specified
+        /*        @badges=moderator/1,subscriber/0,bits/5000;        color=#FF4500;        display-name=MediaMagnet;        emotes=;id=98a76159-e2f6-4080-bb5e-910cd54a6467;        mod=1;room-id=70067886;sent-ts=1509252055763;        subscriber=1;tmi-sent-ts=1509252067701;        turbo=0;user-id=111485954;        user-type=mod:mediamagnet!mediamagnet@mediamagnet.tmi.twitch.tv PRIVMSG #dwangoac :oh nice        
+        */
 
         function Connect() {
 
@@ -898,12 +902,15 @@
             ws.onmessage = function (data) {
                 var o = GetChatObject(data.data);
 
-                var idx = o["user-type"].substring(1).indexOf(':');
-                var ircUser = o["user-type"].substring(1, idx).split('!')[0];
-                var ircMsg = o["user-type"].substring(idx + 2);
+                var userParts = o["user-type"].split(':');
+                var ircUser = userParts[1].split('!')[0];
+                userParts.shift();
+                userParts.shift();
+                var ircMsg = userParts.join(':');
 
                 ParseInput(ircMsg);
-
+                //console.log(ircUser, ircMsg);
+                //console.log(data);
                 //console.log(o);
 
                 //console.log(ircUser, ircMsg);
