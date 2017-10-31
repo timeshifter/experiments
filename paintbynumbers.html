@@ -105,6 +105,7 @@
         <p><a href="javascript:void(0);" onclick="Widget();">Launch widget</a></p>
     </div>
     <div id="input">
+        <p class="text"><label>User:</label><input type="text" id="txtUser" /></p>
         <p class="text"><label>Chat:</label><input type="text" id="txtChat" /></p>
         <p><label id="lblHistory"></label></p>
     </div>
@@ -418,7 +419,9 @@
             gridSize = new Point(-1, -1),
             queryList = {},
             tempImage = new Image(),
-            firstLoad = true;
+            firstLoad = true,
+            history = [],
+            imagesLoaded = 0;
 
         canvas = document.getElementById('cv');
         ctx = canvas.getContext('2d');
@@ -490,6 +493,8 @@
             canvas.height = tempImage.height;
            // console.log('drawing last image');
             ctx.drawImage(tempImage, 0, 0);
+            imagesLoaded++;
+            OnImageLoad();
         }
 
 
@@ -512,6 +517,8 @@
                 localStorage.setItem('lastImage', baseImage.src);
             }
             firstLoad = false;
+            imagesLoaded++;
+            OnImageLoad();
         }
 
         localFile.onchange = function () {
@@ -549,6 +556,14 @@
             }
         }
 
+
+
+        function OnImageLoad() {
+            if (imagesLoaded == 2) {
+
+            }
+        }
+
         function ParseInput(text) {
             text = text.trim();
             var parts;
@@ -581,9 +596,22 @@
                 }
             }
 
+            parts.shift();
+            var drawOrder = parts.join(' ');
 
             if (c != undefined) {
 
+                
+                    
+                var nums = drawOrder.split(',');
+                for (var i = 0; i < nums.length; i++) {
+                    //Fillregion(c, parseInt(nums[i], 10));
+                    ParseDrawZone(c, nums[i].trim());
+                }
+
+                
+
+                /*
                 if (parts[1].indexOf('-') > -1) { //it's a range!
                     var rangeParts = parts[1].split('-');
                     var p1 = parseInt(rangeParts[0], 10),
@@ -630,27 +658,81 @@
 
                 }
                 else if (parts[1].indexOf(',') > -1) {
-                    if (isGrid) {
-                        var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
+                    //if (isGrid) {
+                    //    var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
 
-                        FillRegion(c, (x * gridSize.Y) + y);
+                    //    FillRegion(c, (x * gridSize.Y) + y);
+                    //}
+                    //else {
+                    var nums = parts[1].split(',');
+                    for (var i = 0; i < nums.length; i++) {
+                        Fillregion(c, parseInt(nums[i], 10));
                     }
-                    else {
-                        var nums = parts[1].split(',');
-                        for (var i = 0; i < nums.length; i++) {
-                            Fillregion(c, parseInt(nums[i], 10));
-                        }
 
-                    }
+                    //}
                 }
                 else {
                     FillRegion(c, parseInt(parts[1], 10));
                 }
+                */
+
+
+
                 //console.log('drawing region');
                 localStorage.setItem('lastImage', canvas.toDataURL());
                 return true;
             }
             return false;
+
+        }
+
+        function ParseDrawZone(color, text) {
+            if (text.indexOf('-') > -1) {
+                var rangeParts = text.split('-');
+                var p1 = parseInt(rangeParts[0], 10),
+                    p2 = parseInt(rangeParts[1], 10);
+
+                var min = Math.min(p1, p2),
+                    max = Math.max(p1, p2);
+
+                if (isGrid) {
+                    var pt1 = new Point(Math.floor(min / gridSize.Y) + 0.5, min % gridSize.Y + 0.5),
+                        pt2 = new Point(Math.floor(max / gridSize.Y) + 0.5, max % gridSize.Y + 0.5);
+
+                    var len = Math.sqrt(((pt2.X - pt1.X) * (pt2.X - pt1.X)) + ((pt2.Y - pt1.Y) * (pt2.Y - pt1.Y)));
+
+                    var deltaX = (pt2.X - pt1.X) / len,
+                        deltaY = (pt2.Y - pt1.Y) / len;
+
+                    FillRegion(color, min);
+                    FillRegion(color, max);
+
+                    for (var i = 0; i <= len; i += 1) {
+                        FillRegion(color,
+
+                            (Math.floor(pt1.X + (deltaX * i)) * gridSize.Y) +
+                            Math.floor(pt1.Y + (deltaY * i))
+
+                        );
+                    }
+
+
+
+
+
+                }
+                else {
+
+                    for (var i = min; i <= max; i++) {
+                        FillRegion(color, i);
+                    }
+
+                }
+            }
+            else {
+                FillRegion(color, parseInt(text, 10));
+            }
+
 
         }
 
@@ -884,7 +966,20 @@
 
 
         //connect to twitch channel, if specified
-        /*        @badges=moderator/1,subscriber/0,bits/5000;        color=#FF4500;        display-name=MediaMagnet;        emotes=;id=98a76159-e2f6-4080-bb5e-910cd54a6467;        mod=1;room-id=70067886;sent-ts=1509252055763;        subscriber=1;tmi-sent-ts=1509252067701;        turbo=0;user-id=111485954;        user-type=mod:mediamagnet!mediamagnet@mediamagnet.tmi.twitch.tv PRIVMSG #dwangoac :oh nice        
+        /*
+
+        @badges=moderator/1,subscriber/0,bits/5000;
+        color=#FF4500;
+        display-name=MediaMagnet;
+        emotes=;
+        id=98a76159-e2f6-4080-bb5e-910cd54a6467;
+        mod=1;
+        room-id=70067886;
+        sent-ts=1509252055763;
+        subscriber=1;tmi-sent-ts=1509252067701;
+        turbo=0;user-id=111485954;
+        user-type=mod:mediamagnet!mediamagnet@mediamagnet.tmi.twitch.tv PRIVMSG #dwangoac :oh nice
+        
         */
 
         function Connect() {
