@@ -576,8 +576,8 @@
             else
                 parts = text.split(' ');
 
-            if (parts.length != 2)
-                return;
+            //if (parts.length != 2)
+            //    return;
 
 
             var c, colName = parts[0].toLowerCase();
@@ -605,79 +605,10 @@
                     
                 var nums = drawOrder.split(',');
                 for (var i = 0; i < nums.length; i++) {
-                    //Fillregion(c, parseInt(nums[i], 10));
                     ParseDrawZone(c, nums[i].trim());
                 }
 
-                
-
-                /*
-                if (parts[1].indexOf('-') > -1) { //it's a range!
-                    var rangeParts = parts[1].split('-');
-                    var p1 = parseInt(rangeParts[0], 10),
-                        p2 = parseInt(rangeParts[1], 10);
-
-                    var min = Math.min(p1, p2),
-                        max = Math.max(p1, p2);
-
-                    if (isGrid) {
-                        var pt1 = new Point(Math.floor(min / gridSize.Y) + 0.5, min % gridSize.Y + 0.5),
-                            pt2 = new Point(Math.floor(max / gridSize.Y) + 0.5, max % gridSize.Y + 0.5);
-
-                        var len = Math.sqrt(((pt2.X - pt1.X) * (pt2.X - pt1.X)) + ((pt2.Y - pt1.Y) * (pt2.Y - pt1.Y)));
-
-                        var deltaX = (pt2.X - pt1.X)/len,
-                            deltaY = (pt2.Y - pt1.Y) / len;
-
-                        FillRegion(c, min);
-                        FillRegion(c, max);
-
-                        for (var i = 0; i <= len; i += 1) {
-                            FillRegion(c,
-
-                                (Math.floor(pt1.X + (deltaX * i)) * gridSize.Y) +
-                                Math.floor(pt1.Y + (deltaY * i))
-
-                            );
-                        }
-
-
-                        
-
-                        
-                    }
-                    else {
-
-                        for (var i = min; i <= max; i++) {
-                            FillRegion(c, i);
-                        }
-
-                    }
-
-                   
-
-                }
-                else if (parts[1].indexOf(',') > -1) {
-                    //if (isGrid) {
-                    //    var x = parseInt(parts[1].split(',')[0], 10), y = parseInt(parts[1].split(',')[1], 10);
-
-                    //    FillRegion(c, (x * gridSize.Y) + y);
-                    //}
-                    //else {
-                    var nums = parts[1].split(',');
-                    for (var i = 0; i < nums.length; i++) {
-                        Fillregion(c, parseInt(nums[i], 10));
-                    }
-
-                    //}
-                }
-                else {
-                    FillRegion(c, parseInt(parts[1], 10));
-                }
-                */
-
-
-
+               
                 //console.log('drawing region');
                 localStorage.setItem('lastImage', canvas.toDataURL());
                 return true;
