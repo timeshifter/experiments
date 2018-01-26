@@ -1,0 +1,647 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Shifter's Path of Exile Stash Sharer</title>
+    <link rel="stylesheet" type="text/css" href="reset.css">
+    <style type="text/css">
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 1000px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+            padding-bottom: 100px;
+        }
+
+        h1 {
+            font-size: 24px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+
+        ul, li {
+            list-style: none;
+        }
+
+        p {
+            line-height: 24px;
+        }
+
+        textarea{
+            display:block;
+            width:100%;
+            min-height:150px;
+        }
+
+        #start {
+            margin-top:30px;
+            text-align: center;
+        }
+
+        #start p {
+            font-size:1.5em;
+        }
+        #start button {
+            margin:10px 40px;
+            padding:15px;
+            white-space:nowrap;
+
+        }
+
+
+
+
+            #share>div {
+                width: 49%;
+                display: inline-block;
+                vertical-align: top;
+            }
+
+
+
+
+
+
+
+        /*
+$baseWidth: 80px;
+$quadWidth: $baseWidth / 2;
+
+#stash {
+  width: $baseWidth * 12;
+  height: $baseWidth * 12;
+  position:relative;
+  margin:20px auto;
+
+  @for $i from 1 through 4{
+    .w#{$i}{
+      width:$i * $baseWidth;
+    }
+    .h#{$i}{
+      height:$i * $baseWidth;
+    }
+  }  
+  @for $i from 1 through 12{
+    .x#{$i - 1}{
+      left: ($i - 1) * $baseWidth;
+    }
+    .y#{$i - 1}{
+      top:($i - 1) * $baseWidth;
+    }
+  }
+}
+
+
+#stash.quad {
+  @for $i from 1 through 4{
+    .w#{$i}{
+      width:$i * $quadWidth;
+    }
+    .h#{$i}{
+      height:$i * $quadWidth;
+    }
+  } 
+  @for $i from 1 through 24{
+    .x#{$i - 1}{
+      left: ($i - 1) * $quadWidth;
+    }
+    .y#{$i - 1}{
+      top:($i - 1)*$quadWidth;
+    }
+  }
+}
+            */
+        #stash {
+            width: 720px;
+            height: 720px;
+            position:relative;
+            margin:20px auto;
+        }
+
+            #stash .w1 {
+                width: 60px;
+            }
+
+            #stash .h1 {
+                height: 60px;
+            }
+
+            #stash .w2 {
+                width: 120px;
+            }
+
+            #stash .h2 {
+                height: 120px;
+            }
+
+            #stash .w3 {
+                width: 180px;
+            }
+
+            #stash .h3 {
+                height: 180px;
+            }
+
+            #stash .w4 {
+                width: 240px;
+            }
+
+            #stash .h4 {
+                height: 240px;
+            }
+
+            #stash .x0 {
+                left: 0px;
+            }
+
+            #stash .y0 {
+                top: 0px;
+            }
+
+            #stash .x1 {
+                left: 60px;
+            }
+
+            #stash .y1 {
+                top: 60px;
+            }
+
+            #stash .x2 {
+                left: 120px;
+            }
+
+            #stash .y2 {
+                top: 120px;
+            }
+
+            #stash .x3 {
+                left: 180px;
+            }
+
+            #stash .y3 {
+                top: 180px;
+            }
+
+            #stash .x4 {
+                left: 240px;
+            }
+
+            #stash .y4 {
+                top: 240px;
+            }
+
+            #stash .x5 {
+                left: 300px;
+            }
+
+            #stash .y5 {
+                top: 300px;
+            }
+
+            #stash .x6 {
+                left: 360px;
+            }
+
+            #stash .y6 {
+                top: 360px;
+            }
+
+            #stash .x7 {
+                left: 420px;
+            }
+
+            #stash .y7 {
+                top: 420px;
+            }
+
+            #stash .x8 {
+                left: 480px;
+            }
+
+            #stash .y8 {
+                top: 480px;
+            }
+
+            #stash .x9 {
+                left: 540px;
+            }
+
+            #stash .y9 {
+                top: 540px;
+            }
+
+            #stash .x10 {
+                left: 600px;
+            }
+
+            #stash .y10 {
+                top: 600px;
+            }
+
+            #stash .x11 {
+                left: 660px;
+            }
+
+            #stash .y11 {
+                top: 660px;
+            }
+
+            #stash.quad .w1 {
+                width: 30px;
+            }
+
+            #stash.quad .h1 {
+                height: 30px;
+            }
+
+            #stash.quad .w2 {
+                width: 60px;
+            }
+
+            #stash.quad .h2 {
+                height: 60px;
+            }
+
+            #stash.quad .w3 {
+                width: 90px;
+            }
+
+            #stash.quad .h3 {
+                height: 90px;
+            }
+
+            #stash.quad .w4 {
+                width: 120px;
+            }
+
+            #stash.quad .h4 {
+                height: 120px;
+            }
+
+            #stash.quad .x0 {
+                left: 0px;
+            }
+
+            #stash.quad .y0 {
+                top: 0px;
+            }
+
+            #stash.quad .x1 {
+                left: 30px;
+            }
+
+            #stash.quad .y1 {
+                top: 30px;
+            }
+
+            #stash.quad .x2 {
+                left: 60px;
+            }
+
+            #stash.quad .y2 {
+                top: 60px;
+            }
+
+            #stash.quad .x3 {
+                left: 90px;
+            }
+
+            #stash.quad .y3 {
+                top: 90px;
+            }
+
+            #stash.quad .x4 {
+                left: 120px;
+            }
+
+            #stash.quad .y4 {
+                top: 120px;
+            }
+
+            #stash.quad .x5 {
+                left: 150px;
+            }
+
+            #stash.quad .y5 {
+                top: 150px;
+            }
+
+            #stash.quad .x6 {
+                left: 180px;
+            }
+
+            #stash.quad .y6 {
+                top: 180px;
+            }
+
+            #stash.quad .x7 {
+                left: 210px;
+            }
+
+            #stash.quad .y7 {
+                top: 210px;
+            }
+
+            #stash.quad .x8 {
+                left: 240px;
+            }
+
+            #stash.quad .y8 {
+                top: 240px;
+            }
+
+            #stash.quad .x9 {
+                left: 270px;
+            }
+
+            #stash.quad .y9 {
+                top: 270px;
+            }
+
+            #stash.quad .x10 {
+                left: 300px;
+            }
+
+            #stash.quad .y10 {
+                top: 300px;
+            }
+
+            #stash.quad .x11 {
+                left: 330px;
+            }
+
+            #stash.quad .y11 {
+                top: 330px;
+            }
+
+            #stash.quad .x12 {
+                left: 360px;
+            }
+
+            #stash.quad .y12 {
+                top: 360px;
+            }
+
+            #stash.quad .x13 {
+                left: 390px;
+            }
+
+            #stash.quad .y13 {
+                top: 390px;
+            }
+
+            #stash.quad .x14 {
+                left: 420px;
+            }
+
+            #stash.quad .y14 {
+                top: 420px;
+            }
+
+            #stash.quad .x15 {
+                left: 450px;
+            }
+
+            #stash.quad .y15 {
+                top: 450px;
+            }
+
+            #stash.quad .x16 {
+                left: 480px;
+            }
+
+            #stash.quad .y16 {
+                top: 480px;
+            }
+
+            #stash.quad .x17 {
+                left: 510px;
+            }
+
+            #stash.quad .y17 {
+                top: 510px;
+            }
+
+            #stash.quad .x18 {
+                left: 540px;
+            }
+
+            #stash.quad .y18 {
+                top: 540px;
+            }
+
+            #stash.quad .x19 {
+                left: 570px;
+            }
+
+            #stash.quad .y19 {
+                top: 570px;
+            }
+
+            #stash.quad .x20 {
+                left: 600px;
+            }
+
+            #stash.quad .y20 {
+                top: 600px;
+            }
+
+            #stash.quad .x21 {
+                left: 630px;
+            }
+
+            #stash.quad .y21 {
+                top: 630px;
+            }
+
+            #stash.quad .x22 {
+                left: 660px;
+            }
+
+            #stash.quad .y22 {
+                top: 660px;
+            }
+
+            #stash.quad .x23 {
+                left: 690px;
+            }
+
+            #stash.quad .y23 {
+                top: 690px;
+            }
+
+
+
+            /*
+                end SASS block
+            */
+
+
+
+
+
+
+
+
+            #stash > div {
+                display:block;
+                position: absolute;
+                background-position: center center;
+                background-repeat: no-repeat;
+                background-size: cover;
+                border: solid 1px #333;
+            }
+
+
+            #stash .info {
+                position:absolute;
+                display: none;
+                width: 150px;
+                height: 150px;
+                background-color: #eee;
+                border: solid 1px #222;
+            }
+    </style>
+</head>
+<body>
+    <h1>
+        Shifter's Path of Exile Stash Sharer
+    </h1>
+    <div id="start">
+        <p>I want to...</p>
+        <button onclick="Share();">share my stash</button>
+        <button onclick="Load();">view a stash</button>
+    </div>
+    <div id="share">
+        <div>
+            <p>You must be signed in to pathofexile.com!</p>
+            <ul>
+                <li>
+                    <label>Account name</label>
+                    <input type="text" id="txtAccountName" />
+                </li>
+                <li>
+                    <label>Tab index</label>
+                    <input type="number" id="txtTabIndex" />
+                    <p>Tabs are 0-indexed, so your first tab is 0, second is 1, etc.</p>
+                </li>
+            </ul>
+            <p><a id="ancGetStash" target="_blank"></a></p>
+        </div>
+        <div>
+            <p>Copy the full contents of the link below:</p>
+            <textarea id="txtStashRaw"></textarea>
+            <button onclick="GenerateStash();">Load Stash</button>
+        </div>
+    </div>
+    <div id="divStash">
+        <div id="stash">
+            <div class="info">foo</div>
+        </div>
+        
+    </div>
+    <div id="controls">
+       <p id="coords"></p>
+
+    </div>
+    <div style="clear: both;">
+    </div>
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+    <script>
+
+        var inventory = [];
+
+        $(function (){
+
+            $('#share input').on('input', function () {
+                $('#ancGetStash')
+                    .attr('href', 'https://www.pathofexile.com/character-window/get-stash-items?league=Abyss&tabs=1&tabIndex=' + txtTabIndex.value + '&accountName=' + txtAccountName.value)
+                    .html('Click here to load your tab');
+            });
+
+
+            $('#stash')
+
+                .on('mouseleave', 'div', function () {
+                    $('#stash .info').css('display', 'none');
+                })
+                .on('mouseenter', 'div', function () {
+                    $('#stash .info').css('display', 'block');
+                })
+                .on('mousemove', function (e) {
+
+                    
+                    $('#stash .info')
+                        .css('left', (e.clientX - stash.offsetLeft) + 'px')
+                        .css('top', (e.clientY - stash.offsetTop) + 'px');
+                })
+                ;
+        });
+
+        function Share() {
+
+        }
+
+        function Load() {
+
+        }
+
+        function GenerateStash() {
+            var json = JSON.parse(txtStashRaw.value);
+
+            if (json.quadLayout) {
+                $('#stash').addClass('quad');
+            }
+            else {
+                $('#stash').removeClass('quad');
+            }
+
+            for (var i = 0; i < json.items.length; i++) {
+                var s = $('<div>')
+                    .css('background-image', 'url(' + json.items[i].icon.split('?')[0] + ')')
+                    .addClass('w' + json.items[i].w)
+                    .addClass('h' + json.items[i].h)
+                    .addClass('x' + json.items[i].x)
+                    .addClass('y' + json.items[i].y)
+                    .attr('data-index', i);
+                $('#stash').append(s);
+
+                //var o = {
+                //    Name: json.items[i].name,
+                //    Type: json.items[i].typeLine,
+                //    Props: json.items[i].properties.map(function(x) { return { Name: }})
+
+                //}
+
+
+            }
+
+            $('#start, #share').slideUp(500);
+
+        }
+
+
+
+
+
+    </script>
+
+</body>
+</html>
