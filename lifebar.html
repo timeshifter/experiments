@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>life bar demo</title>
+        <style>
+            *{
+                margin:0;
+                padding:0;
+                outline:0;
+                line-height:1.4em;
+            }
+
+            html{
+                font-family:Arial, Helvetica, sans-serif;
+                font-size:18px;
+                
+            }
+
+            h1 {
+                margin:0.5em 0;
+            }
+
+            ul li {
+
+            }
+
+            #txtHealth {
+                width:5em;
+            }
+
+            #lifebar_wrapper {
+
+            }
+
+            #lifebar_container {
+                margin:1em;
+                width:400px;
+                height:30px;
+                background-color:red;
+                box-sizing:border-box;
+            }
+
+            #lifebar_container.overshell {
+                border:5px solid cyan;
+            }
+
+            #lifebar_health {
+                width:100%;
+                height:100%;
+                background-color:green;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Life Bar demo</h1>
+        <div id="lifebar_wrapper">
+            <div id="lifebar_container">
+                <div id="lifebar_health"></div>
+            </div>
+        </div>
+        <ul>
+            <li><label>Health remaining: <input id="txtHealth" type="number" value="100" step="0.01" />%</label></li>
+            <li><label>Has shield? <input type="checkbox" id="cbShield" ></label></li>
+        </ul>
+        <script>
+            txtHealth.oninput = UpdateHealth;
+            cbShield.onchange = UpdateHealth;
+
+            function UpdateHealth() {
+                lifebar_health.style['width'] = txtHealth.value + '%';
+                if(cbShield.checked) {
+                    lifebar_container.classList.add('overshell');
+                }
+                else{
+                    lifebar_container.classList.remove('overshell');
+                }
+            }
+        </script>
+    </body>
+</html>
