@@ -54,20 +54,22 @@
                 position:absolute;
                 top:0;
                 left:0;
+                transition:width 0.5s ease;
             }
 
             #lifebar_shield {
-                display:none;
+                opacity:0;
                 position:absolute;
                 top:0;
                 left:0;
                 width:100%;
                 height:100%;
                 box-shadow:inset 0 0 10px 5px cyan;
+                transition:opacity 0.5s linear;
             }
 
             #lifebar_container.shield #lifebar_shield {
-                display:block;
+                opacity:1;
             }
 
             #lifebar_status {
@@ -99,9 +101,16 @@
             <li><label>Shield remaining:</label><input type="number" id="txtShield" min="0" value="50" /></li>
         </ul>
         <script>
-            txtCurrentHP.oninput = UpdateHealth;
-            txtMaxHP.oninput=UpdateHealth;
-            txtShield.oninput=UpdateHealth;
+            txtCurrentHP.oninput = UpdateHealthTrigger;
+            txtMaxHP.oninput=UpdateHealthTrigger;
+            txtShield.oninput=UpdateHealthTrigger;
+
+            var tmrId=-1;
+
+            function UpdateHealthTrigger() {
+                clearTimeout(tmrId);
+                tmrId=setTimeout(UpdateHealth, 500);
+            }
 
             function UpdateHealth() {
                 var disp = `${txtCurrentHP.value} / ${txtMaxHP.value}`;
