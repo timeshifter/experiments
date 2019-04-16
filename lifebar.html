@@ -8,46 +8,79 @@
                 padding:0;
                 outline:0;
                 line-height:1.4em;
+                list-style:none;
+                box-sizing:border-box;
             }
 
             html{
                 font-family:Arial, Helvetica, sans-serif;
                 font-size:18px;
-                
+                margin:1em;
             }
 
             h1 {
-                margin:0.5em 0;
             }
 
             ul li {
 
             }
 
-            #txtHealth {
+            ul>li>label {
+                width:9em;
+                display:inline-block;
+            }
+
+            input[type="number"] {
                 width:5em;
+                height:1.5em;
             }
 
             #lifebar_wrapper {
-
+                margin-bottom:1em;
             }
 
             #lifebar_container {
-                margin:1em;
                 width:400px;
                 height:30px;
                 background-color:red;
-                box-sizing:border-box;
-            }
-
-            #lifebar_container.overshell {
-                border:5px solid cyan;
+                position:relative;
+                vertical-align: middle;
             }
 
             #lifebar_health {
                 width:100%;
                 height:100%;
                 background-color:green;
+                position:absolute;
+                top:0;
+                left:0;
+            }
+
+            #lifebar_shield {
+                display:none;
+                position:absolute;
+                top:0;
+                left:0;
+                width:100%;
+                height:100%;
+                box-shadow:inset 0 0 10px 5px cyan;
+            }
+
+            #lifebar_container.shield #lifebar_shield {
+                display:block;
+            }
+
+            #lifebar_status {
+               left:50%;
+                top:50%;
+                position:absolute;
+                transform: translate(-50%, -50%);
+                color:yellow;
+                text-shadow: 0 0 3px black;
+            }
+
+            #lifebar_status>span {
+                color:cyan;
             }
         </style>
     </head>
@@ -56,25 +89,36 @@
         <div id="lifebar_wrapper">
             <div id="lifebar_container">
                 <div id="lifebar_health"></div>
+                <div id="lifebar_shield"></div>
+                <div id="lifebar_status"></div>
             </div>
         </div>
         <ul>
-            <li><label>Health remaining: <input id="txtHealth" type="number" value="100" step="0.01" />%</label></li>
-            <li><label>Has shield? <input type="checkbox" id="cbShield" ></label></li>
+            <li><label>Current HP:</label><input type="number" id="txtCurrentHP" value="100" min="0" /></li>
+            <li><label>Max HP:</label><input id="txtMaxHP" type="number" value="100" /></li>
+            <li><label>Shield remaining:</label><input type="number" id="txtShield" min="0" value="50" /></li>
         </ul>
         <script>
-            txtHealth.oninput = UpdateHealth;
-            cbShield.onchange = UpdateHealth;
+            txtCurrentHP.oninput = UpdateHealth;
+            txtMaxHP.oninput=UpdateHealth;
+            txtShield.oninput=UpdateHealth;
 
             function UpdateHealth() {
-                lifebar_health.style['width'] = txtHealth.value + '%';
-                if(cbShield.checked) {
-                    lifebar_container.classList.add('overshell');
+                var disp = `${txtCurrentHP.value} / ${txtMaxHP.value}`;
+                lifebar_health.style['width'] = (txtCurrentHP.value/txtMaxHP.value*100.0) + '%';
+                
+                if(txtShield.value>0){
+                    disp+=`   <span>(${txtShield.value})</span>`;
+                    lifebar_container.classList.add('shield');
                 }
                 else{
-                    lifebar_container.classList.remove('overshell');
+                    lifebar_container.classList.remove('shield');
                 }
+
+                lifebar_status.innerHTML=disp;
             }
+
+            UpdateHealth();
         </script>
     </body>
 </html>
