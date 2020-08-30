@@ -1,31 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Idle Planet Miner calculator</title>
+    <style>
+        *, *:before, *:after {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            font-family: Arial;
+            margin:0;
+            padding:0;
+            font-size:16px;
+        }
+
+        html {
+            background-color: #eee;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            width: 1000px;
+            min-height: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #666;
+            margin: 0 auto;
+            margin-top:20px;
+            padding-bottom: 100px;
+            padding:15px;
+        }
+
+        input, select {
+            padding:3px;
+        }
+
+        input[type="number"] {
+            width:100px;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            padding: 10px 0 20px 0;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 18px;
+            padding: 5px 0;
+        }
+        ul, li {
+            list-style:none;
+            line-height:1.7em;
+        }
+
+        #output_list {
+            margin-top:20px;
+        }
+
+        #output_list li > ul {
+            margin-left:20px;
+            padding-left:5px;
+            border-left:1px solid #ccc;
+            margin-bottom:0.7em;
+        }
+    </style>
 </head>
+
 <body>
-    <p>What do you want to craft?</p>
+    <h1>timeshifter's Idle Planet Miner crafting calculator</h1>
+    <h2>What do you want to craft?</h2>
     <ul>
         <li>
             <select id="item_select" class="item_select" oninput="Update();"></select>
             <input id="txtQuantity" type="number" class="item_quantity" min="0" value="1" oninput="Update();">
         </li>
     </ul>
-    <div id="output">
+    
+    <div id="output_list">
 
     </div>
 
     <script src="ipm_data.js"></script>
     <script>
-        
-        (function() {
-            for(i of IPM_DATA){
-                if(i.reqs.length>0){
+
+        var contractions = ['', 'K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D'];
+
+        (function () {
+
+            IPM_DATA.filter(i=>i.reqs.length==0).map(i=>i['tier'] = 1);
+            var tier_next = 2, tier_remaining = IPM_DATA.filter(i=>!i.tier);
+
+            while(tier_remaining.length>0){
+                for(item of tier_remaining){
+                    var can_tier=true;
+                    for(req of item.reqs){
+                        if(!(IPM_DATA.filter(i=>i.id==req.id)[0].tier))
+                            can_tier=false;
+                        else if(IPM_DATA.filter(i => i.id == req.id)[0].tier == tier_next)
+                            can_tier=false;
+
+                    }
+                    if(can_tier){
+                        item['tier']=tier_next;
+                    }
+                }
+                tier_next++;
+
+                tier_remaining = IPM_DATA.filter(i => !i.tier)
+            }
+
+
+
+            for (i of IPM_DATA) {
+                if (i.reqs.length > 0) {
                     var d = document.createElement('option');
-                    d.value=i.id;
-                    d.text=i.name;
+                    d.value = i.id;
+                    d.text = i.name;
                     item_select.add(d);
                 }
             }
@@ -34,27 +127,54 @@
         })();
 
         function Update() {
-            console.log(GetReqs(item_select.value, parseInt(txtQuantity.value, 10)));
+            
+            var req_list = GetReqs(item_select.value, parseInt(txtQuantity.value, 10));
+            output_list.innerHTML = GetList(req_list);
 
         }
 
-        function GetReqs(item_id, qty, req_list, req_tree){
-            req_list = req_list || [];
-            req_tree = req_tree || [];
-
-            
-            req_list.push({id: item_id, qty: qty});
-
+        function GetReqs(item_id, qty) {
+            var o = {id: item_id, qty: qty};
             var item = IPM_DATA.filter(i=>i.id==item_id)[0];
+            var reqs = [];
 
-            for(i of item.reqs) {
-                GetReqs(i.id, i.qty * qty, req_list, req_tree);
-                
+            for(k of item.reqs) {
+                reqs.push(GetReqs(k.id, qty*k.qty));
             }
 
+            if(reqs.length>0)
+                o['reqs']=reqs;
             
-            return req_list;
+            return o;
+        }
+
+        function GetList(reqs) {
+            var output = '<ul><li><p>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + ' (' + ShortenNumber(reqs.qty) + ')</p>';
+
+                if(reqs.reqs){
+            for (i of reqs.reqs) {
+                output += GetList(i);
+            }
+        }
+            output += '</li></ul>';
+
+            return output;
+        }
+
+        function GetName(id) {
+            return IPM_DATA.filter(i=>i.id==id)[0].name;
+        }
+
+        function ShortenNumber(num) {
+            var len = num.toString().length;
+            len = Math.floor((len - 1)/3);
+
+            var ret = Math.round(num/Math.pow(10, (len*3)-2)) / 100;
+
+            return ret.toString() + contractions[len];
+
         }
     </script>
 </body>
+
 </html>
