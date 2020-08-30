@@ -48,23 +48,44 @@
         }
 
         h2 {
-            font-size: 18px;
+            font-size: 1.4em;
             padding: 5px 0;
         }
+
+        h3 {
+            margin-top:2em;
+        }
+
         ul, li {
             list-style:none;
-            line-height:1.7em;
+            line-height:1.9em;
         }
 
-        #output_list {
-            margin-top:20px;
+        #options {
+            margin: 0.7em 0;
         }
 
-        #output_list li > ul {
+        #options label {
+            cursor:pointer;
+        }
+
+        #output_tree {
+            margin-top:1em;;
+        }
+
+        #output_tree li > ul {
             margin-left:20px;
             padding-left:5px;
             border-left:1px solid #ccc;
             margin-bottom:0.7em;
+        }
+
+        #output_list >p {
+            margin-top:0.5em;
+        }
+
+        #output_list ul {
+            margin-left:25px;
         }
     </style>
 </head>
@@ -72,13 +93,20 @@
 <body>
     <h1>timeshifter's Idle Planet Miner crafting calculator</h1>
     <h2>What do you want to craft?</h2>
-    <ul>
-        <li>
-            <select id="item_select" class="item_select" oninput="Update();"></select>
-            <input id="txtQuantity" type="number" class="item_quantity" min="0" value="1" oninput="Update();">
+    <ul id="ulItems">
+        <li class="item_row">
+            <select class="item_select" oninput="Update();">
+                <option value="-1">Select item...</option>
+            </select>
+            <input type="number" class="item_quantity" min="0" value="1" oninput="Update();">
         </li>
     </ul>
-    
+    <div id="options">
+        <label><input type="checkbox" id="cbShowOres" oninput="Update();"> Show ores?</label>
+    </div>
+    <h3>Dependency tree</h3>
+    <div id="output_tree"></div>
+    <h3>Totals list</h3>
     <div id="output_list">
 
     </div>
@@ -86,7 +114,8 @@
     <script src="ipm_data.js"></script>
     <script>
 
-        var contractions = ['', 'K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D'];
+        var contractions = ['', 'K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D'],
+            item_template='';
 
         (function () {
 
@@ -113,23 +142,98 @@
             }
 
 
-
+            var smelts = document.createElement('optgroup'), crafts = document.createElement('optgroup');
+            smelts.label = 'Smelter';
+            crafts.label='Crafter';
             for (i of IPM_DATA) {
                 if (i.reqs.length > 0) {
                     var d = document.createElement('option');
                     d.value = i.id;
                     d.text = i.name;
-                    item_select.add(d);
+
+                    if(i.type=='smelt')
+                    smelts.appendChild(d);
+                    else if(i.type=='craft')
+                    crafts.appendChild(d);
+
                 }
             }
+            document.getElementsByClassName('item_select')[0].add(smelts);
+            document.getElementsByClassName('item_select')[0].add(crafts);
+
+            item_template = ulItems.children[0].innerHTML
 
             Update();
         })();
 
         function Update() {
+            var req_list = [];
+
+            var lis = document.getElementsByClassName('item_row');
+            var idx = 0;
+            for (li of lis) {
+                if (li.getElementsByClassName('item_select')[0].value != '-1') {
+                    req_list.push(GetReqs(li.getElementsByClassName('item_select')[0].value, parseInt(li.getElementsByClassName('item_quantity')[0].value, 10)));
+
+                    if (idx == lis.length - 1) {
+                        var newLi = document.createElement('li');
+                        newLi.innerHTML = item_template;
+                        newLi.className = 'item_row';
+                        ulItems.appendChild(newLi);
+                    }
+                }
+                idx++;
+            }
+
+            var tree = '', list = '', list_remaining=[], list_totals=[];
+            for (r of req_list) {
+                tree += GetTree(r);
+                list_remaining.push(r);
+            }
+            output_tree.innerHTML = tree;
+
+            while(list_remaining.length>0){
+                var item = list_remaining[0], isInList=false;
+                 
+                 for(i of list_totals){
+                    if(i.id==item.id){
+                        isInList=true;
+                        i.qty+=item.qty;
+                    }
+                }
+                if(!isInList)
+                    list_totals.push({id: item.id, qty: item.qty});
+                
+                if(item.reqs){
+                    for(r of item.reqs){
+
+                        list_remaining.push(r);
+                    
+                    }
+                }
+                list_remaining.shift();
+            }
+
+            list_totals.sort((a,b) => IPM_DATA.filter(i=>i.id==a.id)[0].tier > IPM_DATA.filter(i => i.id == b.id)[0].tier);
             
-            var req_list = GetReqs(item_select.value, parseInt(txtQuantity.value, 10));
-            output_list.innerHTML = GetList(req_list);
+            var curr_tier=0, last_tier=-1;;
+            for(req of list_totals){
+                var item = IPM_DATA.filter(i=>i.id==req.id)[0];
+                if(item.tier!=last_tier){
+                    if(curr_tier>0){
+                        list+='</ul>';
+                    }
+                    curr_tier++;
+                    last_tier=item.tier;
+                    list+='<p>Tier ' + curr_tier + '</p><ul>';
+                    
+                }
+                list+= '<li><p>' + GetName(req.id) + ' x ' + req.qty.toLocaleString() + (req.qty.toLocaleString() != ShortenNumber(req.qty) ? ' (' + ShortenNumber(req.qty) + ')': '') + '</p></li>';
+            }
+
+            output_list.innerHTML = list + '</ul>';
+
+
 
         }
 
@@ -139,7 +243,9 @@
             var reqs = [];
 
             for(k of item.reqs) {
-                reqs.push(GetReqs(k.id, qty*k.qty));
+                var t = IPM_DATA.filter(i=>i.id==k.id)[0].type;
+                if(t!='ore' || (t=='ore' && cbShowOres.checked))
+                    reqs.push(GetReqs(k.id, qty*k.qty));        
             }
 
             if(reqs.length>0)
@@ -148,12 +254,12 @@
             return o;
         }
 
-        function GetList(reqs) {
-            var output = '<ul><li><p>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + ' (' + ShortenNumber(reqs.qty) + ')</p>';
+        function GetTree(reqs) {
+            var output = '<ul><li><p>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + (reqs.qty.toLocaleString() != ShortenNumber(reqs.qty) ? ' (' + ShortenNumber(reqs.qty) + ')' : '') + '</p>';
 
                 if(reqs.reqs){
             for (i of reqs.reqs) {
-                output += GetList(i);
+                output += GetTree(i);
             }
         }
             output += '</li></ul>';

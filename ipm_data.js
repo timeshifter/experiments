@@ -145,10 +145,6 @@ var IPM_DATA = [
         reqs: [
             { id: 'copper-bar', qty: 10 },
             { id: 'silver-bar', qty: 2 }
-        ],
-        eff_reqs: [
-            { id: 'copper-bar', qty: 8 },
-            { id: 'silver-bar', qty: 2 }
         ]
     },
 
@@ -191,9 +187,6 @@ var IPM_DATA = [
         type: 'craft',
         reqs: [
             { id: 'copper-bar', qty: 5 }
-        ],
-        eff_reqs: [
-            { id: 'copper-bar', qty: 4 }
         ]
     },
 
@@ -213,10 +206,6 @@ var IPM_DATA = [
         reqs: [
             { id: 'copper-wire', qty: 2},
             { id: 'copper-bar', qty: 10}
-        ],
-        eff_reqs: [
-            { id: 'copper-wire', qty: 2},
-            { id: 'copper-bar', qty: 8}
         ]
     },
 
