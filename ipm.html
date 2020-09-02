@@ -61,6 +61,30 @@
             line-height:1.9em;
         }
 
+        #ulItems .remove {
+            display:inline-block;
+            width:30px;
+            height:1.5em;
+            border:solid 1px #802020;
+            background-color:#ee1010;
+            color:#eee;
+            font-weight:bold;
+            cursor:pointer;
+            border-radius: 5px;
+        }
+
+        #ulItems li:last-child .remove {
+            visibility: hidden;
+        }
+
+        #ulItems select {
+            width:250px;
+        }
+
+        #ulItems input[type="number"] {
+            width:100px;
+        }
+
         #options {
             margin: 0.7em 0;
         }
@@ -80,6 +104,14 @@
             margin-bottom:0.7em;
         }
 
+        #output_tree label {
+            cursor:pointer;
+        }
+
+        #output_tree label>input:checked+span {
+            text-decoration:line-through;
+        }
+
         #output_list >p {
             margin-top:0.5em;
         }
@@ -95,6 +127,7 @@
     <h2>What do you want to craft?</h2>
     <ul id="ulItems">
         <li class="item_row">
+            <button class="remove" onclick="DeleteRow(this);">x</button>
             <select class="item_select" oninput="Update();">
                 <option value="-1">Select item...</option>
             </select>
@@ -255,7 +288,7 @@
         }
 
         function GetTree(reqs) {
-            var output = '<ul><li><p>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + (reqs.qty.toLocaleString() != ShortenNumber(reqs.qty) ? ' (' + ShortenNumber(reqs.qty) + ')' : '') + '</p>';
+            var output = '<ul><li><label><input type="checkbox" /> <span>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + (reqs.qty.toLocaleString() != ShortenNumber(reqs.qty) ? ' (' + ShortenNumber(reqs.qty) + ')' : '') + '</span></label>';
 
                 if(reqs.reqs){
             for (i of reqs.reqs) {
@@ -279,6 +312,11 @@
 
             return ret.toString() + contractions[len];
 
+        }
+
+        function DeleteRow(btn) {
+            btn.parentElement.remove();
+            Update();
         }
     </script>
 </body>
