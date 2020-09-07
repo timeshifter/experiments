@@ -61,6 +61,12 @@
             line-height:1.9em;
         }
 
+        #recipes {
+            display:inline-block;
+            width:50%;
+            vertical-align: top;;
+        }
+
         #ulItems .remove {
             display:inline-block;
             width:30px;
@@ -86,7 +92,9 @@
         }
 
         #options {
-            margin: 0.7em 0;
+            display:inline-block;
+            width:40%;
+            vertical-align: top;
         }
 
         #options label {
@@ -124,18 +132,30 @@
 
 <body>
     <h1>timeshifter's Idle Planet Miner crafting calculator</h1>
-    <h2>What do you want to craft?</h2>
-    <ul id="ulItems">
-        <li class="item_row">
-            <button class="remove" onclick="DeleteRow(this);">x</button>
-            <select class="item_select" oninput="Update();">
-                <option value="-1">Select item...</option>
-            </select>
-            <input type="number" class="item_quantity" min="0" value="1" oninput="Update();">
-        </li>
-    </ul>
+    <div id="recipes">
+        <h2>What do you want to craft?</h2>
+        <ul id="ulItems">
+            <li class="item_row">
+                <button class="remove" onclick="DeleteRow(this);">x</button>
+                <select class="item_select" oninput="Update();">
+                    <option value="-1">Select item...</option>
+                </select>
+                <input type="number" class="item_quantity" min="0" value="1" oninput="Update();">
+            </li>
+        </ul>
+    </div>
+    
     <div id="options">
-        <label><input type="checkbox" id="cbShowOres" oninput="Update();"> Show ores?</label>
+        <ul>
+            <li><label><input type="checkbox" id="cbShowOres" oninput="Update();"> Show ores?</label></li>
+            <li><label><input type="checkbox" id="cbSmeltingEfficiency" oninput="Update();"> Smelting Efficiency</label></li>
+            <li><label>Underforge level: </label><input type="number" id="txtUnderforge" min="0" max="11" value="0" oninput="Update();"></li>
+            <li><label><input type="checkbox" id="cbCraftingEfficiency" oninput="Update();"> Crafting Efficiency</label></li>
+            <li><label>Dorm level: </label><input type="number" id="txtDorm" min="0" max="11" value="0" oninput="Update();"></li>
+        </ul>
+        
+        
+        
     </div>
     <h3>Dependency tree</h3>
     <div id="output_tree"></div>
@@ -275,10 +295,31 @@
             var item = IPM_DATA.filter(i=>i.id==item_id)[0];
             var reqs = [];
 
+            var effMod=0.0;
+            if(item.type=='smelt'){
+                if(cbSmeltingEfficiency.checked)
+                    effMod=0.2;
+                var v = parseInt(txtUnderforge.value,10);
+                if(v>0)
+                    effMod+=0.1;
+                if(v>1)
+                    effMod+=(0.04*v);
+            }
+            else if(item.type=='craft'){
+                if(cbCraftingEfficiency.checked)
+                    effMod=0.2;
+                var v = parseInt(txtDorm.value, 10);
+                if (v > 0)
+                    effMod += 0.1;
+                if (v > 1)
+                    effMod += (0.04 * v);
+            }
+            console.log(effMod);
+
             for(k of item.reqs) {
                 var t = IPM_DATA.filter(i=>i.id==k.id)[0].type;
                 if(t!='ore' || (t=='ore' && cbShowOres.checked))
-                    reqs.push(GetReqs(k.id, qty*k.qty));        
+                    reqs.push(GetReqs(k.id, qty*Math.max(1,(k.qty - (Math.round(k.qty*effMod))))));        
             }
 
             if(reqs.length>0)
