@@ -322,7 +322,7 @@
                 if(t!='ore' || (t=='ore' && cbShowOres.checked)){
                     var q = k.qty*100;
                     q=q-(k.qty*effMod);
-                    reqs.push(GetReqs(k.id,  Math.max(1, Math.round(q/100)  )));        
+                    reqs.push(GetReqs(k.id, qty* Math.max(1, Math.round(q/100) ) ) );        
                 }
             }
 
