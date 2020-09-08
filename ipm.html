@@ -295,24 +295,27 @@
             var item = IPM_DATA.filter(i=>i.id==item_id)[0];
             var reqs = [];
 
-            var effMod=0;
+            var effMod=100;
             if(item.type=='smelt'){
-                if(cbSmeltingEfficiency.checked)
-                    effMod=20;
-                var v = parseInt(txtUnderforge.value,10);
-                if(v>0)
-                    effMod+=10;
-                if(v>1)
-                    effMod+=(4*(v-1));
+                var v = parseInt(txtUnderforge.value, 10);
+                if (v > 0)
+                    effMod -= 10;
+                if (v > 1)
+                    effMod -= (4 * (v - 1));
+
+                if (cbSmeltingEfficiency.checked)
+                    effMod *= 0.8;  
             }
             else if(item.type=='craft'){
-                if(cbCraftingEfficiency.checked)
-                    effMod=20;
+
                 var v = parseInt(txtDorm.value, 10);
                 if (v > 0)
-                    effMod += 10;
+                    effMod -= 10;
                 if (v > 1)
-                    effMod += (4 * (v-1));
+                    effMod -= (4 * (v-1));
+                
+                if(cbCraftingEfficiency.checked)
+                    effMod*=0.8;           
             }
 
             //console.log(item.name + ': ' + effMod);
@@ -320,8 +323,8 @@
             for(k of item.reqs) {
                 var t = IPM_DATA.filter(i=>i.id==k.id)[0].type;
                 if(t!='ore' || (t=='ore' && cbShowOres.checked)){
-                    var q = k.qty*100;
-                    q=q-(k.qty*effMod);
+                    var q = k.qty*effMod;
+                    //q=q-(k.qty*effMod);
                     reqs.push(GetReqs(k.id, qty* Math.max(1, Math.round(q/100) ) ) );        
                 }
             }
