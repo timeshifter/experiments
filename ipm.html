@@ -67,7 +67,7 @@
             vertical-align: top;;
         }
 
-        #ulItems .remove {
+        .items .remove {
             display:inline-block;
             width:30px;
             height:1.5em;
@@ -79,15 +79,15 @@
             border-radius: 5px;
         }
 
-        #ulItems li:last-child .remove {
+        .items li:last-child .remove {
             visibility: hidden;
         }
 
-        #ulItems select {
+        .items select {
             width:250px;
         }
 
-        #ulItems input[type="number"] {
+        .items input[type="number"] {
             width:100px;
         }
 
@@ -120,12 +120,20 @@
             text-decoration:line-through;
         }
 
-        #output_list >p {
+        #output_list > p {
             margin-top:0.5em;
         }
 
         #output_list ul {
             margin-left:25px;
+        }
+
+        #output_list label {
+            cursor:pointer;
+        }
+
+        #output_list label>input:checked+span {
+            text-decoration:line-through;
         }
     </style>
 </head>
@@ -133,8 +141,8 @@
 <body>
     <h1>timeshifter's Idle Planet Miner crafting calculator</h1>
     <div id="recipes">
-        <h2>What do you want to craft?</h2>
-        <ul id="ulItems">
+        <h2>Smelts</h2>
+        <ul id="ulSmelts" class="items">
             <li class="item_row">
                 <button class="remove" onclick="DeleteRow(this);">x</button>
                 <select class="item_select" oninput="Update();">
@@ -143,19 +151,38 @@
                 <input type="number" class="item_quantity" min="0" value="1" oninput="Update();">
             </li>
         </ul>
+        <h2>Crafts</h2>
+        <ul id="ulCrafts" class="items">
+            <li class="item_row">
+                <button class="remove" onclick="DeleteRow(this);">x</button>
+                <select class="item_select" oninput="Update();">
+                    <option value="-1">Select item...</option>
+                </select>
+                <input type="number" class="item_quantity" min="0" value="1" oninput="Update();">
+            </li>
+        </ul>
+        <h2>Projects</h2>
+        <ul id="ulProjects" class="items">
+            <li class="item_row">
+                <button class="remove" onclick="DeleteRow(this);">x</button>
+                <select class="item_select" oninput="Update();">
+                    <option value="-1">Select item...</option>
+                </select>
+            </li>
+        </ul>
     </div>
     
     <div id="options">
+        <h2>Options</h2>
         <ul>
             <li><label><input type="checkbox" id="cbShowOres" oninput="Update();"> Show ores?</label></li>
             <li><label><input type="checkbox" id="cbSmeltingEfficiency" oninput="Update();"> Smelting Efficiency</label></li>
             <li><label>Underforge level: </label><input type="number" id="txtUnderforge" min="0" max="11" value="0" oninput="Update();"></li>
             <li><label><input type="checkbox" id="cbCraftingEfficiency" oninput="Update();"> Crafting Efficiency</label></li>
             <li><label>Dorm level: </label><input type="number" id="txtDorm" min="0" max="11" value="0" oninput="Update();"></li>
+            <li><label>Laboratory level: </label><input type="number" id="txtLaboratory" min="0" max="11" value="0" oninput="Update();"></li>
+
         </ul>
-        
-        
-        
     </div>
     <h3>Dependency tree</h3>
     <div id="output_tree"></div>
@@ -168,9 +195,39 @@
     <script>
 
         var contractions = ['', 'K', 'M', 'B', 'T', 'q', 'Q', 's', 'S', 'O', 'N', 'D'],
-            item_template='';
+            smelt_template='', craft_template='', project_template='',
+            settings={};
+
+        function SaveSettings() {
+            var s = {
+                show_ores: cbShowOres.checked,
+                smelt_eff: cbSmeltingEfficiency.checked,
+                craft_eff: cbCraftingEfficiency.checked,
+                smelt_lvl: txtUnderforge.value,
+                craft_lvl: txtDorm.value,
+                project_lvl: txtLaboratory.value
+            };
+            localStorage.setItem('ipm_settings', JSON.stringify(s));
+        }
 
         (function () {
+
+            if(localStorage.getItem('ipm_settings'))
+                settings=JSON.parse(localStorage.getItem('ipm_settings'));
+            
+            if(settings.show_ores)
+                cbShowOres.checked=settings.show_ores;
+            if(settings.smelt_eff)
+                cbSmeltingEfficiency.checked=settings.smelt_eff;
+            if(settings.craft_eff)
+                cbCraftingEfficiency.checked=settings.craft_eff;
+            if(settings.smelt_lvl)
+                txtUnderforge.value=settings.smelt_lvl;
+            if(settings.craft_lvl)
+                txtDorm.value=settings.craft_lvl;
+            if(settings.project_lvl)
+                txtLaboratory.value=settings.project_lvl;
+
 
             IPM_DATA.filter(i=>i.reqs.length==0).map(i=>i['tier'] = 1);
             var tier_next = 2, tier_remaining = IPM_DATA.filter(i=>!i.tier);
@@ -179,11 +236,17 @@
                 for(item of tier_remaining){
                     var can_tier=true;
                     for(req of item.reqs){
-                        if(!(IPM_DATA.filter(i=>i.id==req.id)[0].tier))
-                            can_tier=false;
-                        else if(IPM_DATA.filter(i => i.id == req.id)[0].tier == tier_next)
-                            can_tier=false;
-
+                        try{
+                            if(!(IPM_DATA.filter(i=>i.id==req.id)[0].tier))
+                                can_tier=false;
+                            else if(IPM_DATA.filter(i => i.id == req.id)[0].tier == tier_next)
+                                can_tier=false;
+                        }
+                        catch(e){
+                            console.log(item);
+                            console.log(req);
+                            throw(e);
+                        }
                     }
                     if(can_tier){
                         item['tier']=tier_next;
@@ -194,10 +257,8 @@
                 tier_remaining = IPM_DATA.filter(i => !i.tier)
             }
 
-
-            var smelts = document.createElement('optgroup'), crafts = document.createElement('optgroup');
-            smelts.label = 'Smelter';
-            crafts.label='Crafter';
+            var grps = [];
+            
             for (i of IPM_DATA) {
                 if (i.reqs.length > 0) {
                     var d = document.createElement('option');
@@ -205,24 +266,40 @@
                     d.text = i.name;
 
                     if(i.type=='smelt')
-                    smelts.appendChild(d);
+                        ulSmelts.getElementsByClassName('item_select')[0].add(d);
                     else if(i.type=='craft')
-                    crafts.appendChild(d);
+                        ulCrafts.getElementsByClassName('item_select')[0].add(d);
+                    else if(i.type=='project'){
+                        
+                        if(!grps[i.category]){
+                            var g = document.createElement('optgroup');
+                            g.label=i.category;
+                            grps[i.category]=g;   
+                        }
+
+                        grps[i.category].appendChild(d);
+                    }
 
                 }
             }
-            document.getElementsByClassName('item_select')[0].add(smelts);
-            document.getElementsByClassName('item_select')[0].add(crafts);
+            
+            smelt_template = ulSmelts.children[0].innerHTML;
+            craft_template = ulCrafts.children[0].innerHTML;
 
-            item_template = ulItems.children[0].innerHTML
+            for(g in grps){
+                ulProjects.getElementsByClassName('item_select')[0].add(grps[g]);
+            }
+
+            project_template=ulProjects.children[0].innerHTML;
 
             Update();
         })();
 
         function Update() {
+            SaveSettings();
             var req_list = [];
 
-            var lis = document.getElementsByClassName('item_row');
+            var lis = ulSmelts.getElementsByClassName('item_row');
             var idx = 0;
             for (li of lis) {
                 if (li.getElementsByClassName('item_select')[0].value != '-1') {
@@ -230,13 +307,46 @@
 
                     if (idx == lis.length - 1) {
                         var newLi = document.createElement('li');
-                        newLi.innerHTML = item_template;
+                        newLi.innerHTML = smelt_template;
                         newLi.className = 'item_row';
-                        ulItems.appendChild(newLi);
+                        ulSmelts.appendChild(newLi);
                     }
                 }
                 idx++;
             }
+
+            lis = ulCrafts.getElementsByClassName('item_row');
+            idx = 0;
+            for (li of lis) {
+                if (li.getElementsByClassName('item_select')[0].value != '-1') {
+                    req_list.push(GetReqs(li.getElementsByClassName('item_select')[0].value, parseInt(li.getElementsByClassName('item_quantity')[0].value, 10)));
+
+                    if (idx == lis.length - 1) {
+                        var newLi = document.createElement('li');
+                        newLi.innerHTML = craft_template;
+                        newLi.className = 'item_row';
+                        ulCrafts.appendChild(newLi);
+                    }
+                }
+                idx++;
+            }
+
+            lis = ulProjects.getElementsByClassName('item_row');
+            idx = 0;
+            for (li of lis) {
+                if (li.getElementsByClassName('item_select')[0].value != '-1') {
+                    req_list.push(GetReqs(li.getElementsByClassName('item_select')[0].value, 1));
+
+                    if (idx == lis.length - 1) {
+                        var newLi = document.createElement('li');
+                        newLi.innerHTML = project_template;
+                        newLi.className = 'item_row';
+                        ulProjects.appendChild(newLi);
+                    }
+                }
+                idx++;
+            }
+
 
             var tree = '', list = '', list_remaining=[], list_totals=[];
             for (r of req_list) {
@@ -281,7 +391,7 @@
                     list+='<p>Tier ' + curr_tier + '</p><ul>';
                     
                 }
-                list+= '<li><p>' + GetName(req.id) + ' x ' + req.qty.toLocaleString() + (req.qty.toLocaleString() != ShortenNumber(req.qty) ? ' (' + ShortenNumber(req.qty) + ')': '') + '</p></li>';
+                list+= '<li><label><input type="checkbox" /> <span>' + GetName(req.id) + (item.type!='project' ? ' x ' + req.qty.toLocaleString() + (req.qty.toLocaleString() != ShortenNumber(req.qty) ? ' (' + ShortenNumber(req.qty) + ')': '') : '') + '</span></label></li>';
             }
 
             output_list.innerHTML = list + '</ul>';
@@ -317,14 +427,23 @@
                 if(cbCraftingEfficiency.checked)
                     effMod*=0.8;           
             }
+            else if (item.type == 'project') {
+
+                var v = parseInt(txtLaboratory.value, 10);
+                if (v > 0)
+                    effMod -= 10;
+                if (v > 1)
+                    effMod -= (4 * (v - 1));
+            }
 
             //console.log(item.name + ': ' + effMod);
 
             for(k of item.reqs) {
                 var t = IPM_DATA.filter(i=>i.id==k.id)[0].type;
-                if(t!='ore' || (t=='ore' && cbShowOres.checked)){
+                if((t!='ore' || (t=='ore' && cbShowOres.checked)) && t!='project'){
                     var q = k.qty*effMod;
-                    //q=q-(k.qty*effMod);
+                    if(t=='project')
+                        q=1;
                     reqs.push(GetReqs(k.id, qty* Math.max(1, Math.round(q/100) ) ) );        
                 }
             }
@@ -336,13 +455,15 @@
         }
 
         function GetTree(reqs) {
-            var output = '<ul><li><label><input type="checkbox" /> <span>' + GetName(reqs.id) + ' x ' + reqs.qty.toLocaleString() + (reqs.qty.toLocaleString() != ShortenNumber(reqs.qty) ? ' (' + ShortenNumber(reqs.qty) + ')' : '') + '</span></label>';
+            var item = IPM_DATA.filter(i => i.id == reqs.id)[0];
 
-                if(reqs.reqs){
-            for (i of reqs.reqs) {
-                output += GetTree(i);
+            var output = '<ul><li><label><input type="checkbox" /> <span>' + GetName(reqs.id) + (item.type != 'project' ? ' x ' + reqs.qty.toLocaleString() + (reqs.qty.toLocaleString() != ShortenNumber(reqs.qty) ? ' (' + ShortenNumber(reqs.qty) + ')' : '') : '') + '</span></label>';
+
+            if(reqs.reqs){
+                for (i of reqs.reqs) {
+                    output += GetTree(i);
+                }
             }
-        }
             output += '</li></ul>';
 
             return output;

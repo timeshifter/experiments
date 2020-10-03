@@ -673,4 +673,898 @@ var IPM_DATA = [
         ]
     },
 
+    {
+        id: 'asteroid-miner',
+        name: 'Asteroid Miner',
+        type: 'project',
+        category: 'Basic',
+        reqs: [
+            { id: 'copper', qty: 400 },
+            { id: 'iron', qty: 100 }
+        ]
+    },
+
+    {
+        id: 'management',
+        name: 'Management',
+        type: 'project',
+        category: 'Basic',
+        reqs: [
+            { id: 'copper', qty: 400 },
+            { id: 'iron', qty: 50 }
+        ]
+    },
+
+    {
+        id: 'telescope-1',
+        name: 'Telescope 1',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'iron', qty: 1500 },
+            { id: 'copper-bar', qty: 5 },
+            { id: 'management' }
+        ]
+    },
+
+    {
+        id: 'beacon',
+        name: 'Beacon',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'iron-bar', qty: 15 },
+            { id: 'telescope-1' }
+        ]
+    },
+
+    {
+        id: 'telescope-2',
+        name: 'Telescope 2',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'lead-bar', qty: 10 },
+            { id: 'silica', qty: 500 },
+            { id: 'telescope-1' }
+        ]
+    },
+
+    {
+        id: 'resource-details',
+        name: 'Resource Details',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'battery', qty: 3 },
+            { id: 'telescope-2'}
+        ]
+    },
+
+    {
+        id: 'telescope-3',
+        name: 'Telescope 3',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'iron-nails', qty: 10 },
+            { id: 'silicon-bar', qty: 15 },
+            { id: 'telescope-2'}
+        ]
+    },
+
+    {
+        id: 'asteroid-refined-drilling',
+        name: 'Asteroid Refined Drilling',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'silicon-bar', qty: 40 },
+            { id: 'lead-bar', qty: 80 },
+            { id: 'telescope-3'}
+        ]
+    },
+
+    {
+        id: 'asteroid-harvester',
+        name: 'Asteroid Harvester',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'iron-bar', qty: 400 },
+            { id: 'circuit', qty: 5 },
+            { id: 'asteroid-refined-drilling'}
+        ]
+    },
+
+    {
+        id: 'advanced-asteroid-harvester',
+        name: 'Advanced Asteroid Harvester',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'space-probe', qty: 1 },
+            { id: 'plasma-torch', qty: 50 },
+            { id: 'asteroid-harvester'}
+        ]
+    },
+
+    {
+        id: 'superior-asteroid-harvester',
+        name: 'Superior Asteroid Harvester',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'nuclear-reactor', qty: 10 },
+            { id: 'scrith-bar', qty: 300 },
+            { id: 'inerton-bar', qty: 600 },
+            { id: 'advanced-asteroid-harvester' }
+        ]
+    },
+
+    {
+        id: 'asteroid-scanner',
+        name: 'Asteroid Scanner',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'thermal-scanner', qty: 30 },
+            { id: 'navigation-module', qty: 5 },
+            { id: 'asteroid-harvester' }
+        ]
+    },
+
+    {
+        id: 'advanced-asteroid-scanner',
+        name: 'Advanced Asteroid Scanner',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'telescope', qty: 150 },
+            { id: 'asteroid-scanner' }
+        ]
+    },
+
+    {
+        id: 'telescope-4',
+        name: 'Telescope 4',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'hammer', qty: 5 },
+            { id: 'aluminum-bar', qty: 20 },
+            { id: 'telescope-3'}
+        ]
+    },
+
+    {
+        id: 'market-insight',
+        name: 'Market Insight',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'silver-bar', qty: 20 },
+            { id: 'hammer', qty: 10 },
+            { id: 'telescope-4' }
+        ]
+    },
+
+    {
+        id: 'inside-trader',
+        name: 'Inside Trader',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'steel-bar', qty: 25 },
+            { id: 'lense', qty: 10 },
+            { id: 'market-insight' }
+        ]
+    },
+
+    {
+        id: 'cargo-logistics',
+        name: 'Cargo Logistics',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'aluminum-bar', qty: 10 },
+            { id: 'circuit', qty: 3 },
+            { id: 'telescope-4' }
+        ]
+    },
+
+    {
+        id: 'ore-targeting',
+        name: 'Ore Targeting',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'hammer', qty: 100 },
+            { id: 'battery', qty: 50 },
+            { id: 'cargo-logistics' }
+        ]
+    },
+
+    {
+        id: 'advanced-ore-targeting',
+        name: 'Advanced Ore Targeting',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'basic-computer', qty: 100 },
+            { id: 'thermal-scanner', qty: 15 },
+            { id: 'ore-targeting' }
+        ]
+    },
+
+    {
+        id: 'telescope-5',
+        name: 'Telescope 5',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'circuit', qty: 3 },
+            { id: 'gold-bar', qty: 10 },
+            { id: 'telescope-4' }
+        ]
+    },
+
+    {
+        id: 'rover-advanced-logistics',
+        name: 'Rover Advanced Logistics',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'bronze-bar', qty: 20 },
+            { id: 'battery', qty: 20 },
+            { id: 'lense', qty: 10 },
+            { id: 'telescope-5' }
+        ]
+    },
+
+    {
+        id: 'rover-scanning-module',
+        name: 'Rover Scanning Module',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'aluminum-bar', qty: 100 },
+            { id: 'basic-computer', qty: 1 },
+            { id: 'rover-advanced-logistics' }
+        ]
+    },
+
+    {
+        id: 'telescope-6',
+        name: 'Telescope 6',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'laser', qty: 3 },
+            { id: 'bronze-bar', qty: 25 },
+            { id: 'telescope-5' }
+        ]
+    },
+
+    {
+        id: 'manager-training',
+        name: 'Manager Training',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'laser-torch', qty: 1 },
+            { id: 'steel-bar', qty: 50 },
+            { id: 'telescope-6' }
+        ]
+    },
+
+    {
+        id: 'telescope-7',
+        name: 'Telescope 7',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'solar-panel', qty: 3 },
+            { id: 'platinum-bar', qty: 20 },
+            { id: 'telescope-6' }
+        ]
+    },
+
+    {
+        id: 'telescope-8',
+        name: 'Telescope 8',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'laser-torch', qty: 3 },
+            { id: 'titanium-bar', qty: 10 },
+            { id: 'telescope-7' }
+        ]
+    },
+
+    {
+        id: 'telescope-9',
+        name: 'Telescope 9',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'advanced-battery', qty: 3 },
+            { id: 'iridium-bar', qty: 10 },
+            { id: 'telescope-8' }
+        ]
+    },
+
+    {
+        id: 'telescope-10',
+        name: 'Telescope 10',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'thermal-scanner', qty: 3 },
+            { id: 'paladium-bar', qty: 10 },
+            { id: 'telescope-9' }
+        ]
+    },
+
+    {
+        id: 'advanced-manager-training',
+        name: 'Advanced Manager Training',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'advanced-computer', qty: 2 },
+            { id: 'advanced-battery', qty: 10 },
+            { id: 'telescope-10' }
+        ]
+    },
+
+    {
+        id: 'telescope-11',
+        name: 'Telescope 11',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'advanced-computer', qty: 3 },
+            { id: 'osmium-bar', qty: 10 },
+            { id: 'telescope-10' }
+        ]
+    },
+
+    {
+        id: 'telescope-12',
+        name: 'Telescope 12',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'navigation-module', qty: 3 },
+            { id: 'rhodium-bar', qty: 10 },
+            { id: 'telescope-11' }
+        ]
+    },
+
+    {
+        id: 'telescope-13',
+        name: 'Telescope 13',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'radio-tower', qty: 3 },
+            { id: 'inerton-bar', qty: 10 },
+            { id: 'telescope-12' }
+        ]
+    },
+
+    {
+        id: 'superior-manager-training',
+        name: 'Superior Manager Training',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'rhodium-bar', qty: 200 },
+            { id: 'telescope-13' }
+        ]
+    },
+
+    {
+        id: 'telescope-14',
+        name: 'Telescope 14',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'satellite-dish', qty: 3 },
+            { id: 'quadium-bar', qty: 10 },
+            { id: 'telescope-13' }
+        ]
+    },
+
+    {
+        id: 'telescope-15',
+        name: 'Telescope 15',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'motor', qty: 5 },
+            { id: 'scrith-bar', qty: 10 },
+            { id: 'telescope-14' }
+        ]
+    },
+
+    {
+        id: 'telescope-16',
+        name: 'Telescope 16',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'accumulator', qty: 3 },
+            { id: 'uru-bar', qty: 10 },
+            { id: 'telescope-15' }
+        ]
+    },
+
+    {
+        id: 'telescope-17',
+        name: 'Telescope 17',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'nuclear-capsule', qty: 3 },
+            { id: 'vibranium-bar', qty: 10 },
+            { id: 'telescope-16' }
+        ]
+    },
+
+    {
+        id: 'telescope-18',
+        name: 'Telescope 18',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'wind-turbine', qty: 4 },
+            { id: 'aether-bar', qty: 10 },
+            { id: 'telescope-17' }
+        ]
+    },
+
+    {
+        id: 'colonization',
+        name: 'Colonization',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'copper-bar', qty: 20 },
+            { id: 'iron-bar', qty: 10 },
+            { id: 'management' }
+        ]
+    },
+
+    {
+        id: 'colonization-scouting',
+        name: 'Colonization Scouting',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'iron-nails', qty: 15 },
+            { id: 'colonization' }
+        ]
+    },
+
+    {
+        id: 'colonization-advanced-scouting',
+        name: 'Colonization Advanced Scouting',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'silver-bar', qty: 40 },
+            { id: 'colonization-scouting' }
+        ]
+    },
+
+    {
+        id: 'colonization-superior-scouting',
+        name: 'Colonization Superior Scouting',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'diamond', qty: 25000 },
+            { id: 'colonization-advanced-scouting' }
+        ]
+    },
+
+    {
+        id: 'colonization-efficiency',
+        name: 'Colonization Efficiency',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'silver-bar', qty: 15 },
+            { id: 'hammer', qty: 10 },
+            { id: 'colonization' }
+        ]
+    },
+
+    {
+        id: 'colonization-advanced-efficiency',
+        name: 'Colonization Advanced Efficiency',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'steel-bar', qty: 40 },
+            { id: 'laser', qty: 10 },
+            { id: 'colonization-efficiency' }
+        ]
+    },
+
+    {
+        id: 'colonization-superior-efficiency',
+        name: 'Colonization Superior Efficiency',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'paladium-bar', qty: 50 },
+            { id: 'laser-torch', qty: 15 },
+            { id: 'colonization-advanced-efficiency' }
+        ]
+    },
+
+    {
+        id: 'terraforming',
+        name: 'Terraforming',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'diamond', qty: 20000 },
+            { id: 'thermal-scanner', qty: 10 },
+            { id: 'colonization-advanced-efficiency' }
+        ]
+    },
+
+    {
+        id: 'advanced-terraforming',
+        name: 'Advanced Terraforming',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'satellite-dish', qty: 10 },
+            { id: 'terraforming' }
+        ]
+    },
+
+    {
+        id: 'colony-tax-incentives',
+        name: 'Colony Tax Incentives',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'aluminum-bar', qty: 60 },
+            { id: 'colonization-scouting' },
+            { id: 'colonization-efficiency'}
+        ]
+    },
+
+    {
+        id: 'colony-advanced-tax-incentives',
+        name: 'Colony Advanced Tax Incentives',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'bronze-bar', qty: 60 },
+            { id: 'colony-tax-incentives' }
+        ]
+    },
+
+    {
+        id: 'colony-superior-tax-incentives',
+        name: 'Colony Superior Tax Incentives',
+        type: 'project',
+        category: 'Colonization',
+        reqs: [
+            { id: 'paladium-bar', qty: 60 },
+            { id: 'colony-advanced-tax-incentives' }
+        ]
+    },
+
+    {
+        id: 'rover',
+        name: 'Rover',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'copper-wire', qty: 10 },
+            { id: 'asteroid-miner' }
+        ]
+    },
+
+    {
+        id: 'advanced-mining',
+        name: 'Advanced Mining',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'battery', qty: 5 },
+            { id: 'aluminum-bar', qty: 20 },
+            { id: 'rover' }
+        ]
+    },
+
+    {
+        id: 'advanced-thrusters',
+        name: 'Advanced Thrusters',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'glass', qty: 2 },
+            { id: 'gold-bar', qty: 10 },
+            { id: 'advanced-mining' }
+        ]
+    },
+
+    {
+        id: 'advanced-cargo-handling',
+        name: 'Advanced Cargo Handling',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'hammer', qty: 5 },
+            { id: 'silver-bar', qty: 25 },
+            { id: 'advanced-mining' }
+        ]
+    },
+
+    {
+        id: 'superior-mining',
+        name: 'Superior Mining',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'laser-torch', qty: 10 },
+            { id: 'platinum-bar', qty: 25 },
+            { id: 'advanced-thrusters' },
+            { id: 'advanced-cargo-handling' }
+        ]
+    },
+
+    {
+        id: 'superior-thrusters',
+        name: 'Superior Thrusters',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'advanced-battery', qty: 4 },
+            { id: 'superior-mining' }
+        ]
+    },
+
+    {
+        id: 'superior-cargo-handling',
+        name: 'Superior Cargo Handling',
+        type: 'project',
+        category: 'Planets',
+        reqs: [
+            { id: 'titanium-bar', qty: 50 },
+            { id: 'superior-mining' }
+        ]
+    },
+
+    {
+        id: 'smelter',
+        name: 'Smelter',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'copper', qty: 600 },
+            { id: 'iron', qty: 250 },
+            { id: 'asteroid-miner' }
+        ]
+    },
+
+    {
+        id: 'crafter',
+        name: 'Crafter',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'lead', qty: 5000 },
+            { id: 'iron-bar', qty: 5 },
+            { id: 'smelter' }
+        ]
+    },
+
+    {
+        id: 'advanced-crafter',
+        name: 'Advanced Crafter',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'lense', qty: 5 },
+            { id: 'gold-bar', qty: 50 },
+            { id: 'crafter' }
+        ]
+    },
+
+    {
+        id: 'crafting-efficiency',
+        name: 'Crafting Efficiency',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'solar-panel', qty: 40 },
+            { id: 'advanced-crafter' }
+        ]
+    },
+
+    {
+        id: 'superior-crafting',
+        name: 'Superior Crafting',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'thermal-scanner', qty: 2 },
+            { id: 'advanced-battery', qty: 10 },
+            { id: 'laser-torch', qty: 20 },
+            { id: 'crafting-efficiency' },
+            { id: 'advanced-item-value' }
+        ]
+    },
+
+    {
+        id: 'advanced-item-value',
+        name: 'Advanced Item Value',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'lense', qty: 1 },
+            { id: 'silver-bar', qty: 5 },
+            { id: 'advanced-crafter' }
+        ]
+    },
+
+    {
+        id: 'crafting-specialist',
+        name: 'Crafting Specialist',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'advanced-battery', qty: 2 },
+            { id: 'advanced-computer', qty: 2 },
+            { id: 'advanced-item-value' }
+        ]
+    },
+
+    {
+        id: 'superior-item-value',
+        name: 'Superior Item Value',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'paladium-bar', qty: 200 },
+            { id: 'laser-torch', qty: 25 },
+            { id: 'advanced-item-value' }
+        ]
+    },
+
+    {
+        id: 'advanced-furnace',
+        name: 'Advanced Furnace',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'glass', qty: 3 },
+            { id: 'aluminum-bar', qty: 10 },
+            { id: 'smelter' }
+        ]
+    },
+
+    {
+        id: 'smelting-efficiency',
+        name: 'Smelting Efficiency',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'bronze-bar', qty: 200 },
+            { id: 'advanced-furnace' }
+        ]
+    },
+
+    {
+        id: 'superior-furnace',
+        name: 'Superior Furnace',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'iridium-bar', qty: 5 },
+            { id: 'titanium-bar', qty: 20 },
+            { id: 'platinum-bar', qty: 50 },
+            { id: 'smelting-efficiency' },
+            { id: 'advanced-alloy-value' }
+        ]
+    },
+
+    {
+        id: 'advanced-alloy-value',
+        name: 'Advanced Alloy Value',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'circuit', qty: 3 },
+            { id: 'silver-bar', qty: 10 },
+            { id: 'advanced-furnace' }
+        ]
+    },
+
+    {
+        id: 'smelting-specialist',
+        name: 'Smelting Specialist',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'basic-computer', qty: 5 },
+            { id: 'advanced-battery', qty: 2 },
+            { id: 'advanced-alloy-value' }
+        ]
+    },
+
+    {
+        id: 'superior-alloy-value',
+        name: 'Superior Alloy Value',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'diamond', qty: 250000 },
+            { id: 'laser', qty: 30 },
+            { id: 'advanced-alloy-value' }
+        ]
+    },
+
+    {
+        id: 'preferred-vendor',
+        name: 'Preferred Vendor',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'iron-nails', qty: 200 },
+            { id: 'hammer', qty: 75 },
+            { id: 'circuit', qty: 40 },
+            { id: 'superior-furnace' }
+        ]
+    },
+
+    {
+        id: 'furnace-overdrive',
+        name: 'Furnace Overdrive',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'osmium-bar', qty: 20 },
+            { id: 'plasma-torch', qty: 1 },
+            { id: 'superior-furnace' }
+        ]
+    },
+
+    {
+        id: 'advanced-furnace-overdrive',
+        name: 'Advanced Furnace Overdrive',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'rhodium-bar', qty: 40 },
+            { id: 'inerton-bar', qty: 20 },
+            { id: 'thermal-scanner', qty: 10 },
+            { id: 'furnace-overdrive' }
+        ]
+    },
+
+    {
+        id: 'furnace-overdrive-efficiency',
+        name: 'Furnace Overdrive Efficiency',
+        type: 'project',
+        category: 'Production',
+        reqs: [
+            { id: 'iridium-bar', qty: 200 },
+            { id: 'motor', qty: 1 },
+            { id: 'furnace-overdrive' }
+        ]
+    },
+
+
+    
 ]
