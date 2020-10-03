@@ -803,6 +803,18 @@ var IPM_DATA = [
     },
 
     {
+        id: 'asteroid-auto-miner',
+        name: 'Asteroid Auto Miner',
+        type: 'project',
+        category: 'Telescope',
+        reqs: [
+            { id: 'advanced-computer', qty: 20 },
+            { id: 'solar-panel', qty: 100 },
+            { id: 'asteroid-harvester' }
+        ]
+    },
+
+    {
         id: 'asteroid-scanner',
         name: 'Asteroid Scanner',
         type: 'project',
