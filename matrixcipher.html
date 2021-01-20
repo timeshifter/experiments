@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Cipher</title>
+    <link rel="stylesheet" href="reset.css">
+    <style>
+        body {
+            margin:15px;
+            font-size:16px;
+        }
+
+        div {
+            margin:0.5em 0;
+        }
+
+        p {
+            margin:0.5em 0;
+        }
+
+        p.info {
+            font-size:0.8em;
+            margin-bottom:1.5em;
+        }
+
+        p.error {
+            color:red;
+            display:inline-block;
+        }
+
+        label {
+            display:inline-block;
+            width:80px;
+        }
+
+        button {
+            font-size:1.0em;
+            display:inline-block;
+            margin:0.3em 0;
+        }
+
+        textarea {
+            padding:0.3em;
+        }
+
+        input[type="text"] {
+            font-family:'Courier New', Courier, monospace;
+            width:600px;
+            padding:0.3em;
+        }
+    </style>
+</head>
+<body>
+    <p><label for="txtAlphabet">Alphabet</label></p>
+    <textarea name="txtAlphabet" id="txtAlphabet" cols="80" rows="4" spellcheck="false">abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+1234567890
+ .,!?</textarea>
+    <p class="info">Line breaks are just for grouping; they will not be encoded.</p>
+    <div>
+        <label for="txtPlaintext">Plaintext:</label><input type="text" name="txtPlaintext" id="txtPlaintext">
+    </div>
+    <div>
+        <button onclick="Encode();">Encode ↓</button> <button onclick="Decode();">↑ Decode</button> <p id="lblError" class="error"></p>
+    </div>
+    <div>
+        <label for="txtCipher">Cipher:</label><input type="text" name="txtCipher" id="txtCipher" spellcheck="false">
+    </div>
+    <script>
+
+        function Encode() {
+            var alph = txtAlphabet.value.replace(/\n/g, '');
+            txtCipher.value='';
+            lblError.innerHTML='';
+            try{
+                var cipher = GenerateCipher(txtPlaintext.value, alph);
+                txtCipher.value=cipher;
+            }
+            catch(e) {
+                lblError.innerHTML = e;
+            }
+        }
+
+        function Decode() {
+            var alph = txtAlphabet.value.replace(/\n/g, '');
+            txtPlaintext.value = '';
+            lblError.innerHTML = '';
+            try {
+                var plaintext = DecodeCipher(txtCipher.value, alph);
+                txtPlaintext.value=plaintext;
+            }
+            catch (e) {
+                lblError.innerHTML = e;
+            }
+
+        }
+
+        function GenerateCipher(plaintext, alphabet){
+            if(alphabet.indexOf(' ')==-1)
+                throw 'Alphabet must contain space.'
+
+            if(plaintext.length==0)
+                throw 'Message cannot be blank.'
+
+
+            var chars = plaintext.split('');
+            for(c of chars){
+                if(alphabet.indexOf(c)==-1){
+                    throw `Character in message but not in alphabet: "${c}"`;
+                }
+            }
+
+            var sidelen = Math.ceil(Math.sqrt(chars.length));
+
+            //make sure plaintext is the correct length
+            while(chars.length<(sidelen*sidelen)){
+                chars.push(' ');
+            }
+
+            //generate the working matrix
+            var matrix = [], x=0, y=0, i=0;
+            for(var i=0;i<=sidelen;i++){
+                matrix.push(new Array(sidelen+1));
+            }
+
+            //put the plaintext character codes as defined by the alphabet into the array
+            var idx=0;
+            for(y=1;y<=sidelen;y++){
+                for(x=1;x<=sidelen;x++){
+
+                    //matrix[y][x]=1;
+                    matrix[y][x]=alphabet.indexOf(chars[idx]);
+
+                    //matrix[y][x]=chars[idx];
+                    idx++;
+                }
+            }
+
+            //generate random numbers along the top and left edges
+            for(x = 0;x<=sidelen;x++){
+                matrix[0][x]=Math.floor(Math.random()*alphabet.length);
+                //matrix[0][x]=2;
+            }
+            for(y=1;y<=sidelen;y++){
+                matrix[y][0]= Math.floor(Math.random() * alphabet.length);
+                //matrix[y][0]=3;
+            }
+
+            //add the header rows and columns down and across
+            for(x=0;x<=sidelen;x++){
+                for(y=1;y<=sidelen;y++){
+                    matrix[y][x]+=matrix[0][x];
+                }
+            }
+            for(y=0;y<=sidelen;y++){
+                for(x=1;x<=sidelen;x++){
+                    matrix[y][x] += matrix[y][0];
+                }
+            }
+
+            //unroll and pass through alphabet again
+            var cipher='';
+            for(y=0;y<=sidelen;y++){
+                for(x=0;x<=sidelen;x++){
+                    var t = matrix[y][x] % alphabet.length;
+                    cipher += alphabet.charAt(t);
+                }
+            }
+            
+            return cipher;
+        }
+
+        function DecodeCipher(ciphertext, alphabet) {
+            if (alphabet.indexOf(' ') == -1)
+                throw 'Alphabet must contain space.'
+
+
+            var chars = ciphertext.split('');
+            if(Math.sqrt(chars.length)!=Math.floor(Math.sqrt(chars.length)) || chars.length==0)
+                throw 'Invalid ciphertext length.';
+
+            for(c of chars){
+                if(alphabet.indexOf(c)==-1){
+                    throw `Character in cipher but not in alphabet: "${c}"`;
+                }
+            }
+
+            var sidelen = Math.sqrt(chars.length)-1;
+
+            //generate the working matrix
+            var matrix = [], x = 0, y = 0, i = 0;
+            for (var i = 0; i <= sidelen; i++) {
+                matrix.push(new Array(sidelen + 1));
+            }
+
+            var idx=0;
+            for(y=0;y<=sidelen;y++){
+                for(x=0;x<=sidelen;x++){
+                    matrix[y][x] = alphabet.indexOf(chars[idx]);
+                    idx++;
+                }
+            }
+
+            //de-add
+            for(x=0;x<=sidelen;x++){
+                for(y=1;y<=sidelen;y++){
+                    matrix[y][x]-=matrix[0][x];
+                }
+            }
+            for(y=0;y<=sidelen;y++){
+                for(x=1;x<=sidelen;x++){
+                    matrix[y][x]-=matrix[y][0];
+                }
+            }
+
+            //unroll and decode using the alphabet
+            var plaintext='';
+            for (y = 1; y <= sidelen; y++) {
+                for (x = 1; x <= sidelen; x++) {
+                    var t = matrix[y][x];
+                    while(t<0){
+                        t+=alphabet.length;
+                    }
+                    plaintext+=alphabet.charAt(t);
+
+                }
+            }
+
+            return plaintext;
+        }
+
+
+    </script>
+</body>
+</html>
