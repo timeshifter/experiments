@@ -163,7 +163,10 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
             var cipher='';
             for(y=0;y<=sidelen;y++){
                 for(x=0;x<=sidelen;x++){
-                    var t = matrix[y][x] % alphabet.length;
+                    var t = matrix[y][x];
+                    while(t>=alphabet.length){
+                        t-=alphabet.length;
+                    }
                     cipher += alphabet.charAt(t);
                 }
             }
@@ -219,6 +222,10 @@ ABCDEFGHIJKLMNOPQRSTUVWXYZ
             for (y = 1; y <= sidelen; y++) {
                 for (x = 1; x <= sidelen; x++) {
                     var t = matrix[y][x];
+                    while(t>=alphabet.length){
+                        t-=alphabet.length;
+                    }
+                    
                     while(t<0){
                         t+=alphabet.length;
                     }
