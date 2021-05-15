@@ -674,6 +674,22 @@ var IPM_DATA = [
     },
 
     {
+        id: 'teleporfusion-reactorter',
+        name: 'Fusion Reactor',
+        type: 'craft',
+        reqs: [
+            { id: 'collider', qty: 40 },
+            { id: 'nuclear-reactor', qty: 50 },
+            { id: 'fusion-capsule', qty: 1}
+        ]
+    },
+
+
+
+
+
+
+    {
         id: 'asteroid-miner',
         name: 'Asteroid Miner',
         type: 'project',
