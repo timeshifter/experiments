@@ -674,7 +674,7 @@ var IPM_DATA = [
     },
 
     {
-        id: 'teleporfusion-reactorter',
+        id: 'fusion-reactor',
         name: 'Fusion Reactor',
         type: 'craft',
         reqs: [
