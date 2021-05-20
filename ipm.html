@@ -258,8 +258,12 @@
             }
 
             var grps = [];
+
+            var data_idx=0;
             
             for (i of IPM_DATA) {
+                i.index=data_idx;
+                data_idx++;
                 if (i.reqs.length > 0) {
                     var d = document.createElement('option');
                     d.value = i.id;
@@ -377,8 +381,12 @@
                 list_remaining.shift();
             }
 
-            list_totals.sort((a,b) => IPM_DATA.filter(i=>i.id==a.id)[0].tier > IPM_DATA.filter(i => i.id == b.id)[0].tier);
             
+            list_totals.sort((a,b) => 
+                IPM_DATA.filter(i=>i.id==a.id)[0].tier * 100 + IPM_DATA.filter(i => i.id == a.id)[0].index > 
+                IPM_DATA.filter(i => i.id == b.id)[0].tier * 100 + IPM_DATA.filter(i => i.id == b.id)[0].index
+            );
+
             var curr_tier=0, last_tier=-1;;
             for(req of list_totals){
                 var item = IPM_DATA.filter(i=>i.id==req.id)[0];
